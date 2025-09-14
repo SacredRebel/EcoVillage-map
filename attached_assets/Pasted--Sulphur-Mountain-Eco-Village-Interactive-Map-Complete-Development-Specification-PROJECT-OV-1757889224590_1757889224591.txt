@@ -1,0 +1,225 @@
+# Sulphur Mountain Eco-Village Interactive Map - Complete Development Specification
+
+## PROJECT OVERVIEW
+Build an interactive 2D map interface for the Sulphur Mountain Eco-Village (11962 Sulphur Mountain Road, Upper Ojai, CA) that serves as an immersive investor presentation and project visualization tool. The map will feature clickable project zones, detailed information cards, 3D visual elements, and smooth navigation controls.
+
+## BRAND IDENTITY & STYLING
+**Base the design on existing website:** https://sulphurmountainroad.vercel.app
+- Clean, modern interface with earth-tone color palette
+- Professional presentation suitable for investors
+- Integration with existing "digital twin" and eco-village narrative
+- Responsive design for desktop and mobile viewing
+
+## TECHNICAL REQUIREMENTS
+
+### Core Technology Stack
+- **Mapping Library:** Leaflet.js or Mapbox GL JS for interactive map functionality
+- **Framework:** React.js with modern hooks for state management
+- **Styling:** Tailwind CSS for rapid development and consistency
+- **3D Elements:** CSS 3D transforms and/or Three.js for simple 3D overlays
+- **Image Management:** Custom tile server setup for aerial imagery integration
+- **Data Structure:** JSON-based project database for easy content management
+
+### Map Foundation
+- Convert provided aerial imagery (10-acre property with red boundary lines) into interactive map tiles
+- Implement smooth zoom levels (3-5 levels recommended)
+- Pan and zoom controls with momentum scrolling
+- Property boundary overlay matching the red lines from aerial photo
+- Coordinate system mapped to real-world GPS coordinates if available
+
+## DETAILED PROPERTY ZONE ANALYSIS & COLOR CODING
+
+### Zone 1: FRONT LEFT SECTION (Agricultural Hub) - Color: #22C55E (Green)
+**Location:** Left side after main entrance, approximately 3 acres of visible flat terrain
+**Visible Features in Aerial Photo:** Large open flat areas with some scattered trees
+**Projects to Map:**
+1. **Gatehouse Renovation** (1,200 sq ft operations center) - Near entrance
+2. **Art Creation Center** - Mid-section of flat area
+3. **Nursery Operations** - Adjacent to art center
+4. **Agriculture Zones** - Large flat cleared areas visible in photo
+5. **Sacred Geometry Flower Garden** - Right slope leading to main residence
+6. **Orchard Development** - Sloped terrain with existing tree coverage
+
+### Zone 2: MAIN RESIDENCE COMPOUND - Color: #3B82F6 (Blue)
+**Location:** Elevated position in back-left corner with mountain views
+**Visible Features:** Can identify elevated area with existing structures
+**Projects to Map:**
+1. **Main Residence** (7,200 sq ft, $2.5M budget) - Central elevated structure
+2. **Guesthouse** (1,200 sq ft) - Adjacent to main residence
+3. **Vintage Pool Structure** (3,600 sq ft) - Behind main residence area
+4. **Green Lawn & Yard** - Open space surrounding residence
+
+### Zone 3: MIDDLE SECTION (Community Hub) - Color: #F59E0B (Amber)
+**Location:** Central area with visible creek line and paddock fencing
+**Visible Features:** Lower elevation area with scattered trees, existing sheds
+**Projects to Map:**
+1. **Livestock Paddock** - Fenced area visible in aerial photo
+2. **Central Community Kitchen** - Near historic stone fireplace location
+3. **Gathering Area** - Adjacent to creek with seating and shade
+4. **Existing Sheds** - Two structures currently used for gym/storage
+5. **Creek Corridor** - Natural water feature running through property
+
+### Zone 4: RIGHT HILLSIDE SECTION (Retreat Village) - Color: #8B5CF6 (Purple)  
+**Location:** Eastern sloped terrain extending up hillside
+**Visible Features:** Heavily treed sloped area with natural clearings
+**Projects to Map:**
+1. **McQueen's Garage** (3,200 sq ft warehouse, $500K renovation) - Located at base of hillside
+2. **Cabin & Dome Village** - Scattered throughout hillside clearings (20-30 units planned)
+3. **Glamping Village** - Creek-adjacent flat areas (20-30 units)
+4. **Ceremonial Grounds** - Natural clearings under oak trees
+5. **Healing Sanctuaries** - Private secluded areas up the hillside
+
+### Zone 5: INFRASTRUCTURE & UTILITIES - Color: #6B7280 (Gray)
+**Location:** Throughout property with focus on main access routes
+**Projects to Map:**
+1. **Road Extensions** - New 1/4-mile access road to upper hillside
+2. **Water Line Extensions** - From existing well to all zones
+3. **Solar Grid Systems** - Distributed throughout property
+4. **Electrical Infrastructure** - Trenching routes for power distribution
+
+## INTERACTIVE FEATURES SPECIFICATION
+
+### 3D Visual Elements
+- **Main Residence:** 3D house icon with architectural details
+- **McQueen's Garage:** Industrial warehouse representation
+- **Livestock Areas:** Animated animal icons (horses, goats, chickens)
+- **Glamping Units:** Tent and dome structures at scale
+- **Sacred Spaces:** Geometric symbols and fire circle representations
+- **Agriculture:** Tree and garden bed visual representations
+
+### Project Information Cards
+Each clickable zone opens a detailed modal containing:
+
+**Card Template Structure:**
+```
+- Project Name & Phase
+- Budget & Timeline
+- Current Status (Not Started/In Progress/Complete)
+- Image Gallery (before/after/concept renderings)
+- Detailed Description
+- Revenue Projections
+- Investment Opportunities
+- Key Features & Amenities
+```
+
+### Specific Project Card Content
+
+**Main Residence Compound Card:**
+- Budget: $2.5M Construction
+- Timeline: Permits ready, 12-month build
+- Images: Current site, architectural concepts
+- Features: 6-bedroom residence, mountain views, ceremonial links
+- Revenue: $18,000/month from luxury short-term stays
+
+**McQueen's Garage Card:**
+- Budget: $500K Renovation  
+- Timeline: 8-month renovation
+- Historical: Originally owned by Steve McQueen
+- Features: 3,200 sq ft creative/ceremonial venue, 16ft ceilings
+- Revenue: $8,000/month studio and venue rentals
+
+**Guest Lodging Village Card:**
+- Capacity: Up to 50 units across multiple types
+- Types: Custom chalets, cobb houses, geodesic domes, glamping tents
+- Location: Creek-side and hillside distributed placement
+- Revenue: $100-300/night depending on unit type
+
+**Agriculture & Farm Card:**
+- Area: 3 acres ready-to-go farmland
+- Features: Food forests, 500+ fruit trees, nursery operation
+- Infrastructure: Gravity-fed irrigation, compost systems
+- Revenue: $5,000/month from farm products and CSA
+
+## NAVIGATION & USER EXPERIENCE
+
+### Map Controls
+- Zoom in/out buttons with smooth animation transitions
+- Pan controls with edge boundaries to keep focus on property
+- Reset view button to return to full property overview
+- Layer toggles for different project phases (Phase 1/2/3)
+
+### Phase Timeline Visualization
+- Toggle between current state and future development phases
+- Visual progression showing 18-month development timeline
+- Color-coded project status indicators
+- Construction progress tracking capability
+
+### Investment Integration
+- Investment opportunity highlights on relevant project zones  
+- Direct links to partnership and collaboration information
+- Revenue projection overlays showing income potential
+- Contact integration for investor inquiries
+
+## RESPONSIVE DESIGN REQUIREMENTS
+
+### Desktop Experience (Primary)
+- Full-screen immersive map interface
+- Side panel for detailed project information
+- Hover effects showing project previews
+- Smooth animations and transitions throughout
+
+### Mobile Experience
+- Touch-optimized navigation and zoom controls
+- Bottom sheet modal design for project cards
+- Simplified 3D elements for performance
+- Gesture-based navigation (pinch to zoom, drag to pan)
+
+## CONTENT MANAGEMENT SYSTEM
+
+### Editable Data Structure
+Create JSON-based project database allowing easy updates of:
+- Project descriptions and status
+- Budget and timeline information  
+- Image galleries and media content
+- Investment opportunities and partnership details
+- Revenue projections and metrics
+
+### Admin Interface Requirements
+- Simple form-based editing for project details
+- Image upload and management system
+- Progress tracking and status updates
+- Revenue data input and visualization
+
+## PERFORMANCE OPTIMIZATION
+
+### Image Optimization
+- Progressive loading for aerial imagery tiles
+- Compressed image formats for faster loading
+- Lazy loading for project card images
+- Optimized 3D element rendering
+
+### Code Structure
+- Modular component architecture for easy maintenance
+- Efficient state management preventing unnecessary re-renders
+- Optimized map rendering with level-of-detail scaling
+- Mobile performance considerations throughout
+
+## DEVELOPMENT PHASES
+
+### Phase 1: Foundation (Week 1-2)
+- Set up interactive map using aerial imagery as base tiles
+- Implement basic zoom/pan functionality with property boundaries
+- Create project zone overlays with click detection
+- Build basic project card modal system
+
+### Phase 2: Content Integration (Week 2-3)  
+- Add all project-specific information cards with business plan data
+- Implement 3D visual elements for major structures
+- Create phase timeline visualization system
+- Add investment and partnership integration
+
+### Phase 3: Polish & Features (Week 3-4)
+- Implement smooth animations and advanced interactions
+- Add mobile responsiveness and touch optimization
+- Create content management system for easy updates
+- Performance optimization and testing across devices
+
+## FINAL DELIVERABLES
+
+1. **Interactive Map Application** - Fully functional web application
+2. **Content Management System** - Easy-to-use admin interface
+3. **Documentation** - Setup and maintenance guides
+4. **Source Code** - Clean, commented, and modular codebase
+5. **Deployment Package** - Ready for hosting on Vercel/Netlify
+
+This specification provides everything needed to create a professional, investor-ready interactive map that showcases the full vision and development potential of Sulphur Mountain Eco-Village while maintaining brand consistency with the existing digital presence.

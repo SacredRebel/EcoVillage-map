@@ -1,6 +1,7 @@
 import { type User, type InsertUser, type ProjectZone, type InsertProjectZone, users, projectZones } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;

@@ -6,7 +6,8 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  role: text("role").notNull().default("user"), // 'admin' or 'user'
 });
 
 export const projectZones = pgTable("project_zones", {
@@ -27,7 +28,13 @@ export const projectZones = pgTable("project_zones", {
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
-  password: true,
+  passwordHash: true,
+  role: true,
+});
+
+export const loginUserSchema = z.object({
+  username: z.string(),
+  password: z.string(),
 });
 
 export const insertProjectZoneSchema = createInsertSchema(projectZones).omit({

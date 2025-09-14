@@ -1,5 +1,6 @@
-import { type User, type InsertUser, type ProjectZone, type InsertProjectZone } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { type User, type InsertUser, type ProjectZone, type InsertProjectZone, users, projectZones } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -8,20 +9,74 @@ export interface IStorage {
   getProjectZones(): Promise<ProjectZone[]>;
   getProjectZone(id: string): Promise<ProjectZone | undefined>;
   getProjectZoneByType(type: string): Promise<ProjectZone | undefined>;
+  createProjectZone(zone: InsertProjectZone): Promise<ProjectZone>;
+  updateProjectZone(id: string, zone: Partial<InsertProjectZone>): Promise<ProjectZone | undefined>;
+  deleteProjectZone(id: string): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private projectZones: Map<string, ProjectZone>;
-
-  constructor() {
-    this.users = new Map();
-    this.projectZones = new Map();
-    this.initializeProjectZones();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
-  private initializeProjectZones() {
-    const zones: Omit<ProjectZone, 'id'>[] = [
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getProjectZones(): Promise<ProjectZone[]> {
+    return await db.select().from(projectZones);
+  }
+
+  async getProjectZone(id: string): Promise<ProjectZone | undefined> {
+    const [zone] = await db.select().from(projectZones).where(eq(projectZones.id, id));
+    return zone || undefined;
+  }
+
+  async getProjectZoneByType(type: string): Promise<ProjectZone | undefined> {
+    const [zone] = await db.select().from(projectZones).where(eq(projectZones.type, type));
+    return zone || undefined;
+  }
+
+  async createProjectZone(zone: InsertProjectZone): Promise<ProjectZone> {
+    const [newZone] = await db
+      .insert(projectZones)
+      .values(zone)
+      .returning();
+    return newZone;
+  }
+
+  async updateProjectZone(id: string, zone: Partial<InsertProjectZone>): Promise<ProjectZone | undefined> {
+    const [updatedZone] = await db
+      .update(projectZones)
+      .set(zone)
+      .where(eq(projectZones.id, id))
+      .returning();
+    return updatedZone || undefined;
+  }
+
+  async deleteProjectZone(id: string): Promise<boolean> {
+    const result = await db.delete(projectZones).where(eq(projectZones.id, id));
+    return result.rowCount !== null && result.rowCount !== undefined && result.rowCount > 0;
+  }
+
+  async seedInitialData(): Promise<void> {
+    // Check if data already exists
+    const existingZones = await this.getProjectZones();
+    if (existingZones.length > 0) {
+      return; // Data already seeded
+    }
+
+    const initialZones: InsertProjectZone[] = [
       {
         name: "Agricultural Hub",
         type: "agricultural",
@@ -159,40 +214,16 @@ export class MemStorage implements IStorage {
       }
     ];
 
-    zones.forEach(zone => {
-      const id = randomUUID();
-      this.projectZones.set(id, { ...zone, id });
-    });
-  }
-
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
-  }
-
-  async getProjectZones(): Promise<ProjectZone[]> {
-    return Array.from(this.projectZones.values());
-  }
-
-  async getProjectZone(id: string): Promise<ProjectZone | undefined> {
-    return this.projectZones.get(id);
-  }
-
-  async getProjectZoneByType(type: string): Promise<ProjectZone | undefined> {
-    return Array.from(this.projectZones.values()).find(zone => zone.type === type);
+    for (const zone of initialZones) {
+      await this.createProjectZone(zone);
+    }
   }
 }
 
-export const storage = new MemStorage();
+// Initialize storage and seed data
+const storage = new DatabaseStorage();
+
+// Seed initial data on startup
+storage.seedInitialData().catch(console.error);
+
+export { storage };

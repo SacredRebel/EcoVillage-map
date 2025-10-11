@@ -9,7 +9,7 @@ const __dirname = dirname(__filename);
 console.log('🚀 Starting EcoVillageBuilder Interactive Map...');
 
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5000;
 
 // Comprehensive Project Zones Data - 11 Zones Total ($6.9M Investment)
 const PROJECT_ZONES = [
@@ -2414,9 +2414,9 @@ app.use((err, req, res, next) => {
 });
 
 // Start server with comprehensive error handling
-const server = app.listen(port, () => {
+const server = app.listen(port, '0.0.0.0', () => {
   console.log('🚀 EcoVillageBuilder Interactive Map Server');
-  console.log(`🌐 Server running on http://localhost:${port}`);
+  console.log(`🌐 Server running on port ${port}`);
   console.log(`📊 Serving ${PROJECT_ZONES.length} project zones ($7.75M total investment)`);
   console.log(`🔲 ${PERMANENT_PROPERTY_LINES.length} permanent property boundary lines`);
   console.log('✨ Ready for investor presentations and interactive exploration');

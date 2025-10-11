@@ -7,10 +7,13 @@ import ProjectSummary from "@/components/ProjectSummary";
 import MapControls from "@/components/MapControls";
 import { ProjectZone } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import PhaseTimeline from "@/components/PhaseTimeline";
+import LayerToggle from "@/components/LayerToggle";
 
 export default function MapPage() {
   const [selectedZone, setSelectedZone] = useState<ProjectZone | null>(null);
   const [currentPhase, setCurrentPhase] = useState<'current' | 'future'>('current');
+  const [activeLayer, setActiveLayer] = useState<string>('All');
 
   const { data: zones = [], isLoading } = useQuery<ProjectZone[]>({
     queryKey: ['/api/project-zones'],
@@ -23,9 +26,20 @@ export default function MapPage() {
     }
   };
 
-  const togglePhase = () => {
-    setCurrentPhase(prev => prev === 'current' ? 'future' : 'current');
+  const handlePhaseChange = (phase: 'current' | 'future') => {
+    setCurrentPhase(phase);
   };
+
+  const handleLayerToggle = (layer: string) => {
+    setActiveLayer(layer);
+  };
+
+  // Example timeline data for PhaseTimeline
+  const timeline = [
+    { phase: 'foundation', label: 'Foundation', color: '#22C55E', status: 'Complete' },
+    { phase: 'content', label: 'Content Integration', color: '#3B82F6', status: 'In Progress' },
+    { phase: 'polish', label: 'Polish & Features', color: '#F59E0B', status: 'Not Started' },
+  ];
 
   if (isLoading) {
     return (
@@ -54,7 +68,7 @@ export default function MapPage() {
             </div>
             <div className="flex items-center space-x-4">
               <Button 
-                onClick={togglePhase}
+                onClick={() => handlePhaseChange(currentPhase === 'current' ? 'future' : 'current')}
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
                 data-testid="button-phase-toggle"
               >
@@ -74,12 +88,23 @@ export default function MapPage() {
 
       {/* Main Content */}
       <main className="pt-20 h-screen relative">
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 flex gap-4">
+          <PhaseTimeline 
+            currentPhase={currentPhase} 
+            onPhaseChange={handlePhaseChange} 
+            timeline={timeline}
+          />
+          <LayerToggle 
+            phases={['All', 'Agricultural', 'Residence', 'Community', 'Retreat', 'Infrastructure']} 
+            activePhase={activeLayer} 
+            onToggle={handleLayerToggle}
+          />
+        </div>
         <MapContainer 
           zones={zones} 
           onZoneClick={handleZoneClick}
           currentPhase={currentPhase}
         />
-        
         <MapControls />
         <ZoneLegend zones={zones} />
         <ProjectSummary />

@@ -4,3 +4,24 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Local development
+.local/
+*.log
+
+# Environment variables
+.env
+.env.local
+
+# Images folder (contains files with long names that cause Git issues)
+images/
+
+# Backup files
+*.bak
+*.backup
+*_BACKUP_*
+
+# Test outputs
+test-*.html
+test-*.txt
+temp-*.html

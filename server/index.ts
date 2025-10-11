@@ -47,11 +47,16 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // In development, either attach Vite middleware (default)
+  // or, if USE_EXTERNAL_VITE=1, redirect to external Vite dev server
   if (app.get("env") === "development") {
-    await setupVite(app, server);
+    if (process.env.USE_EXTERNAL_VITE === '1') {
+      app.get(['/', '/index.html'], (_req: Request, res: Response) => {
+        res.redirect(307, 'http://localhost:5173');
+      });
+    } else {
+      await setupVite(app, server);
+    }
   } else {
     serveStatic(app);
   }
@@ -61,11 +66,14 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
+  const listenOptions: any = {
     port,
     host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  };
+  if (process.platform !== 'win32') {
+    listenOptions.reusePort = true;
+  }
+  server.listen(listenOptions, () => {
     log(`serving on port ${port}`);
   });
 })();

@@ -2,6 +2,9 @@ import { ProjectZone } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, Check } from 'lucide-react';
+import ImageGallery from '@/components/ImageGallery';
+import ProgressTracker from '@/components/ProgressTracker';
+import InvestmentOverlay from '@/components/InvestmentOverlay';
 
 interface ProjectModalProps {
   zone: ProjectZone;
@@ -15,6 +18,11 @@ export default function ProjectModal({ zone, onClose }: ProjectModalProps) {
     }
   };
 
+  // Use imageUrl as the only image for now (schema does not have images array)
+  const images = [zone.imageUrl];
+  // Placeholder: In real app, progress would be dynamic
+  const progress = zone.status === 'Complete' ? 100 : zone.status === 'In Progress' ? 60 : 10;
+
   return (
     <div 
       className="fixed inset-0 z-50 fade-in"
@@ -23,7 +31,9 @@ export default function ProjectModal({ zone, onClose }: ProjectModalProps) {
     >
       <div className="modal-backdrop absolute inset-0 bg-black/50" />
       <div className="absolute inset-y-0 right-0 w-full max-w-2xl bg-card shadow-2xl slide-in">
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col relative">
+          {/* Investment Overlay */}
+          <InvestmentOverlay revenue={zone.monthlyRevenue} investment={zone.investment} />
           {/* Modal Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
             <h2 className="text-2xl font-serif font-semibold" data-testid="text-modal-title">
@@ -42,15 +52,8 @@ export default function ProjectModal({ zone, onClose }: ProjectModalProps) {
 
           {/* Modal Content */}
           <div className="flex-1 overflow-y-auto p-6">
-            {/* Project Image */}
-            <div className="mb-6">
-              <img 
-                src={zone.imageUrl} 
-                alt={`${zone.name} visualization`}
-                className="w-full h-48 object-cover rounded-lg"
-                data-testid="img-project"
-              />
-            </div>
+            {/* Image Gallery */}
+            <ImageGallery images={images} />
 
             {/* Project Stats */}
             <div className="grid grid-cols-3 gap-4 mb-6">
@@ -73,6 +76,9 @@ export default function ProjectModal({ zone, onClose }: ProjectModalProps) {
                 <div className="text-sm text-muted-foreground">Monthly Revenue</div>
               </div>
             </div>
+
+            {/* Progress Tracker */}
+            <ProgressTracker status={zone.status} progress={progress} />
 
             {/* Project Description */}
             <div className="mb-6">

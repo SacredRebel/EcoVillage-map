@@ -2413,32 +2413,36 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Start server with comprehensive error handling
-const server = app.listen(port, '0.0.0.0', () => {
-  console.log('🚀 EcoVillageBuilder Interactive Map Server');
-  console.log(`🌐 Server running on port ${port}`);
-  console.log(`📊 Serving ${PROJECT_ZONES.length} project zones ($7.75M total investment)`);
-  console.log(`🔲 ${PERMANENT_PROPERTY_LINES.length} permanent property boundary lines`);
-  console.log('✨ Ready for investor presentations and interactive exploration');
-});
-
-server.on('error', (error) => {
-  if (error.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${port} is already in use`);
-    console.log('💡 Kill existing processes with: Get-Process | Where-Object {$_.ProcessName -eq "node"} | Stop-Process -Force');
-  } else {
-    console.error('❌ Server error:', error);
-  }
-});
-
-// Graceful shutdown handling
-process.on('SIGINT', () => {
-  console.log('🛑 Shutting down EcoVillageBuilder server gracefully...');
-  server.close(() => {
-    console.log('✅ Server shutdown complete');
-    process.exit(0);
+// Start server with comprehensive error handling (only if not in Vercel serverless environment)
+if (process.env.VERCEL !== '1') {
+  const server = app.listen(port, '0.0.0.0', () => {
+    console.log('🚀 EcoVillageBuilder Interactive Map Server');
+    console.log(`🌐 Server running on port ${port}`);
+    console.log(`📊 Serving ${PROJECT_ZONES.length} project zones ($7.75M total investment)`);
+    console.log(`🔲 ${PERMANENT_PROPERTY_LINES.length} permanent property boundary lines`);
+    console.log('✨ Ready for investor presentations and interactive exploration');
   });
-});
+
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${port} is already in use`);
+      console.log('💡 Kill existing processes with: Get-Process | Where-Object {$_.ProcessName -eq "node"} | Stop-Process -Force');
+    } else {
+      console.error('❌ Server error:', error);
+    }
+  });
+
+  // Graceful shutdown handling
+  process.on('SIGINT', () => {
+    console.log('🛑 Shutting down EcoVillageBuilder server gracefully...');
+    server.close(() => {
+      console.log('✅ Server shutdown complete');
+      process.exit(0);
+    });
+  });
+} else {
+  console.log('🚀 Running in Vercel serverless mode');
+}
 
 process.on('uncaughtException', (error) => {
   console.error('💥 Uncaught Exception:', error);

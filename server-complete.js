@@ -6,10 +6,13 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-console.log('🚀 Starting EcoVillageBuilder Interactive Map...');
-
 const app = express();
 const PORT = process.env.PORT || 5001;
+
+// Only log startup message when running locally
+if (process.env.VERCEL !== '1') {
+  console.log('🚀 Starting EcoVillageBuilder Interactive Map...');
+}
 
 // Comprehensive Project Zones Data - 16 Zones Total ($7.75M Investment)
 const PROJECT_ZONES = [

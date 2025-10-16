@@ -1,24 +1,15 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "server-complete.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "50mb"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/server-complete.js"
-    }
-  ],
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/server-complete.js"
+      "destination": "/api"
     }
-  ]
+  ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 10,
+      "memory": 1024
+    }
+  }
 }

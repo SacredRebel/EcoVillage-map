@@ -7,19 +7,14 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Use the local tsx binary - properly quoted for paths with spaces
+// Use the local tsx binary
 const tsxPath = path.join(__dirname, 'node_modules', '.bin', 'tsx.cmd');
 const serverPath = path.join(__dirname, 'server', 'index.ts');
 
 console.log('Starting server with tsx...');
-console.log('TSX Path:', tsxPath);
-console.log('Server Path:', serverPath);
-
-// Use spawn with proper path handling for Windows paths with spaces
-const child = spawn(`"${tsxPath}"`, [`"${serverPath}"`], {
+const child = spawn(tsxPath, [serverPath], {
   stdio: 'inherit',
-  shell: true,
-  windowsHide: false
+  shell: true
 });
 
 child.on('error', (err) => {

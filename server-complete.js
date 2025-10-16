@@ -9,9 +9,9 @@ const __dirname = dirname(__filename);
 console.log('🚀 Starting EcoVillageBuilder Interactive Map...');
 
 const app = express();
-const port = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
-// Comprehensive Project Zones Data - 11 Zones Total ($6.9M Investment)
+// Comprehensive Project Zones Data - 16 Zones Total ($7.75M Investment)
 const PROJECT_ZONES = [
   {
     id: "agricultural-hub",
@@ -424,6 +424,250 @@ const PROJECT_ZONES = [
       "Land Stewardship program fees: $900/month",
       "Nature immersion experiences: $800/month"
     ]
+  },
+  {
+    id: "farmstead-produce-stand",
+    name: "Farmstead Produce Stand & Online Hub",
+    emoji: "🛒",
+    position: [34.432483, -119.156935],
+    polygon: [[34.4334, -119.1560], [34.4336, -119.1560], [34.4336, -119.1558], [34.4334, -119.1558]],
+    type: "agriculture",
+    budget: "$85,000",
+    timeline: "Phase 1 (Month 5 launch)",
+    monthlyRevenue: "$9,000",
+    roi: "271% annual ROI",
+    description: "Roadside farm stand and e-commerce marketplace at the property entrance, serving as the direct-to-consumer sales channel for all regenerative farm products, livestock goods, and artisan creations.",
+    features: [
+      "Physical roadside stand at main entrance/gate",
+      "Refrigerated display cases for fresh produce",
+      "E-commerce platform for online orders",
+      "CSA box subscription fulfillment center",
+      "Product shelving and display systems",
+      "POS system for walk-up transactions",
+      "Cold storage for dairy and meat products",
+      "Packaging and distribution center",
+      "Signage visible from Sulphur Mountain Road",
+      "Customer parking area"
+    ],
+    revenueStreams: [
+      "Fresh produce & nursery sales: $3,000/month",
+      "Livestock products (eggs, honey, meat): $3,500/month",
+      "Value-added goods (tinctures, soaps, candles): $1,500/month",
+      "CSA box subscriptions: $1,000/month"
+    ],
+    products: {
+      freshProduce: {
+        category: "🌱 Fresh Farm Produce",
+        description: "Seasonal regenerative produce from the 3-acre farm zone",
+        items: [
+          {
+            name: "Seasonal Fruits",
+            source: "500+ fruit trees (food forest)",
+            availability: "Seasonal rotation",
+            details: "Grown using regenerative practices and permaculture design"
+          },
+          {
+            name: "Organic Vegetables & Greens",
+            source: "3-acre farm zone, structured garden beds",
+            availability: "Year-round (seasonal varieties)",
+            details: "Fresh harvest available daily"
+          },
+          {
+            name: "Culinary & Medicinal Herbs",
+            source: "Dedicated herb gardens",
+            availability: "Fresh & dried options",
+            uses: "Cooking, teas, medicine-making, aromatherapy"
+          },
+          {
+            name: "Specialty Mushrooms",
+            source: "Trailer cultivation + log farming",
+            varieties: "Shiitake, Oyster, Lion's Mane, and more",
+            revenue: "$10,000-$20,000/month potential",
+            roi: "650% ROI on log-based cultivation"
+          },
+          {
+            name: "Nursery Plants & Seedlings",
+            source: "On-site propagation nursery",
+            types: "Seedlings, vegetable starts, fruit tree saplings, native plants"
+          }
+        ]
+      },
+      livestockProducts: {
+        category: "🐝 Livestock & Apiary Products",
+        description: "Regenerative animal products with $108,000 annual revenue projection",
+        annualRevenue: "$108,000",
+        roi: "227% ROI with 12-month payback",
+        items: [
+          {
+            category: "Honey & Beeswax",
+            products: ["Raw wildflower honey", "Beeswax blocks", "Propolis"],
+            revenue: "$12,000/year",
+            timeline: "Revenue starts within 3 months",
+            details: "Partnership with local beekeepers, 10-20 hives"
+          },
+          {
+            category: "Poultry & Eggs",
+            products: ["Fresh eggs (chicken & duck)", "Pasture-raised chicken meat"],
+            revenue: "$20,000/year",
+            details: "Free-range, rotational grazing, organic feed supplementation"
+          },
+          {
+            category: "Grass-Fed Beef",
+            products: ["Beef cuts (various)", "Optional: Raw milk, cheese"],
+            revenue: "$30,000/year",
+            details: "Rotational grazing for land regeneration, hormone-free"
+          },
+          {
+            category: "Goat Products",
+            products: ["Goat meat", "Optional: Goat milk, cheese"],
+            revenue: "$15,000/year",
+            details: "Brush management specialists, dual-purpose breeds"
+          },
+          {
+            category: "Lamb & Wool",
+            products: ["Lamb meat", "Optional: Raw wool, yarn"],
+            revenue: "$16,000/year",
+            details: "Grass maintenance, fiber arts potential"
+          },
+          {
+            category: "Pork",
+            products: ["Pork cuts", "Breeding stock"],
+            revenue: "$15,000/year",
+            details: "Forest foraging, land management through rooting"
+          }
+        ]
+      },
+      valueAdded: {
+        category: "✨ Artisan & Value-Added Creations",
+        description: "Creative goods leveraging farm materials and Creative Workshop output",
+        items: [
+          {
+            category: "Wellness Products",
+            products: ["Herbal tinctures", "Medicinal teas", "Herbal remedies", "Healing salves"],
+            ingredients: "Farm-grown herbs & botanicals",
+            createdIn: "Creative Workshop collaboration"
+          },
+          {
+            category: "Body Care",
+            products: ["Skincare creams & lotions", "Handmade soaps", "Beeswax lip balms", "Herbal bath products"],
+            ingredients: "Beeswax, farm herbs, essential oils",
+            createdIn: "Creative Workshop & Art Creation Center"
+          },
+          {
+            category: "Home & Altar Goods",
+            products: ["Beeswax candles", "Altar tools", "Artisan woodwork", "Sacred art pieces", "Incense blends"],
+            source: "Creative Workshop artist collaborations",
+            details: "Commission-based revenue sharing with creators"
+          },
+          {
+            category: "Farm Inputs & Amendments",
+            products: ["Organic compost (bagged)", "Mycelium spawn/products", "Worm castings"],
+            source: "Excess from on-site composting and mycelium operations",
+            details: "Soil remediation byproducts available for sale"
+          }
+        ]
+      }
+    },
+    salesChannels: {
+      physical: {
+        name: "Roadside Farm Stand",
+        location: "Property entrance on Sulphur Mountain Road",
+        hours: "Variable based on seasonal supply",
+        features: ["Walk-up retail", "Self-service honor system option", "Refrigerated displays"]
+      },
+      online: {
+        name: "E-Commerce Store",
+        platform: "Dedicated online marketplace",
+        features: ["Product catalog", "Pre-orders", "Delivery scheduling", "CSA subscriptions"],
+        reach: "Local Ojai + regional online customers"
+      },
+      csa: {
+        name: "Community Supported Agriculture",
+        model: "Weekly/bi-weekly subscription boxes",
+        price: "$35-$65 per box",
+        features: ["Seasonal produce variety", "Add-on products", "Pickup or delivery"]
+      },
+      wholesale: {
+        name: "B2B Sales",
+        partners: ["Local restaurants", "Hotels", "Cafes"],
+        focus: "Specialty mushrooms, fresh produce, honey",
+        details: "Farm-to-table partnerships with Ojai hospitality"
+      }
+    },
+    infrastructure: {
+      physical: [
+        "Refrigerated display units ($8,000)",
+        "Product shelving and fixtures ($3,500)",
+        "POS system and payment processing ($2,000)",
+        "Signage and branding ($4,000)",
+        "Cold storage expansion ($12,000)",
+        "Packaging supplies and materials ($2,500)"
+      ],
+      digital: [
+        "E-commerce platform development ($15,000)",
+        "Inventory management system ($5,000)",
+        "Photography and product imaging ($3,000)",
+        "Digital marketing setup ($4,000)"
+      ],
+      site: [
+        "Stand structure and roofing ($20,000)",
+        "Customer parking area ($6,000)"
+      ]
+    },
+    contributionPaths: [
+      {
+        type: "Investment",
+        focus: "Stand infrastructure and technology",
+        minimum: "$5,000",
+        rewardModel: "10% revenue share from product sales",
+        examples: ["Refrigeration units", "E-commerce platform", "Display fixtures"]
+      },
+      {
+        type: "Job - Sales & Fulfillment Steward",
+        responsibilities: ["Manage daily stand operations", "Customer service", "Inventory management", "Order fulfillment"],
+        compensation: "ECO tokens + housing credits or hourly rate"
+      },
+      {
+        type: "Job - E-Commerce Manager",
+        responsibilities: ["Online store management", "Digital marketing", "Order processing", "Customer communications"],
+        compensation: "Revenue share or token-based compensation"
+      },
+      {
+        type: "Creative Expansion",
+        focus: "Value-added product creation",
+        examples: ["Tinctures", "Soaps", "Candles", "Artisan goods"],
+        rewardModel: "40% creator / 60% village revenue split"
+      }
+    ],
+    financialProjection: {
+      phase1: {
+        timeline: "Month 5-12",
+        monthlyRevenue: "$3,000",
+        focus: "Nursery & agriculture products, initial CSA"
+      },
+      phase2: {
+        timeline: "Month 12-18",
+        monthlyRevenue: "$5,000",
+        focus: "Expanded CSA, livestock products, value-added goods"
+      },
+      phase3: {
+        timeline: "Month 18+",
+        monthlyRevenue: "$9,000+",
+        focus: "Full product range, wholesale partnerships, scaled livestock ($216k/year potential)"
+      },
+      totalProjection: {
+        year1: "$54,000",
+        year2: "$108,000",
+        year3: "$216,000 (with scaled livestock operations)"
+      }
+    },
+    valueProposition: {
+      financial: "Immediate cash flow from product sales; diversifies revenue beyond lodging/events; 12-month payback on livestock investment; high-margin value-added goods",
+      ecological: "Creates market demand for regenerative practices; incentivizes sustainable farming; completes the farm-to-consumer loop; reduces food miles",
+      community: "Public-facing brand ambassador; local employment opportunities; educational signage about regenerative practices; builds Ojai community relationships",
+      marketing: "Tangible proof of eco-village concept; attracts local support and visitors; farm-to-table experience for retreat guests; authentic regenerative brand story",
+      strategic: "Self-funding revenue engine for Phase 1 development; validates agriculture business model; scalable to $216k/year; creates recurring customer base"
+    }
   }
 ];
 
@@ -739,13 +983,21 @@ app.get('/', (req, res) => {
             box-shadow: 5px 0 40px rgba(0,0,0,0.15), 0 0 20px rgba(0,0,0,0.1);
             z-index: 2000;
             overflow: hidden;
-            transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+            will-change: left, transform;
+            transform: translateZ(0);
+            transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s ease;
             border-right: 1px solid rgba(0,0,0,0.06);
             backdrop-filter: blur(20px);
           }
           
           .side-panel.open {
             left: 0;
+          }
+
+          .side-panel.swiping {
+            transition: transform 0s !important;
           }
           
           .panel-header {
@@ -1064,6 +1316,308 @@ app.get('/', (req, res) => {
             height: 150px;
           }
           
+          /* Image Carousel Styles - Fixed Sizing */
+          .image-carousel {
+            position: relative;
+            width: 100%;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: #000;
+          }
+          
+          .carousel-main {
+            position: relative;
+            width: 100%;
+            height: 450px;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+          }
+          
+          .carousel-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            background: #000;
+            opacity: 0;
+            transition: opacity 250ms ease, filter 300ms ease;
+            filter: blur(8px);
+            will-change: opacity, filter;
+            image-rendering: auto;
+          }
+
+          /* GPU hints for Leaflet map to reduce jank */
+          .leaflet-container {
+            -webkit-tap-highlight-color: transparent;
+            backface-visibility: hidden;
+            transform: translateZ(0);
+          }
+          
+          .carousel-image.active {
+            opacity: 1;
+          }
+          
+          .carousel-image.loaded {
+            filter: blur(0);
+          }
+          
+          .carousel-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(1px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 200ms ease;
+            z-index: 9;
+          }
+          .carousel-loading.active { opacity: 1; pointer-events: auto; }
+          .loading-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255,255,255,0.35);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+          @keyframes spin { to { transform: rotate(360deg); } }
+          
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          
+          .carousel-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.9);
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          }
+          
+          .carousel-nav:hover {
+            background: white;
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          }
+          
+          .carousel-nav.prev {
+            left: 15px;
+          }
+          
+          .carousel-nav.next {
+            right: 15px;
+          }
+          
+          .carousel-counter {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+          }
+          
+          .carousel-thumbnails {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            overflow-x: auto;
+            scrollbar-width: thin;
+          }
+          
+          .carousel-thumbnails::-webkit-scrollbar {
+            height: 6px;
+          }
+          
+          .carousel-thumbnails::-webkit-scrollbar-track {
+            background: #e9ecef;
+            border-radius: 3px;
+          }
+          
+          .carousel-thumbnails::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+          }
+          
+          .carousel-thumbnail {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            border: 2px solid transparent;
+          }
+          
+          .carousel-thumbnail:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+          }
+          
+          .carousel-thumbnail.active {
+            opacity: 1;
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+          }
+          
+          .no-images-message {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-size: 15px;
+          }
+          
+          .loading-images {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 15px;
+          }
+          
+          /* Sub-Navigation Bar for Subcategories */
+          .sub-nav-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          }
+          
+          .sub-nav-tabs {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            padding-bottom: 5px;
+          }
+          
+          .sub-nav-tabs::-webkit-scrollbar {
+            height: 4px;
+          }
+          
+          .sub-nav-tabs::-webkit-scrollbar-track {
+            background: #f1f3f5;
+            border-radius: 2px;
+          }
+          
+          .sub-nav-tabs::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 2px;
+          }
+          
+          .sub-nav-tab {
+            flex-shrink: 0;
+            padding: 8px 20px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+          }
+          
+          .sub-nav-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transition: left 0.5s ease;
+          }
+          
+          .sub-nav-tab:hover::before {
+            left: 100%;
+          }
+          
+          .sub-nav-tab:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+          }
+          
+          .sub-nav-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+          }
+          
+          .sub-nav-tab .count-badge {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+          }
+          
+          .sub-nav-tab.active .count-badge {
+            background: rgba(255,255,255,0.25);
+          }
+          
+          .subcategory-content {
+            display: none;
+            animation: fadeInUp 0.4s ease-out;
+          }
+          
+          .subcategory-content.active {
+            display: block;
+          }
+          
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
           /* Responsive Design */
           @media (max-width: 768px) {
             .side-panel {
@@ -1082,6 +1636,32 @@ app.get('/', (req, res) => {
             
             .image-grid {
               grid-template-columns: 1fr;
+            }
+            
+            .carousel-main {
+              height: 300px;
+            }
+            
+            .carousel-thumbnail {
+              width: 60px;
+              height: 45px;
+            }
+            
+            .carousel-nav {
+              width: 40px;
+              height: 40px;
+              font-size: 18px;
+            }
+
+            /* Larger zoom controls on mobile for better touch targets */
+            .leaflet-control-zoom a {
+              width: 42px;
+              height: 42px;
+              line-height: 42px;
+              font-size: 20px;
+            }
+            .leaflet-control-zoom {
+              border-radius: 12px;
             }
           }    /* Loading Animation */
     @keyframes pulse {
@@ -1435,17 +2015,33 @@ app.get('/', (req, res) => {
     </div>
     
     <div class="popup-content">
-      <button class="control-button edit-button" id="edit-toggle" style="background: #4CAF50; margin-bottom: 10px;">
-        📍 Toggle Edit Mode
+      <div class="zone-selector" style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Select Zone to Move:</label>
+        <select id="zone-move-selector" style="width: 100%; padding: 10px; border-radius: 6px; border: 2px solid #e0e0e0; font-size: 14px; margin-bottom: 10px;">
+          <option value="">Choose a zone...</option>
+        </select>
+      </div>
+      
+      <button class="control-button edit-button" id="unlock-zone-btn" style="background: #4CAF50; margin-bottom: 10px;" disabled>
+        🔓 Unlock Selected Zone
       </button>
       
-      <button class="control-button capture-button" id="capture-zones-btn" style="background: #FF5722; margin-bottom: 10px;">
-        🎯 Capture Positions
+      <button class="control-button edit-button" id="lock-zone-btn" style="background: #FF9800; margin-bottom: 10px; display: none;">
+        🔒 Lock Zone Position
+      </button>
+      
+      <button class="control-button capture-button" id="capture-zones-btn" style="background: #9C27B0; margin-bottom: 10px;">
+        💾 Capture All Positions
       </button>
       
       <div class="status-indicator" id="status-indicator">
         <div>🔒</div>
-        <div class="status-text">Zones Locked</div>
+        <div class="status-text">All Zones Locked</div>
+      </div>
+      
+      <div class="status-indicator" id="selected-zone-indicator" style="background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); border-left-color: #FF9800; margin-top: 10px; display: none;">
+        <div>📍</div>
+        <div class="status-text" id="selected-zone-name">None Selected</div>
       </div>
       
       <div class="status-indicator" id="zoom-indicator" style="background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border-left-color: #2196F3; margin-top: 10px;">
@@ -1531,29 +2127,50 @@ app.get('/', (req, res) => {
       doubleClickZoom: true,
       boxZoom: true,
       keyboard: true,
-      dragging: true
+      dragging: true,
+      preferCanvas: true,
+      zoomAnimation: true,
+      fadeAnimation: true,
+      markerZoomAnimation: true,
+      inertia: true,
+      inertiaDeceleration: 3000,
+      zoomSnap: 0.25,
+      zoomDelta: 0.25,
+      wheelDebounceTime: 20,
+      wheelPxPerZoomLevel: 90,
+      tapTolerance: 15
     });
     
     // Add multiple high-resolution tile layers for better zoom coverage
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: '© Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN',
+      attribution: '🗺️ Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN',
       maxZoom: 22,
       minZoom: 1,
-      errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+      errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      detectRetina: true,
+      updateWhenIdle: true,
+      updateWhenZooming: false,
+      keepBuffer: 4
     });
     
     // Add OpenStreetMap as fallback
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
+      attribution: '🗺️ OpenStreetMap contributors',
       maxZoom: 19,
-      minZoom: 1
+      minZoom: 1,
+      detectRetina: true,
+      updateWhenIdle: true,
+      keepBuffer: 4
     });
     
     // Add Google Satellite as alternative (public tiles)
     const googleSatLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-      attribution: '© Google',
+      attribution: '🗺️ Google',
       maxZoom: 22,
-      minZoom: 1
+      minZoom: 1,
+      detectRetina: true,
+      updateWhenIdle: true,
+      keepBuffer: 4
     });
     
     // Create layer control
@@ -1567,9 +2184,12 @@ app.get('/', (req, res) => {
     satelliteLayer.addTo(map);
     const layerControl = L.control.layers(baseLayers).addTo(map);
     
+    // Enable mobile swipe-to-close for the side panel
+    attachPanelSwipe(map);
+    
     // Add tile loading indicators and error handling
     satelliteLayer.on('loading', () => {
-      console.log('� Loading satellite tiles...');
+      console.log('🔄 Loading satellite tiles...');
     });
     
     satelliteLayer.on('load', () => {
@@ -1662,6 +2282,9 @@ app.get('/', (req, res) => {
       }
     });
     
+    // Keep references to markers for dynamic scaling on zoom
+    const zoneMarkers = [];
+    
     // Add zones to map
     zones.forEach(zone => {
       // Create rounded zone polygon (40% smaller radius)
@@ -1699,6 +2322,7 @@ app.get('/', (req, res) => {
           iconAnchor: [20, 20]
         })
       }).addTo(map);
+      zoneMarkers.push(marker);
       
       // Add click handlers for interactive side panel
       const clickHandler = () => openSidePanel(zone);
@@ -1726,6 +2350,24 @@ app.get('/', (req, res) => {
     });
     
     console.log('📍 Zone markers and polygons added to map');
+    
+    // Smooth dynamic marker scaling for visibility and pixel definition
+    function updateMarkerScale() {
+      const zoom = map.getZoom();
+      const scaleBase = 1 + (zoom - 17) * 0.08;
+      const scale = Math.max(0.9, Math.min(1.9, scaleBase)) * (window.devicePixelRatio >= 2 ? 1.05 : 1);
+      const baseFont = 22;
+      zoneMarkers.forEach(m => {
+        const el = m.getElement();
+        if (!el) return;
+        const inner = el.querySelector('div');
+        if (!inner) return;
+        inner.style.transform = 'perspective(100px) rotateX(15deg) scale(' + scale + ')';
+        inner.style.fontSize = (baseFont * scale) + 'px';
+      });
+    }
+    map.on('zoomend', updateMarkerScale);
+    updateMarkerScale();
     
     // Side panel functionality
     function openSidePanel(zone) {
@@ -1755,14 +2397,103 @@ app.get('/', (req, res) => {
       // Set up image gallery tabs
       setupImageGalleryTabs();
       
+      // Load images for this zone
+      loadZoneImages(zone.id);
+      
+      // Store current zone for auto-refresh
+      window.currentZoneId = zone.id;
+      
+      // Start auto-refresh for images (checks every 30 seconds)
+      if (window.imageRefreshInterval) {
+        clearInterval(window.imageRefreshInterval);
+      }
+      window.imageRefreshInterval = setInterval(() => {
+        if (window.currentZoneId && panel.classList.contains('open')) {
+          loadZoneImages(window.currentZoneId);
+        }
+      }, 30000); // 30 seconds
+      
       console.log('📋 Opened side panel for:', zone.name);
     }
     
     // Close panel functionality
     document.getElementById('close-panel').addEventListener('click', () => {
       document.getElementById('side-panel').classList.remove('open');
+      
+      // Stop auto-refresh when panel closes
+      if (window.imageRefreshInterval) {
+        clearInterval(window.imageRefreshInterval);
+        window.imageRefreshInterval = null;
+      }
+      window.currentZoneId = null;
+      
       console.log('❌ Closed side panel');
     });
+    
+    // Enable swipe-to-close on mobile for the side panel
+    function attachPanelSwipe(map) {
+      const panel = document.getElementById('side-panel');
+      if (!panel) return;
+      let startX = 0, startY = 0, isTracking = false, isSwiping = false;
+      const SWIPE_THRESHOLD = 80; // px
+      const ANGLE_THRESHOLD = 10; // px before we consider as swipe
+      
+      const onStart = (clientX, clientY) => {
+        if (!panel.classList.contains('open')) return;
+        startX = clientX;
+        startY = clientY;
+        isTracking = true;
+        isSwiping = false;
+      };
+      const onMove = (clientX, clientY, ev) => {
+        if (!isTracking) return;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        if (!isSwiping) {
+          if (Math.abs(dx) > ANGLE_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
+            isSwiping = true;
+            panel.classList.add('swiping');
+          } else {
+            return; // vertical scroll
+          }
+        }
+        if (ev && ev.cancelable) ev.preventDefault();
+        const translateX = Math.min(0, dx); // only left swipe
+        panel.style.transform = 'translateX(' + translateX + 'px)';
+      };
+      const onEnd = () => {
+        if (!isTracking) return;
+        const style = panel.style.transform || '';
+        const match = style.match(/translateX\(([-0-9.]+)px\)/);
+        const translateX = match ? parseFloat(match[1]) : 0;
+        panel.classList.remove('swiping');
+        panel.style.transform = '';
+        isTracking = false;
+        if (translateX < -SWIPE_THRESHOLD) {
+          panel.classList.remove('open');
+          if (window.imageRefreshInterval) {
+            clearInterval(window.imageRefreshInterval);
+            window.imageRefreshInterval = null;
+          }
+          window.currentZoneId = null;
+          console.log('👆 Panel closed by swipe');
+        }
+      };
+      // Touch events
+      panel.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        onStart(t.clientX, t.clientY);
+      }, { passive: true });
+      panel.addEventListener('touchmove', (e) => {
+        const t = e.touches[0];
+        onMove(t.clientX, t.clientY, e);
+      }, { passive: false });
+      panel.addEventListener('touchend', onEnd);
+      // Pointer events fallback
+      panel.addEventListener('pointerdown', (e) => onStart(e.clientX, e.clientY));
+      panel.addEventListener('pointermove', (e) => onMove(e.clientX, e.clientY, e));
+      panel.addEventListener('pointerup', onEnd);
+    }
     
     // Enhanced image gallery tab functionality
     function setupImageGalleryTabs() {
@@ -1795,6 +2526,345 @@ app.get('/', (req, res) => {
       });
     }
     
+    // Load images for a specific zone (with subcategory support)
+    async function loadZoneImages(zoneId) {
+      const categories = ['current', 'vision'];
+      
+      for (const category of categories) {
+        try {
+          const response = await fetch(\`/api/images/\${zoneId}/\${category}\`);
+          const data = await response.json();
+          
+          const container = document.getElementById(\`\${category}-images\`);
+          if (!container) continue;
+          
+          // Check if data has subcategories
+          if (data.hasSubcategories && data.subcategories) {
+            container.innerHTML = createSubcategoryGallery(data, zoneId, category);
+            initializeSubcategoryNavigation(category);
+          } else if (data.images && data.images.length > 0) {
+            container.innerHTML = createImageCarousel(data.images, zoneId, category);
+            initializeCarousel(category);
+          } else {
+            container.innerHTML = \`
+              <div class="no-images-message">
+                <div style="font-size: 48px; opacity: 0.3; margin-bottom: 10px;">📷</div>
+                <div>No images yet for this category</div>
+                <div style="font-size: 13px; opacity: 0.7; margin-top: 5px;">
+                  Add images to: images/\${zoneId}/\${category}/
+                </div>
+              </div>
+            \`;
+          }
+        } catch (error) {
+          console.error(\`Error loading \${category} images:\`, error);
+          const container = document.getElementById(\`\${category}-images\`);
+          if (container) {
+            container.innerHTML = \`
+              <div class="no-images-message">
+                <div style="color: #e74c3c;">⚠️ Error loading images</div>
+              </div>
+            \`;
+          }
+        }
+      }
+    }
+    
+    // Create subcategory gallery with horizontal navigation
+    function createSubcategoryGallery(data, zoneId, category) {
+      let subcategories = Object.keys(data.subcategories);
+      
+      // Prefer "Outdoor" (then "Cabins") first in Vision galleries for Main Residence and Retreat Village
+      if (category === 'vision' && (zoneId === 'main-residence' || zoneId === 'retreat-village')) {
+        const preferredOrder = ['Outdoor', 'Cabins', 'Indoor', 'Floor Plans'];
+        subcategories.sort((a, b) => {
+          const ai = preferredOrder.indexOf(a);
+          const bi = preferredOrder.indexOf(b);
+          const aa = ai === -1 ? Number.MAX_SAFE_INTEGER : ai;
+          const bb = bi === -1 ? Number.MAX_SAFE_INTEGER : bi;
+          if (aa !== bb) return aa - bb;
+          return a.localeCompare(b);
+        });
+      } else {
+        // Default alphabetical for other cases
+        subcategories.sort((a, b) => a.localeCompare(b));
+      }
+      
+      // Choose the first subcategory that actually has images; fallback to first
+      const activeSubcategory = subcategories.find(name => (data.subcategories[name]?.count || 0) > 0) || subcategories[0];
+      
+      // Create sub-navigation tabs
+      const subNavTabs = subcategories.map((subcat) => \`
+        <div class="sub-nav-tab \${subcat === activeSubcategory ? 'active' : ''}" 
+             data-subcategory="\${subcat}"
+             onclick="switchSubcategory('\${category}', '\${subcat}')">
+          \${subcat}
+          <span class="count-badge">\${data.subcategories[subcat].count}</span>
+        </div>
+      \`).join('');
+      
+      // Create content for each subcategory
+      const subcategoryContents = subcategories.map((subcat) => {
+        const images = data.subcategories[subcat].images;
+        const carouselHtml = images.length > 0 
+          ? createImageCarousel(images, zoneId, \`\${category}-\${subcat}\`)
+          : \`<div class=\"no-images-message\">No images in this subcategory</div>\`;
+        
+        return \`
+          <div class="subcategory-content \${subcat === activeSubcategory ? 'active' : ''}" 
+               data-subcategory="\${subcat}">
+            \${carouselHtml}
+          </div>
+        \`;
+      }).join('');
+      
+      return \`
+        <div class="sub-nav-container">
+          <div class="sub-nav-tabs">
+            \${subNavTabs}
+          </div>
+        </div>
+        <div class="subcategory-gallery">
+          \${subcategoryContents}
+        </div>
+      \`;
+    }
+    
+    // Initialize subcategory navigation
+    function initializeSubcategoryNavigation(category) {
+      // Initialize carousels for all subcategories
+      const subcategoryContents = document.querySelectorAll(\`#\${category}-images .subcategory-content\`);
+      subcategoryContents.forEach(content => {
+        const subcategory = content.getAttribute('data-subcategory');
+        const carouselCategory = \`\${category}-\${subcategory}\`;
+        initializeCarousel(carouselCategory);
+      });
+    }
+    
+    // Switch between subcategories
+    window.switchSubcategory = function(category, subcategoryName) {
+      const container = document.getElementById(\`\${category}-images\`);
+      if (!container) return;
+      
+      // Update tabs
+      const tabs = container.querySelectorAll('.sub-nav-tab');
+      tabs.forEach(tab => {
+        if (tab.getAttribute('data-subcategory') === subcategoryName) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+      
+      // Update content
+      const contents = container.querySelectorAll('.subcategory-content');
+      contents.forEach(content => {
+        if (content.getAttribute('data-subcategory') === subcategoryName) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+    };
+    
+    // Create image carousel HTML with optimized loading
+    function createImageCarousel(images, zoneId, category) {
+      const mainImages = images.map((src, index) => \`
+        <img src="\${src}" 
+             class="carousel-image \${index === 0 ? 'active' : ''}" 
+             alt="Image \${index + 1}"
+             loading="\${index === 0 ? 'eager' : 'lazy'}"
+             fetchpriority="\${index === 0 ? 'high' : 'low'}"
+             sizes="(max-width: 768px) 100vw, 580px"
+             decoding="async">
+      \`).join('');
+      
+      const thumbnails = images.map((src, index) => \`
+        <img src="\${src}" 
+             class="carousel-thumbnail \${index === 0 ? 'active' : ''}" 
+             alt="Thumbnail \${index + 1}"
+             data-index="\${index}"
+             loading="lazy"
+             decoding="async"
+             onclick="goToSlide('\${category}', \${index})">
+      \`).join('');
+      
+      return \`
+        <div class="image-carousel" data-category="\${category}">
+          <div class="carousel-main">
+            \${mainImages}
+            <div class="carousel-loading"><div class="loading-spinner"></div></div>
+            \${images.length > 1 ? \`
+              <button class="carousel-nav prev" onclick="navigateCarousel('\${category}', -1)">
+                &#8249;
+              </button>
+              <button class="carousel-nav next" onclick="navigateCarousel('\${category}', 1)">
+                &#8250;
+              </button>
+              <div class="carousel-counter">
+                <span class="current-slide">1</span> / <span class="total-slides">\${images.length}</span>
+              </div>
+            \` : ''}
+          </div>
+          \${images.length > 1 ? \`
+            <div class="carousel-thumbnails">
+              \${thumbnails}
+            </div>
+          \` : ''}
+        </div>
+      \`;
+    }
+    
+    // Initialize carousel for a category
+    function initializeCarousel(category) {
+      const carousel = document.querySelector(\`[data-category="\${category}"]\`);
+      if (!carousel) return;
+      
+      const images = Array.from(carousel.querySelectorAll('.carousel-image'));
+      if (images.length === 0) return;
+      
+      // Initialize current index once
+      if (!carousel.dataset.currentIndex) carousel.dataset.currentIndex = '0';
+      
+      // Mark images as loaded when ready (removes blur smoothly)
+      images.forEach((img) => {
+        const markLoaded = () => img.classList.add('loaded');
+        if (img.complete && img.naturalWidth > 0) {
+          if (typeof img.decode === 'function') {
+            img.decode().catch(() => {}).finally(markLoaded);
+          } else {
+            markLoaded();
+          }
+        } else {
+          img.addEventListener('load', markLoaded, { once: true });
+          img.addEventListener('error', markLoaded, { once: true });
+        }
+      });
+      
+      // Preload adjacent images for instant nav
+      const idx = parseInt(carousel.dataset.currentIndex || '0', 10) || 0;
+      preloadAdjacent(category, idx);
+      
+      // Keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        const panel = document.getElementById('side-panel');
+        if (!panel || !panel.classList.contains('open')) return;
+        const activeTab = document.querySelector('.gallery-tab.active');
+        const activeCategory = activeTab ? activeTab.getAttribute('data-tab') : null;
+        if (activeCategory === category) {
+          if (e.key === 'ArrowLeft') navigateCarousel(category, -1);
+          if (e.key === 'ArrowRight') navigateCarousel(category, 1);
+        }
+      });
+
+      // Swipe navigation on mobile
+      const main = carousel.querySelector('.carousel-main');
+      if (main) {
+        let sx = 0, sy = 0, swiping = false;
+        const THRESH = 50;
+        const ANGLE = 12;
+        const onStart = (x, y) => { sx = x; sy = y; swiping = false; };
+        const onMove = (x, y, ev) => {
+          const dx = x - sx; const dy = y - sy;
+          if (!swiping && Math.abs(dx) > ANGLE && Math.abs(dx) > Math.abs(dy)) {
+            swiping = true;
+          }
+          if (swiping && ev && ev.cancelable) ev.preventDefault();
+        };
+        const onEnd = (x, y) => {
+          const dx = x - sx; const dy = y - sy;
+          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > THRESH) {
+            navigateCarousel(category, dx < 0 ? 1 : -1);
+          }
+        };
+
+        // Touch
+        main.addEventListener('touchstart', (e) => { const t = e.touches[0]; onStart(t.clientX, t.clientY); }, { passive: true });
+        main.addEventListener('touchmove', (e) => { const t = e.touches[0]; onMove(t.clientX, t.clientY, e); }, { passive: false });
+        main.addEventListener('touchend', (e) => { const t = e.changedTouches[0]; onEnd(t.clientX, t.clientY); });
+        // Pointer fallback
+        main.addEventListener('pointerdown', (e) => onStart(e.clientX, e.clientY));
+        main.addEventListener('pointermove', (e) => onMove(e.clientX, e.clientY, e));
+        main.addEventListener('pointerup', (e) => onEnd(e.clientX, e.clientY));
+      }
+    }
+
+    // Preload previous and next images
+    function preloadAdjacent(category, index) {
+      const carousel = document.querySelector(\`[data-category="\${category}"]\`);
+      if (!carousel) return;
+      const images = carousel.querySelectorAll('.carousel-image');
+      if (!images.length) return;
+      const prev = (index - 1 + images.length) % images.length;
+      const next = (index + 1) % images.length;
+      [prev, next].forEach(i => {
+        const img = images[i];
+        if (!img) return;
+        if (!img.classList.contains('loaded')) {
+          if (typeof img.decode === 'function') {
+            img.decode().catch(() => {}).then(() => img.classList.add('loaded'));
+          }
+        }
+      });
+    }
+
+    async function switchToIndex(category, newIndex) {
+      const carousel = document.querySelector(\`[data-category="\${category}"]\`);
+      if (!carousel) return;
+      
+      // Debounce rapid clicks
+      if (carousel.dataset.navBusy === '1') return;
+      carousel.dataset.navBusy = '1';
+      
+      const images = carousel.querySelectorAll('.carousel-image');
+      const thumbnails = carousel.querySelectorAll('.carousel-thumbnail');
+      if (!images.length) { carousel.dataset.navBusy = '0'; return; }
+      
+      if (newIndex < 0) newIndex = images.length - 1;
+      if (newIndex >= images.length) newIndex = 0;
+      
+      const overlay = carousel.querySelector('.carousel-loading');
+      if (overlay) overlay.classList.add('active');
+      
+      const target = images[newIndex];
+      if (target) {
+        try {
+          if (typeof target.decode === 'function') {
+            await target.decode().catch(() => {});
+          } else if (!target.complete) {
+            await new Promise((res) => {
+              target.addEventListener('load', res, { once: true });
+              target.addEventListener('error', res, { once: true });
+            });
+          }
+        } finally {
+          target.classList.add('loaded');
+        }
+      }
+      
+      images.forEach((img, i) => img.classList.toggle('active', i === newIndex));
+      thumbnails.forEach((thumb, i) => thumb.classList.toggle('active', i === newIndex));
+      const counter = carousel.querySelector('.current-slide');
+      if (counter) counter.textContent = String(newIndex + 1);
+      carousel.dataset.currentIndex = String(newIndex);
+      preloadAdjacent(category, newIndex);
+      if (overlay) overlay.classList.remove('active');
+      setTimeout(() => { carousel.dataset.navBusy = '0'; }, 120);
+    }
+    
+    // Navigate carousel
+    window.navigateCarousel = function(category, direction) {
+      const carousel = document.querySelector(\`[data-category="\${category}"]\`);
+      if (!carousel) return;
+      const currentIndex = parseInt(carousel.dataset.currentIndex || '0', 10) || 0;
+      switchToIndex(category, currentIndex + direction);
+    };
+    
+    // Go to specific slide
+    window.goToSlide = function(category, index) {
+      switchToIndex(category, index);
+    };
+    
     // Zone positions are now permanently locked - no reset functionality needed
     
     // Generate comprehensive project details HTML
@@ -1807,65 +2877,14 @@ app.get('/', (req, res) => {
         <div class="image-gallery">
           <div class="gallery-tabs">
             <div class="gallery-tab active" data-tab="current">📷 Current Photos</div>
-            <div class="gallery-tab" data-tab="vision">🎨 Architectural Vision</div>
-            <div class="gallery-tab" data-tab="progress">⚡ Progress Updates</div>
+            <div class="gallery-tab" data-tab="vision">🎨 Vision</div>
           </div>
           <div class="gallery-content">
             <div id="current-images">
-              <div class="image-placeholder" onclick="this.querySelector('input').click();">
-                <div class="placeholder-icon">📷</div>
-                <div class="placeholder-text">Drop Current Photos Here<br>Path: /images/\${zone.id}/current/</div>
-                <input type="file" multiple accept="image/*" style="display: none;" onchange="handleImageUpload(this, '\${zone.id}', 'current')">
-              </div>
-              <div class="image-grid">
-                <div class="image-placeholder" onclick="this.querySelector('input').click();">
-                  <div class="placeholder-icon">🌄</div>
-                  <div class="placeholder-text">Aerial View</div>
-                  <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(this, '\${zone.id}', 'current')">
-                </div>
-                <div class="image-placeholder" onclick="this.querySelector('input').click();">
-                  <div class="placeholder-icon">🏞️</div>
-                  <div class="placeholder-text">Ground Level</div>
-                  <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(this, '\${zone.id}', 'current')">
-                </div>
-              </div>
+              <div class="loading-images">⏳ Loading images...</div>
             </div>
             <div id="vision-images" style="display: none;">
-              <div class="image-placeholder" onclick="this.querySelector('input').click();">
-                <div class="placeholder-icon">🎨</div>
-                <div class="placeholder-text">Drop Architectural Renderings<br>Path: /images/\${zone.id}/vision/</div>
-                <input type="file" multiple accept="image/*" style="display: none;" onchange="handleImageUpload(this, '\${zone.id}', 'vision')">
-              </div>
-              <div class="image-grid">
-                <div class="image-placeholder" onclick="this.querySelector('input').click();">
-                  <div class="placeholder-icon">🏗️</div>
-                  <div class="placeholder-text">3D Rendering</div>
-                  <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(this, '\${zone.id}', 'vision')">
-                </div>
-                <div class="image-placeholder">
-                  <div class="placeholder-icon">📐</div>
-                  <div class="placeholder-text">Floor Plans</div>
-                </div>
-              </div>
-            </div>
-            <div id="progress-images" style="display: none;">
-              <div class="image-placeholder" onclick="this.querySelector('input').click();">
-                <div class="placeholder-icon">⚡</div>
-                <div class="placeholder-text">Drop Progress Photos<br>Path: /images/\${zone.id}/progress/</div>
-                <input type="file" multiple accept="image/*" style="display: none;" onchange="handleImageUpload(this, '\${zone.id}', 'progress')">
-              </div>
-              <div class="image-grid">
-                <div class="image-placeholder" onclick="this.querySelector('input').click();">
-                  <div class="placeholder-icon">🔨</div>
-                  <div class="placeholder-text">Construction Phase 1</div>
-                  <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(this, '\${zone.id}', 'progress')">
-                </div>
-                <div class="image-placeholder" onclick="this.querySelector('input').click();">
-                  <div class="placeholder-icon">🏗️</div>
-                  <div class="placeholder-text">Completion Milestone</div>
-                  <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(this, '\${zone.id}', 'progress')">
-                </div>
-              </div>
+              <div class="loading-images">⏳ Loading images...</div>
             </div>
           </div>
         </div>
@@ -2289,30 +3308,124 @@ app.get('/', (req, res) => {
       console.log('Positions also saved to zone-positions.txt file');
     });
     
-    // Edit mode functionality for draggable markers
-    window.editMode = false;
-    
-    const editToggleBtn = document.getElementById('edit-toggle');
-    editToggleBtn.addEventListener('click', () => {
-      window.editMode = !window.editMode;
+    // Zone movement controls - Carefully implemented
+    (function initZoneMovement() {
+      const selector = document.getElementById('zone-move-selector');
+      const unlockBtn = document.getElementById('unlock-zone-btn');
+      const lockBtn = document.getElementById('lock-zone-btn');
+      const selectedIndicator = document.getElementById('selected-zone-indicator');
+      const selectedName = document.getElementById('selected-zone-name');
+      const statusDiv = document.getElementById('status-indicator');
       
-      // Update all markers draggable state
-      map.eachLayer(layer => {
-        if (layer.options && layer.options.draggable !== undefined) {
-          if (window.editMode) {
-            layer.dragging.enable();
-            editToggleBtn.innerHTML = '🔓 Lock Positions';
-            editToggleBtn.style.background = '#ff9800';
-          } else {
-            layer.dragging.disable();
-            editToggleBtn.innerHTML = '📍 Edit Positions';
-            editToggleBtn.style.background = '#4CAF50';
-          }
+      if (!selector || !unlockBtn || !lockBtn) {
+        console.log('Zone movement UI not found');
+        return;
+      }
+      
+      const markerMap = new Map();
+      let currentMarker = null;
+      let currentZoneId = null;
+      
+      // Populate dropdown
+      zones.forEach(function(z) {
+        const opt = document.createElement('option');
+        opt.value = z.id;
+        opt.textContent = z.emoji + ' ' + z.name;
+        selector.appendChild(opt);
+      });
+      
+      // Map markers
+      map.eachLayer(function(layer) {
+        if (layer.options && layer.options.zoneId) {
+          markerMap.set(layer.options.zoneId, layer);
         }
       });
       
-      console.log(window.editMode ? '🔓 Edit mode enabled - drag to reposition zones' : '🔒 Edit mode disabled - positions locked');
-    });
+      // Selection handler
+      selector.addEventListener('change', function(e) {
+        const id = e.target.value;
+        if (!id) {
+          unlockBtn.disabled = true;
+          if (selectedIndicator) selectedIndicator.style.display = 'none';
+          return;
+        }
+        unlockBtn.disabled = false;
+        const z = zones.find(function(zone) { return zone.id === id; });
+        if (selectedName && z) {
+          selectedName.textContent = 'Selected: ' + z.emoji + ' ' + z.name;
+        }
+        if (selectedIndicator) selectedIndicator.style.display = 'flex';
+      });
+      
+      // Unlock handler
+      unlockBtn.addEventListener('click', function() {
+        const id = selector.value;
+        if (!id) return;
+        const marker = markerMap.get(id);
+        const z = zones.find(function(zone) { return zone.id === id; });
+        if (!marker || !z) return;
+        
+        marker.dragging.enable();
+        currentMarker = marker;
+        currentZoneId = id;
+        
+        const el = marker.getElement();
+        if (el) {
+          el.style.filter = 'drop-shadow(0 0 10px #FF9800) brightness(1.3)';
+          el.style.transform = 'scale(1.2)';
+          el.style.transition = 'all 0.3s ease';
+        }
+        
+        unlockBtn.style.display = 'none';
+        lockBtn.style.display = 'block';
+        
+        if (statusDiv) {
+          const txt = statusDiv.querySelector('.status-text');
+          if (txt) txt.textContent = z.emoji + ' ' + z.name + ' - UNLOCKED';
+          statusDiv.style.background = 'linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)';
+          statusDiv.style.borderLeftColor = '#FF9800';
+          const ico = statusDiv.querySelector('div:first-child');
+          if (ico) ico.textContent = '🔓';
+        }
+        
+        console.log('Unlocked:', z.name);
+      });
+      
+      // Lock handler
+      lockBtn.addEventListener('click', function() {
+        if (!currentMarker || !currentZoneId) return;
+        const z = zones.find(function(zone) { return zone.id === currentZoneId; });
+        
+        currentMarker.dragging.disable();
+        
+        const el = currentMarker.getElement();
+        if (el) {
+          el.style.filter = '';
+          el.style.transform = '';
+        }
+        
+        const pos = currentMarker.getLatLng();
+        console.log('Locked:', z.name);
+        console.log('New position:', [pos.lat, pos.lng]);
+        
+        unlockBtn.style.display = 'block';
+        lockBtn.style.display = 'none';
+        
+        if (statusDiv) {
+          const txt = statusDiv.querySelector('.status-text');
+          if (txt) txt.textContent = 'All Zones Locked';
+          statusDiv.style.background = 'linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%)';
+          statusDiv.style.borderLeftColor = '#F44336';
+          const ico = statusDiv.querySelector('div:first-child');
+          if (ico) ico.textContent = '🔒';
+        }
+        
+        currentMarker = null;
+        currentZoneId = null;
+      });
+      
+      console.log('Zone movement controls initialized');
+    })();
     
     // Image upload handling function
     function handleImageUpload(input, zoneId, category) {
@@ -2404,8 +3517,123 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve static images
-app.use('/images', express.static(join(__dirname, 'images')));
+// Mapping from project IDs to actual folder names
+const PROJECT_FOLDER_MAP = {
+  'agricultural-hub': 'Agricultural Hub',
+  'main-residence': 'Main Residence Compound',
+  'community-hub': 'Community Hub',
+  'retreat-village': 'Retreat Village',
+  'infrastructure': 'Infrastructure & Utilities',
+  'mcqueens-garage': "McQueen's Garage & Creative",
+  'ceremonial-infrastructure': 'Ceremonial Infrastructure',
+  'wellness-facilities': 'Wellness & Spa Facilities',
+  'mushroom-cultivation': 'Mushroom Cultivation',
+  'beekeeping-program': 'Beekeeping & Honey Production',
+  'livestock-program': 'Livestock & Dairy Program',
+  'creative-workshop-center': 'Creative Workshop & Art Creation Center',
+  'glamping-creek-village': 'Creek-Side Glamping & Lodging Village',
+  'gatelodge-operations-hub': 'Sulphur Mountain Gatelodge (Operations ADU)',
+  'sulphur-mountain-sanctuary': 'Sulphur Mountain Sanctuary The Living Landscape',
+  'farmstead-produce-stand': 'Farmstead Produce Stand & Online Hub'
+};
+
+// API endpoint to get images for a specific zone (with subcategory support)
+app.get('/api/images/:zoneId/:category', async (req, res) => {
+  try {
+    const { zoneId, category } = req.params;
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    
+    // Map project ID to actual folder name
+    const folderName = PROJECT_FOLDER_MAP[zoneId] || zoneId;
+    const categoryPath = join(__dirname, 'images', folderName, category);
+    
+    try {
+      const items = await fs.readdir(categoryPath, { withFileTypes: true });
+      
+      // Check for subfolders
+      const subfolders = items.filter(item => item.isDirectory()).map(dir => dir.name);
+      
+      // If subfolders exist, get images from each subfolder
+      if (subfolders.length > 0) {
+        const subcategories = {};
+        
+        for (const subfolder of subfolders) {
+          const subfolderPath = join(categoryPath, subfolder);
+          try {
+            const subFiles = await fs.readdir(subfolderPath);
+            const subImages = subFiles.filter(file => 
+              /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file)
+            );
+            
+            subcategories[subfolder] = {
+              images: subImages.map(file => 
+                `/images/${encodeURIComponent(folderName)}/${category}/${encodeURIComponent(subfolder)}/${encodeURIComponent(file)}`
+              ),
+              count: subImages.length
+            };
+          } catch (err) {
+            subcategories[subfolder] = { images: [], count: 0 };
+          }
+        }
+        
+        // Set cache headers for faster loading
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        
+        res.json({
+          success: true,
+          zoneId,
+          category,
+          folderName,
+          hasSubcategories: true,
+          subcategories,
+          totalCount: Object.values(subcategories).reduce((sum, sub) => sum + sub.count, 0)
+        });
+      } else {
+        // No subfolders, get images directly from category folder
+        const imageFiles = items
+          .filter(item => item.isFile() && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(item.name))
+          .map(item => item.name);
+        
+        // Set cache headers for faster loading
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        
+        res.json({
+          success: true,
+          zoneId,
+          category,
+          folderName,
+          hasSubcategories: false,
+          images: imageFiles.map(file => `/images/${encodeURIComponent(folderName)}/${category}/${encodeURIComponent(file)}`),
+          count: imageFiles.length
+        });
+      }
+    } catch (err) {
+      res.json({
+        success: true,
+        zoneId,
+        category,
+        hasSubcategories: false,
+        images: [],
+        count: 0
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Serve static images with strong caching
+app.use(
+  '/images',
+  express.static(join(__dirname, 'images'), {
+    maxAge: '30d',
+    immutable: true,
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    },
+  })
+);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -2415,9 +3643,9 @@ app.use((err, req, res, next) => {
 
 // Start server with comprehensive error handling (only if not in Vercel serverless environment)
 if (process.env.VERCEL !== '1') {
-  const server = app.listen(port, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log('🚀 EcoVillageBuilder Interactive Map Server');
-    console.log(`🌐 Server running on port ${port}`);
+    console.log(`🌐 Server running on port ${PORT}`);
     console.log(`📊 Serving ${PROJECT_ZONES.length} project zones ($7.75M total investment)`);
     console.log(`🔲 ${PERMANENT_PROPERTY_LINES.length} permanent property boundary lines`);
     console.log('✨ Ready for investor presentations and interactive exploration');
@@ -2425,7 +3653,7 @@ if (process.env.VERCEL !== '1') {
 
   server.on('error', (error) => {
     if (error.code === 'EADDRINUSE') {
-      console.error(`❌ Port ${port} is already in use`);
+      console.error(`❌ Port ${PORT} is already in use`);
       console.log('💡 Kill existing processes with: Get-Process | Where-Object {$_.ProcessName -eq "node"} | Stop-Process -Force');
     } else {
       console.error('❌ Server error:', error);

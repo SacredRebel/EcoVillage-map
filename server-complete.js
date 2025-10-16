@@ -3537,103 +3537,38 @@ const PROJECT_FOLDER_MAP = {
   'farmstead-produce-stand': 'Farmstead Produce Stand & Online Hub'
 };
 
-// API endpoint to get images for a specific zone (with subcategory support)
+// API endpoint to get images for a specific zone
+// NOTE: Disabled for Vercel serverless - images folder is gitignored
+// Images would need to be hosted externally (S3, Cloudinary, etc.) for production
 app.get('/api/images/:zoneId/:category', async (req, res) => {
-  try {
-    const { zoneId, category } = req.params;
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    
-    // Map project ID to actual folder name
-    const folderName = PROJECT_FOLDER_MAP[zoneId] || zoneId;
-    const categoryPath = join(__dirname, 'images', folderName, category);
-    
-    try {
-      const items = await fs.readdir(categoryPath, { withFileTypes: true });
-      
-      // Check for subfolders
-      const subfolders = items.filter(item => item.isDirectory()).map(dir => dir.name);
-      
-      // If subfolders exist, get images from each subfolder
-      if (subfolders.length > 0) {
-        const subcategories = {};
-        
-        for (const subfolder of subfolders) {
-          const subfolderPath = join(categoryPath, subfolder);
-          try {
-            const subFiles = await fs.readdir(subfolderPath);
-            const subImages = subFiles.filter(file => 
-              /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file)
-            );
-            
-            subcategories[subfolder] = {
-              images: subImages.map(file => 
-                `/images/${encodeURIComponent(folderName)}/${category}/${encodeURIComponent(subfolder)}/${encodeURIComponent(file)}`
-              ),
-              count: subImages.length
-            };
-          } catch (err) {
-            subcategories[subfolder] = { images: [], count: 0 };
-          }
-        }
-        
-        // Set cache headers for faster loading
-        res.setHeader('Cache-Control', 'public, max-age=3600');
-        
-        res.json({
-          success: true,
-          zoneId,
-          category,
-          folderName,
-          hasSubcategories: true,
-          subcategories,
-          totalCount: Object.values(subcategories).reduce((sum, sub) => sum + sub.count, 0)
-        });
-      } else {
-        // No subfolders, get images directly from category folder
-        const imageFiles = items
-          .filter(item => item.isFile() && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(item.name))
-          .map(item => item.name);
-        
-        // Set cache headers for faster loading
-        res.setHeader('Cache-Control', 'public, max-age=3600');
-        
-        res.json({
-          success: true,
-          zoneId,
-          category,
-          folderName,
-          hasSubcategories: false,
-          images: imageFiles.map(file => `/images/${encodeURIComponent(folderName)}/${category}/${encodeURIComponent(file)}`),
-          count: imageFiles.length
-        });
-      }
-    } catch (err) {
-      res.json({
-        success: true,
-        zoneId,
-        category,
-        hasSubcategories: false,
-        images: [],
-        count: 0
-      });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  const { zoneId, category } = req.params;
+  
+  // Return empty response for now - images folder is not deployed
+  res.json({
+    success: true,
+    zoneId,
+    category,
+    hasSubcategories: false,
+    images: [],
+    count: 0,
+    message: 'Images folder not deployed - use external image hosting for production'
+  });
 });
 
-// Serve static images with strong caching
-app.use(
-  '/images',
-  express.static(join(__dirname, 'images'), {
-    maxAge: '30d',
-    immutable: true,
-    setHeaders: (res) => {
-      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-    },
-  })
-);
+// Serve static images with strong caching (only for local development)
+// Images folder is gitignored and won't be deployed to Vercel
+if (process.env.VERCEL !== '1') {
+  app.use(
+    '/images',
+    express.static(join(__dirname, 'images'), {
+      maxAge: '30d',
+      immutable: true,
+      setHeaders: (res) => {
+        res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+      },
+    })
+  );
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

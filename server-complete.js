@@ -9,6 +9,11 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Supabase configuration
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
+const SUPABASE_BUCKET = 'eco-village-images';
+
 // Only log startup message when running locally
 if (process.env.VERCEL !== '1') {
   console.log('🚀 Starting EcoVillageBuilder Interactive Map...');
@@ -3938,78 +3943,98 @@ const PROJECT_FOLDER_MAP = {
   'farmstead-produce-stand': 'Farmstead Produce Stand & Online Hub'
 };
 
-// API endpoint to get images for a specific zone (with subcategory support)
+// API endpoint to get images for a specific zone (Supabase Storage)
 app.get('/api/images/:zoneId/:category', async (req, res) => {
   try {
     const { zoneId, category } = req.params;
-    const fs = await import('fs/promises');
     
     // Map project ID to actual folder name
     const folderName = PROJECT_FOLDER_MAP[zoneId] || zoneId;
-    const categoryPath = join(__dirname, 'images', folderName, category);
+    const folderPath = folderName + '/' + category;
+    
+    // Fetch file list from Supabase Storage
+    const supabaseUrl = SUPABASE_URL + '/storage/v1/object/list/' + SUPABASE_BUCKET + '?prefix=' + encodeURIComponent(folderPath);
     
     try {
-      const items = await fs.readdir(categoryPath, { withFileTypes: true });
+      const response = await fetch(supabaseUrl, {
+        headers: {
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'apikey': SUPABASE_ANON_KEY
+        }
+      });
       
-      // Check for subfolders
-      const subfolders = items.filter(item => item.isDirectory()).map(dir => dir.name);
+      if (!response.ok) {
+        throw new Error('Supabase fetch failed');
+      }
       
-      // If subfolders exist, get images from each subfolder
-      if (subfolders.length > 0) {
-        const subcategories = {};
-        
-        for (const subfolder of subfolders) {
-          const subfolderPath = join(categoryPath, subfolder);
-          try {
-            const subFiles = await fs.readdir(subfolderPath);
-            const subImages = subFiles.filter(file => 
-              /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file)
+      const files = await response.json();
+      
+      // Filter image files and organize by subfolder
+      const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg)$/i;
+      const organizedImages = {};
+      const rootImages = [];
+      
+      files.forEach(function(file) {
+        if (file.name && imageExtensions.test(file.name)) {
+          const pathParts = file.name.split('/');
+          const fileName = pathParts[pathParts.length - 1];
+          
+          // Check if image is in a subfolder
+          if (pathParts.length > 3) {
+            const subfolder = pathParts[2];
+            if (!organizedImages[subfolder]) {
+              organizedImages[subfolder] = [];
+            }
+            organizedImages[subfolder].push(
+              SUPABASE_URL + '/storage/v1/object/public/' + SUPABASE_BUCKET + '/' + file.name
             );
-            
-            subcategories[subfolder] = {
-              images: subImages.map(file => 
-                `/images/${encodeURIComponent(folderName)}/${category}/${encodeURIComponent(subfolder)}/${encodeURIComponent(file)}`
-              ),
-              count: subImages.length
-            };
-          } catch (err) {
-            subcategories[subfolder] = { images: [], count: 0 };
+          } else {
+            rootImages.push(
+              SUPABASE_URL + '/storage/v1/object/public/' + SUPABASE_BUCKET + '/' + file.name
+            );
           }
         }
+      });
+      
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      
+      // Return subcategories if they exist
+      if (Object.keys(organizedImages).length > 0) {
+        const subcategories = {};
+        Object.keys(organizedImages).forEach(function(subfolder) {
+          subcategories[subfolder] = {
+            images: organizedImages[subfolder],
+            count: organizedImages[subfolder].length
+          };
+        });
         
-        res.setHeader('Cache-Control', 'public, max-age=3600');
         res.json({
           success: true,
-          zoneId,
-          category,
-          folderName,
+          zoneId: zoneId,
+          category: category,
+          folderName: folderName,
           hasSubcategories: true,
-          subcategories,
-          totalCount: Object.values(subcategories).reduce((sum, sub) => sum + sub.count, 0)
+          subcategories: subcategories,
+          totalCount: Object.values(subcategories).reduce(function(sum, sub) { return sum + sub.count; }, 0)
         });
       } else {
-        // No subfolders, get images directly from category folder
-        const imageFiles = items
-          .filter(item => item.isFile() && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(item.name))
-          .map(item => item.name);
-        
-        res.setHeader('Cache-Control', 'public, max-age=3600');
+        // Return root images
         res.json({
           success: true,
-          zoneId,
-          category,
-          folderName,
+          zoneId: zoneId,
+          category: category,
+          folderName: folderName,
           hasSubcategories: false,
-          images: imageFiles.map(file => `/images/${encodeURIComponent(folderName)}/${category}/${encodeURIComponent(file)}`),
-          count: imageFiles.length
+          images: rootImages,
+          count: rootImages.length
         });
       }
     } catch (err) {
-      // Category folder doesn't exist or is empty - return empty array
+      // Return empty if Supabase fetch fails
       res.json({
         success: true,
-        zoneId,
-        category,
+        zoneId: zoneId,
+        category: category,
         hasSubcategories: false,
         images: [],
         count: 0

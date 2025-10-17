@@ -3096,23 +3096,21 @@ app.get('/', (req, res) => {
       
       const lightbox = document.createElement('div');
       lightbox.id = 'image-lightbox';
-      lightbox.innerHTML = `
-        <div class="lightbox-overlay"></div>
-        <button class="lightbox-close" aria-label="Close">&times;</button>
-        <div class="lightbox-content">
-          <img class="lightbox-image" src="" alt="Full size image">
-          <div class="lightbox-loading"><div class="loading-spinner"></div></div>
-        </div>
-        <button class="lightbox-nav lightbox-prev" aria-label="Previous">
-          <span>&#8249;</span>
-        </button>
-        <button class="lightbox-nav lightbox-next" aria-label="Next">
-          <span>&#8250;</span>
-        </button>
-        <div class="lightbox-counter">
-          <span class="lightbox-current">1</span> / <span class="lightbox-total">1</span>
-        </div>
-      `;
+      lightbox.innerHTML = '<div class="lightbox-overlay"></div>' +
+        '<button class="lightbox-close" aria-label="Close">&times;</button>' +
+        '<div class="lightbox-content">' +
+          '<img class="lightbox-image" src="" alt="Full size image">' +
+          '<div class="lightbox-loading"><div class="loading-spinner"></div></div>' +
+        '</div>' +
+        '<button class="lightbox-nav lightbox-prev" aria-label="Previous">' +
+          '<span>&#8249;</span>' +
+        '</button>' +
+        '<button class="lightbox-nav lightbox-next" aria-label="Next">' +
+          '<span>&#8250;</span>' +
+        '</button>' +
+        '<div class="lightbox-counter">' +
+          '<span class="lightbox-current">1</span> / <span class="lightbox-total">1</span>' +
+        '</div>';
       document.body.appendChild(lightbox);
       
       // Initialize lightbox event handlers
@@ -3225,7 +3223,7 @@ app.get('/', (req, res) => {
         // Detect horizontal swipe
         if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
           isDragging = true;
-          img.style.transform = `translateX(${dx}px)`;
+          img.style.transform = 'translateX(' + dx + 'px)';
           img.style.transition = 'none';
         }
       }, { passive: true });
@@ -3256,11 +3254,11 @@ app.get('/', (req, res) => {
     
     // Wrapper function to open lightbox from carousel
     window.openImageLightbox = function(category, index) {
-      const carousel = document.querySelector(`[data-category="${category}"]`);
+      const carousel = document.querySelector('[data-category="' + category + '"]');
       if (!carousel) return;
       
       const images = Array.from(carousel.querySelectorAll('.carousel-image'))
-        .map(img => img.src);
+        .map(function(img) { return img.src; });
       
       if (images.length > 0) {
         ensureLightboxExists();

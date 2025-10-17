@@ -13,7 +13,7 @@ vite.config.ts.*
 .env
 .env.local
 
-# Images folder (contains files with long names that cause Git issues)
+# Images folder (Windows path length issues - use Vercel Blob for production)
 images/
 
 # Backup files

@@ -1,15 +1,10 @@
 {
-  "version": 2,
+  "buildCommand": "echo 'Serverless function - no build needed'",
+  "outputDirectory": ".",
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/api"
     }
-  ],
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 10,
-      "memory": 1024
-    }
-  }
+  ]
 }

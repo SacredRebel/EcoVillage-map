@@ -2437,65 +2437,111 @@ app.get('/', (req, res) => {
     function attachPanelSwipe(map) {
       const panel = document.getElementById('side-panel');
       if (!panel) return;
-      let startX = 0, startY = 0, isTracking = false, isSwiping = false;
-      const SWIPE_THRESHOLD = 80; // px
-      const ANGLE_THRESHOLD = 10; // px before we consider as swipe
+      let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0;
+      const SWIPE_THRESHOLD = 50; // px - reduced from 80 for easier closing
+      const VELOCITY_THRESHOLD = 0.3; // px/ms - fast swipe also closes
+      const ANGLE_THRESHOLD = 15; // px - increased for better detection
       
       const onStart = (clientX, clientY) => {
         if (!panel.classList.contains('open')) return;
         startX = clientX;
         startY = clientY;
+        startTime = Date.now();
         isTracking = true;
         isSwiping = false;
+        // Remove transition during drag for immediate feedback
+        panel.style.transition = 'none';
       };
+      
       const onMove = (clientX, clientY, ev) => {
         if (!isTracking) return;
         const dx = clientX - startX;
         const dy = clientY - startY;
+        
         if (!isSwiping) {
-          if (Math.abs(dx) > ANGLE_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
-            isSwiping = true;
-            panel.classList.add('swiping');
-          } else {
-            return; // vertical scroll
+          // Detect horizontal swipe (more lenient angle detection)
+          if (Math.abs(dx) > ANGLE_THRESHOLD) {
+            if (Math.abs(dx) > Math.abs(dy) * 1.5) {
+              isSwiping = true;
+              panel.classList.add('swiping');
+            }
           }
+          if (!isSwiping) return; // Still waiting to detect direction
         }
+        
+        // Prevent default to stop scrolling while swiping
         if (ev && ev.cancelable) ev.preventDefault();
-        const translateX = Math.min(0, dx); // only left swipe
+        
+        // Only allow left swipe (negative dx)
+        const translateX = Math.min(0, dx);
         panel.style.transform = 'translateX(' + translateX + 'px)';
       };
+      
       const onEnd = () => {
         if (!isTracking) return;
+        
         const style = panel.style.transform || '';
         const match = style.match(/translateX\(([-0-9.]+)px\)/);
         const translateX = match ? parseFloat(match[1]) : 0;
+        const duration = Date.now() - startTime;
+        const velocity = Math.abs(translateX) / duration; // px per ms
+        
+        // Re-enable transition for smooth snap-back
+        panel.style.transition = 'transform 0.3s ease-out';
         panel.classList.remove('swiping');
-        panel.style.transform = '';
-        isTracking = false;
-        if (translateX < -SWIPE_THRESHOLD) {
-          panel.classList.remove('open');
-          if (window.imageRefreshInterval) {
-            clearInterval(window.imageRefreshInterval);
-            window.imageRefreshInterval = null;
-          }
-          window.currentZoneId = null;
-          console.log('👆 Panel closed by swipe');
+        
+        // Close if: swiped far enough OR swiped fast enough
+        const shouldClose = translateX < -SWIPE_THRESHOLD || velocity > VELOCITY_THRESHOLD;
+        
+        if (shouldClose) {
+          // Animate panel out completely before closing
+          panel.style.transform = 'translateX(-100%)';
+          setTimeout(function() {
+            panel.classList.remove('open');
+            panel.style.transform = '';
+            panel.style.transition = '';
+            if (window.imageRefreshInterval) {
+              clearInterval(window.imageRefreshInterval);
+              window.imageRefreshInterval = null;
+            }
+            window.currentZoneId = null;
+            console.log('👆 Panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
+          }, 300);
+        } else {
+          // Snap back to original position
+          panel.style.transform = '';
+          setTimeout(function() {
+            panel.style.transition = '';
+          }, 300);
         }
+        
+        isTracking = false;
+        isSwiping = false;
       };
+      
       // Touch events
-      panel.addEventListener('touchstart', (e) => {
+      panel.addEventListener('touchstart', function(e) {
         const t = e.touches[0];
         onStart(t.clientX, t.clientY);
       }, { passive: true });
-      panel.addEventListener('touchmove', (e) => {
+      
+      panel.addEventListener('touchmove', function(e) {
         const t = e.touches[0];
         onMove(t.clientX, t.clientY, e);
       }, { passive: false });
-      panel.addEventListener('touchend', onEnd);
+      
+      panel.addEventListener('touchend', onEnd, { passive: true });
+      panel.addEventListener('touchcancel', onEnd, { passive: true });
+      
       // Pointer events fallback
-      panel.addEventListener('pointerdown', (e) => onStart(e.clientX, e.clientY));
-      panel.addEventListener('pointermove', (e) => onMove(e.clientX, e.clientY, e));
+      panel.addEventListener('pointerdown', function(e) {
+        onStart(e.clientX, e.clientY);
+      });
+      panel.addEventListener('pointermove', function(e) {
+        onMove(e.clientX, e.clientY, e);
+      });
       panel.addEventListener('pointerup', onEnd);
+      panel.addEventListener('pointercancel', onEnd);
     }
     
     // Enhanced image gallery tab functionality

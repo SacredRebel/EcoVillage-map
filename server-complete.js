@@ -1621,6 +1621,184 @@ app.get('/', (req, res) => {
             }
           }
           
+          /* ===== LIGHTBOX STYLES ===== */
+          #image-lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+          }
+          
+          #image-lightbox.active {
+            opacity: 1;
+            pointer-events: auto;
+          }
+          
+          .lightbox-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+          }
+          
+          .lightbox-content {
+            position: relative;
+            z-index: 1;
+            max-width: 95vw;
+            max-height: 95vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          .lightbox-image {
+            max-width: 100%;
+            max-height: 95vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            user-select: none;
+            -webkit-user-drag: none;
+          }
+          
+          .lightbox-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+          }
+          
+          .lightbox-loading.active {
+            opacity: 1;
+          }
+          
+          .lightbox-close {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 3;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 32px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+          }
+          
+          .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: rotate(90deg) scale(1.1);
+          }
+          
+          .lightbox-nav {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 3;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 36px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+          }
+          
+          .lightbox-nav:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-50%) scale(1.1);
+          }
+          
+          .lightbox-prev {
+            left: 30px;
+          }
+          
+          .lightbox-next {
+            right: 30px;
+          }
+          
+          .lightbox-counter {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+          }
+          
+          /* Mobile lightbox optimizations */
+          @media (max-width: 768px) {
+            .lightbox-close {
+              top: 15px;
+              right: 15px;
+              width: 44px;
+              height: 44px;
+              font-size: 28px;
+            }
+            
+            .lightbox-nav {
+              width: 50px;
+              height: 50px;
+              font-size: 30px;
+            }
+            
+            .lightbox-prev {
+              left: 15px;
+            }
+            
+            .lightbox-next {
+              right: 15px;
+            }
+            
+            .lightbox-counter {
+              bottom: 20px;
+              padding: 10px 20px;
+              font-size: 14px;
+            }
+            
+            .lightbox-image {
+              max-height: 90vh;
+            }
+          }
+          
           /* Responsive Design */
           @media (max-width: 768px) {
             .side-panel {
@@ -2403,18 +2581,12 @@ app.get('/', (req, res) => {
       // Load images for this zone
       loadZoneImages(zone.id);
       
-      // Store current zone for auto-refresh
+      // Store current zone
       window.currentZoneId = zone.id;
       
-      // Start auto-refresh for images (checks every 30 seconds)
-      if (window.imageRefreshInterval) {
-        clearInterval(window.imageRefreshInterval);
-      }
-      window.imageRefreshInterval = setInterval(() => {
-        if (window.currentZoneId && panel.classList.contains('open')) {
-          loadZoneImages(window.currentZoneId);
-        }
-      }, 30000); // 30 seconds
+      // Initialize gallery state tracking
+      if (!window.galleryState) window.galleryState = {};
+      window.galleryState[zone.id] = { current: 0, vision: 0 };
       
       console.log('📋 Opened side panel for:', zone.name);
     }
@@ -2423,11 +2595,7 @@ app.get('/', (req, res) => {
     document.getElementById('close-panel').addEventListener('click', () => {
       document.getElementById('side-panel').classList.remove('open');
       
-      // Stop auto-refresh when panel closes
-      if (window.imageRefreshInterval) {
-        clearInterval(window.imageRefreshInterval);
-        window.imageRefreshInterval = null;
-      }
+      // Clear current zone reference
       window.currentZoneId = null;
       
       console.log('❌ Closed side panel');
@@ -2500,10 +2668,6 @@ app.get('/', (req, res) => {
             panel.classList.remove('open');
             panel.style.transform = '';
             panel.style.transition = '';
-            if (window.imageRefreshInterval) {
-              clearInterval(window.imageRefreshInterval);
-              window.imageRefreshInterval = null;
-            }
             window.currentZoneId = null;
             console.log('👆 Panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
           }, 300);
@@ -2575,7 +2739,7 @@ app.get('/', (req, res) => {
       });
     }
     
-    // Load images for a specific zone (with subcategory support)
+    // Load images for a specific zone (preserves gallery state)
     async function loadZoneImages(zoneId) {
       const categories = ['current', 'vision'];
       
@@ -2587,6 +2751,10 @@ app.get('/', (req, res) => {
           const container = document.getElementById(\`\${category}-images\`);
           if (!container) continue;
           
+          // Get saved index before rebuilding
+          const carousel = container.querySelector('[data-category]');
+          const savedIndex = carousel ? parseInt(carousel.dataset.currentIndex || '0', 10) : 0;
+          
           // Check if data has subcategories
           if (data.hasSubcategories && data.subcategories) {
             container.innerHTML = createSubcategoryGallery(data, zoneId, category);
@@ -2594,6 +2762,10 @@ app.get('/', (req, res) => {
           } else if (data.images && data.images.length > 0) {
             container.innerHTML = createImageCarousel(data.images, zoneId, category);
             initializeCarousel(category);
+            // Restore saved index
+            if (savedIndex > 0 && savedIndex < data.images.length) {
+              switchToIndex(category, savedIndex);
+            }
           } else {
             container.innerHTML = \`
               <div class="no-images-message">
@@ -2725,7 +2897,9 @@ app.get('/', (req, res) => {
              loading="\${index === 0 ? 'eager' : 'lazy'}"
              fetchpriority="\${index === 0 ? 'high' : 'low'}"
              sizes="(max-width: 768px) 100vw, 580px"
-             decoding="async">
+             decoding="async"
+             onclick="openImageLightbox('\${category}', \${index})"
+             style="cursor: pointer;">
       \`).join('');
       
       const thumbnails = images.map((src, index) => \`
@@ -2912,6 +3086,186 @@ app.get('/', (req, res) => {
     // Go to specific slide
     window.goToSlide = function(category, index) {
       switchToIndex(category, index);
+    };
+    
+    // ===== LIGHTBOX SYSTEM FOR FULL-SIZE IMAGE VIEWING =====
+    
+    // Create lightbox HTML (append to body once)
+    function ensureLightboxExists() {
+      if (document.getElementById('image-lightbox')) return;
+      
+      const lightbox = document.createElement('div');
+      lightbox.id = 'image-lightbox';
+      lightbox.innerHTML = `
+        <div class="lightbox-overlay"></div>
+        <button class="lightbox-close" aria-label="Close">&times;</button>
+        <div class="lightbox-content">
+          <img class="lightbox-image" src="" alt="Full size image">
+          <div class="lightbox-loading"><div class="loading-spinner"></div></div>
+        </div>
+        <button class="lightbox-nav lightbox-prev" aria-label="Previous">
+          <span>&#8249;</span>
+        </button>
+        <button class="lightbox-nav lightbox-next" aria-label="Next">
+          <span>&#8250;</span>
+        </button>
+        <div class="lightbox-counter">
+          <span class="lightbox-current">1</span> / <span class="lightbox-total">1</span>
+        </div>
+      `;
+      document.body.appendChild(lightbox);
+      
+      // Initialize lightbox event handlers
+      initializeLightboxHandlers();
+    }
+    
+    // Initialize lightbox event handlers
+    function initializeLightboxHandlers() {
+      const lightbox = document.getElementById('image-lightbox');
+      const overlay = lightbox.querySelector('.lightbox-overlay');
+      const closeBtn = lightbox.querySelector('.lightbox-close');
+      const prevBtn = lightbox.querySelector('.lightbox-prev');
+      const nextBtn = lightbox.querySelector('.lightbox-next');
+      const img = lightbox.querySelector('.lightbox-image');
+      const loading = lightbox.querySelector('.lightbox-loading');
+      
+      let currentImages = [];
+      let currentIndex = 0;
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let isDragging = false;
+      
+      // Close lightbox
+      function closeLightbox() {
+        lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+        setTimeout(() => {
+          img.src = '';
+          currentImages = [];
+        }, 300);
+      }
+      
+      // Navigate to image
+      function navigateToImage(index) {
+        if (index < 0 || index >= currentImages.length) return;
+        currentIndex = index;
+        
+        // Show loading spinner
+        loading.classList.add('active');
+        img.style.opacity = '0';
+        
+        // Load new image
+        const newSrc = currentImages[index];
+        const tempImg = new Image();
+        tempImg.onload = () => {
+          img.src = newSrc;
+          loading.classList.remove('active');
+          img.style.opacity = '1';
+          
+          // Update counter
+          lightbox.querySelector('.lightbox-current').textContent = index + 1;
+          
+          // Preload adjacent images
+          if (index > 0) {
+            const prev = new Image();
+            prev.src = currentImages[index - 1];
+          }
+          if (index < currentImages.length - 1) {
+            const next = new Image();
+            next.src = currentImages[index + 1];
+          }
+        };
+        tempImg.src = newSrc;
+        
+        // Update nav button visibility
+        prevBtn.style.display = index > 0 ? 'flex' : 'none';
+        nextBtn.style.display = index < currentImages.length - 1 ? 'flex' : 'none';
+      }
+      
+      // Open lightbox with images
+      window.openLightbox = function(images, startIndex) {
+        ensureLightboxExists();
+        currentImages = images;
+        currentIndex = startIndex || 0;
+        
+        lightbox.querySelector('.lightbox-total').textContent = images.length;
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        navigateToImage(currentIndex);
+      };
+      
+      // Event listeners
+      overlay.addEventListener('click', closeLightbox);
+      closeBtn.addEventListener('click', closeLightbox);
+      prevBtn.addEventListener('click', () => navigateToImage(currentIndex - 1));
+      nextBtn.addEventListener('click', () => navigateToImage(currentIndex + 1));
+      
+      // Keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        if (!lightbox.classList.contains('active')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') navigateToImage(currentIndex - 1);
+        if (e.key === 'ArrowRight') navigateToImage(currentIndex + 1);
+      });
+      
+      // Touch/swipe navigation
+      const content = lightbox.querySelector('.lightbox-content');
+      content.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isDragging = false;
+      }, { passive: true });
+      
+      content.addEventListener('touchmove', (e) => {
+        if (!touchStartX) return;
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+        
+        // Detect horizontal swipe
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
+          isDragging = true;
+          img.style.transform = `translateX(${dx}px)`;
+          img.style.transition = 'none';
+        }
+      }, { passive: true });
+      
+      content.addEventListener('touchend', (e) => {
+        if (!isDragging) {
+          touchStartX = 0;
+          return;
+        }
+        
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        img.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+        img.style.transform = '';
+        
+        // Swipe threshold: 80px
+        if (Math.abs(dx) > 80) {
+          if (dx > 0) {
+            navigateToImage(currentIndex - 1); // Swipe right = previous
+          } else {
+            navigateToImage(currentIndex + 1); // Swipe left = next
+          }
+        }
+        
+        touchStartX = 0;
+        isDragging = false;
+      }, { passive: true });
+    }
+    
+    // Wrapper function to open lightbox from carousel
+    window.openImageLightbox = function(category, index) {
+      const carousel = document.querySelector(`[data-category="${category}"]`);
+      if (!carousel) return;
+      
+      const images = Array.from(carousel.querySelectorAll('.carousel-image'))
+        .map(img => img.src);
+      
+      if (images.length > 0) {
+        ensureLightboxExists();
+        window.openLightbox(images, index);
+      }
     };
     
     // Zone positions are now permanently locked - no reset functionality needed

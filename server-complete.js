@@ -684,82 +684,132 @@ const PERMANENT_PROPERTY_LINES = [
   {
     id: 'boundary_line_1',
     coordinates: [[34.433576, -119.156878], [34.433578, -119.155856], [34.433580, -119.154834]],
-    thickness: 8,
-    color: '#FF0000',
-    description: 'Eastern property boundary - Main section',
-    permanent: true
+    thickness: 10,
+    gradientColors: ['#9C27B0', '#673AB7', '#3F51B5', '#2196F3'],
+    glowColor: '#9C27B0',
+    description: 'Eastern Boundary - Main Section',
+    name: 'Eastern Property Line',
+    length: '1,250 ft',
+    features: ['Panoramic mountain views', 'Mature oak trees', 'Natural elevation'],
+    permanent: true,
+    section: 'east'
   },
   {
     id: 'boundary_line_2', 
     coordinates: [[34.433585, -119.154840], [34.433215, -119.154843], [34.432846, -119.154845]],
-    thickness: 8,
-    color: '#FF0000',
-    description: 'Southern property boundary - Section 1',
-    permanent: true
+    thickness: 10,
+    gradientColors: ['#2196F3', '#03A9F4', '#00BCD4', '#26C6DA'],
+    glowColor: '#00BCD4',
+    description: 'Southern Boundary - Section 1',
+    name: 'South Property Line (East)',
+    length: '580 ft',
+    features: ['Gentle slope', 'Garden potential', 'Solar exposure'],
+    permanent: true,
+    section: 'south-east'
   },
   {
     id: 'boundary_line_3',
     coordinates: [[34.432855, -119.154845], [34.432857, -119.154885], [34.432859, -119.154925]],
-    thickness: 8,
-    color: '#FF0000',
-    description: 'Southern corner connection',
-    permanent: true
+    thickness: 10,
+    gradientColors: ['#00BCD4', '#00ACC1', '#0097A7'],
+    glowColor: '#00BCD4',
+    description: 'Southern Corner Connection',
+    name: 'South Corner Transition',
+    length: '85 ft',
+    features: ['Corner landmark', 'Property marker'],
+    permanent: true,
+    section: 'south-corner'
   },
   {
     id: 'boundary_line_4',
     coordinates: [[34.432855, -119.154920], [34.432370, -119.154912], [34.432185, -119.154908], [34.431886, -119.154904]],
-    thickness: 8,
-    color: '#FF0000',
-    description: 'Southern property boundary - Section 2',
-    permanent: true
+    thickness: 10,
+    gradientColors: ['#00BCD4', '#4CAF50', '#66BB6A', '#81C784'],
+    glowColor: '#4CAF50',
+    description: 'Southern Boundary - Section 2',
+    name: 'South Property Line (West)',
+    length: '750 ft',
+    features: ['Flat terrain', 'Agricultural zone', 'Creek proximity'],
+    permanent: true,
+    section: 'south-west'
   },
   {
     id: 'boundary_line_5',
     coordinates: [[34.431886, -119.154893], [34.431890, -119.155854], [34.431894, -119.156814]], 
-    thickness: 8,
-    color: '#FF0000',
-    description: 'Western property boundary - Main section',
-    permanent: true
+    thickness: 10,
+    gradientColors: ['#4CAF50', '#8BC34A', '#CDDC39', '#D4E157'],
+    glowColor: '#8BC34A',
+    description: 'Western Boundary - Main Section',
+    name: 'West Property Line',
+    length: '1,420 ft',
+    features: ['Seasonal creek', 'Riparian corridor', 'Wildlife habitat'],
+    permanent: true,
+    section: 'west'
   },
   {
     id: 'boundary_line_6',
     coordinates: [[34.431899, -119.156808], [34.432000, -119.156816], [34.432102, -119.156824]],
-    thickness: 8,
-    color: '#FF0000',
-    description: 'Western corner connection',
-    permanent: true
+    thickness: 10,
+    gradientColors: ['#CDDC39', '#C0CA33', '#AFB42B'],
+    glowColor: '#CDDC39',
+    description: 'Western Corner Connection',
+    name: 'West Corner Transition',
+    length: '180 ft',
+    features: ['Creek crossing', 'Corner marker'],
+    permanent: true,
+    section: 'west-corner'
   },
   {
     id: 'boundary_line_7', 
     coordinates: [[34.432102, -119.156824], [34.432160, -119.157278], [34.432217, -119.157731]],
-    thickness: 8,
-    color: '#FF0000',
-    description: 'Northwestern property boundary - Section 1',
-    permanent: true
+    thickness: 10,
+    gradientColors: ['#CDDC39', '#FFEB3B', '#FDD835', '#FBC02D'],
+    glowColor: '#FDD835',
+    description: 'Northwestern Boundary - Section 1',
+    name: 'Northwest Property Line',
+    length: '680 ft',
+    features: ['Creek valley', 'Natural amphitheater', 'Oak woodland'],
+    permanent: true,
+    section: 'northwest'
   },
   {
     id: 'boundary_line_8',
     coordinates: [[34.432222, -119.157726], [34.432293, -119.157742], [34.432363, -119.157758]],
-    thickness: 8,
-    color: '#FF0000',
-    description: 'Northwestern corner connection',
-    permanent: true
+    thickness: 10,
+    gradientColors: ['#FDD835', '#F9A825', '#F57F17'],
+    glowColor: '#FDD835',
+    description: 'Northwestern Corner Connection',
+    name: 'Northwest Corner Transition',
+    length: '125 ft',
+    features: ['Elevated viewpoint', 'Corner landmark'],
+    permanent: true,
+    section: 'northwest-corner'
   },
   {
     id: 'boundary_line_9',
     coordinates: [[34.432368, -119.157758], [34.432470, -119.157326], [34.432571, -119.156894]],
-    thickness: 8,
-    color: '#FF0000',
-    description: 'Northern property boundary - Section 1',
-    permanent: true
+    thickness: 10,
+    gradientColors: ['#FFC107', '#FFB300', '#FFA000', '#FF8F00'],
+    glowColor: '#FFC107',
+    description: 'Northern Boundary - Section 1',
+    name: 'North Property Line (West)',
+    length: '720 ft',
+    features: ['Upper plateau', 'Mountain views', 'Ceremony sites'],
+    permanent: true,
+    section: 'north-west'
   },
   {
     id: 'boundary_line_10',
     coordinates: [[34.432576, -119.156899], [34.433078, -119.156889], [34.433580, -119.156878]],
-    thickness: 8,
-    color: '#FF0000',
-    description: 'Northern property boundary - Section 2',
-    permanent: true
+    thickness: 10,
+    gradientColors: ['#FF8F00', '#FF6F00', '#E65100', '#9C27B0'],
+    glowColor: '#FF6F00',
+    description: 'Northern Boundary - Section 2',
+    name: 'North Property Line (East)',
+    length: '780 ft',
+    features: ['Ridge line', 'Sunset views', 'Highest elevation'],
+    permanent: true,
+    section: 'north-east'
   }
 ];
 
@@ -1223,11 +1273,91 @@ app.get('/', (req, res) => {
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
     }
     
-    /* Property Lines */
-          .property-line-permanent {
-            stroke-dasharray: none !important;
-            stroke-linecap: round;
-          }
+    /* Magical Property Boundary Lines */
+    .property-line-magical {
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      filter: drop-shadow(0 0 8px currentColor) brightness(1);
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-glow {
+      0%, 100% {
+        filter: drop-shadow(0 0 8px currentColor) brightness(1);
+        opacity: 0.9;
+      }
+      50% {
+        filter: drop-shadow(0 0 15px currentColor) brightness(1.1);
+        opacity: 1;
+      }
+    }
+    
+    .property-line-magical:hover {
+      filter: drop-shadow(0 0 20px gold) 
+              drop-shadow(0 0 30px currentColor) 
+              brightness(1.3);
+      animation: sparkle-dance 0.6s ease-in-out;
+      stroke-width: 12 !important;
+    }
+    
+    @keyframes sparkle-dance {
+      0%, 100% { 
+        filter: drop-shadow(0 0 20px gold) 
+                drop-shadow(0 0 30px currentColor) 
+                brightness(1.3); 
+      }
+      25% { 
+        filter: drop-shadow(0 0 25px gold) 
+                drop-shadow(0 0 35px currentColor) 
+                brightness(1.4);
+      }
+      50% { 
+        filter: drop-shadow(0 0 30px gold) 
+                drop-shadow(0 0 40px currentColor) 
+                brightness(1.5);
+      }
+      75% { 
+        filter: drop-shadow(0 0 25px gold) 
+                drop-shadow(0 0 35px currentColor) 
+                brightness(1.4);
+      }
+    }
+    
+    .property-line-magical.active {
+      filter: drop-shadow(0 0 25px gold) 
+              drop-shadow(0 0 35px currentColor) 
+              brightness(1.4);
+      stroke-width: 13 !important;
+      animation: active-pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes active-pulse {
+      0%, 100% {
+        filter: drop-shadow(0 0 25px gold) 
+                drop-shadow(0 0 35px currentColor) 
+                brightness(1.4);
+      }
+      50% {
+        filter: drop-shadow(0 0 30px gold) 
+                drop-shadow(0 0 45px currentColor) 
+                brightness(1.5);
+      }
+    }
+    
+    /* Mobile optimization */
+    @media (max-width: 768px) {
+      .property-line-magical {
+        filter: drop-shadow(0 0 6px currentColor) brightness(1);
+      }
+      
+      .property-line-magical:active {
+        filter: drop-shadow(0 0 15px gold) 
+                drop-shadow(0 0 25px currentColor) 
+                brightness(1.3);
+      }
+    }
           
           /* Enhanced Image Gallery Styles */
           .image-gallery {
@@ -1849,7 +1979,165 @@ app.get('/', (req, res) => {
             .leaflet-control-zoom {
               border-radius: 12px;
             }
-          }    /* Loading Animation */
+          }
+          
+    /* Property Boundary Info Panel */
+    .property-panel {
+      position: absolute;
+      top: 0;
+      right: -480px;
+      width: 460px;
+      height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      box-shadow: -5px 0 40px rgba(0,0,0,0.25), 0 0 20px rgba(0,0,0,0.15);
+      z-index: 2000;
+      overflow: hidden;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      will-change: right, transform;
+      transform: translateZ(0);
+      transition: right 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      border-left: 2px solid rgba(255,255,255,0.2);
+    }
+    
+    .property-panel.open {
+      right: 0;
+    }
+    
+    .property-panel-header {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+      backdrop-filter: blur(20px);
+      color: white;
+      padding: 20px;
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .property-panel-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-right: 40px;
+    }
+    
+    .property-icon {
+      font-size: 32px;
+      animation: rainbow-spin 3s linear infinite;
+    }
+    
+    @keyframes rainbow-spin {
+      0% { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
+    
+    .property-panel-title h3 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    
+    .property-panel-content {
+      padding: 25px;
+      background: rgba(255, 255, 255, 0.95);
+      margin: 0;
+      height: calc(100vh - 80px);
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    
+    .property-panel-content::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .property-panel-content::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.05);
+    }
+    
+    .property-panel-content::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 4px;
+    }
+    
+    .property-info-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .property-info-section h4 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #667eea;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 8px;
+    }
+    
+    .property-detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .property-detail-row:last-child {
+      border-bottom: none;
+    }
+    
+    .property-detail-label {
+      font-weight: 500;
+      color: #555;
+    }
+    
+    .property-detail-value {
+      color: #333;
+      font-weight: 600;
+    }
+    
+    .property-features-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 0 0;
+    }
+    
+    .property-features-list li {
+      padding: 8px 0 8px 25px;
+      position: relative;
+      color: #555;
+      line-height: 1.5;
+    }
+    
+    .property-features-list li:before {
+      content: "✨";
+      position: absolute;
+      left: 0;
+      font-size: 14px;
+    }
+    
+    .boundary-gradient-preview {
+      width: 100%;
+      height: 60px;
+      border-radius: 8px;
+      margin: 15px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: 2px solid white;
+    }
+    
+    @media (max-width: 768px) {
+      .property-panel {
+        width: 100vw;
+        right: -100vw;
+      }
+    }
+    
+    /* Loading Animation */
     @keyframes pulse {
       0% { opacity: 1; }
       50% { opacity: 0.5; }
@@ -2293,6 +2581,20 @@ app.get('/', (req, res) => {
     <div class="panel-content" id="panel-content"></div>
   </div>
   
+  <!-- Property Boundary Info Panel -->
+  <div id="property-panel" class="property-panel">
+    <div class="property-panel-header">
+      <div class="property-panel-title">
+        <span class="property-icon">🌈</span>
+        <h3 id="property-title">Property Boundary</h3>
+      </div>
+      <button class="close-panel" id="close-property-panel">&times;</button>
+    </div>
+    <div class="property-panel-content" id="property-panel-content">
+      <!-- Content will be dynamically inserted -->
+    </div>
+  </div>
+  
   <!-- Map Container -->
   <div id="map"></div>
   
@@ -2422,30 +2724,99 @@ app.get('/', (req, res) => {
     
     console.log('📊 Loaded', zones.length, 'project zones and', permanentLines.length, 'property lines');
     
-    // Add permanent property boundary lines - LOCKED PERMANENTLY
-    permanentLines.forEach((lineData, index) => {
+    // Add magical interactive property boundary lines with rainbow gradients
+    const propertyLines = [];
+    
+    permanentLines.forEach(function(lineData, index) {
+      // Create gradient color - use first color as base
+      const baseColor = lineData.gradientColors[0];
+      
       const line = L.polyline(lineData.coordinates, {
-        color: lineData.color,
+        color: baseColor,
         weight: lineData.thickness,
-        opacity: 1,
-        className: 'property-line-permanent',
-        interactive: false, // Lock against accidental modification
-        bubblingMouseEvents: false
+        opacity: 0.9,
+        className: 'property-line-magical',
+        interactive: true,
+        bubblingMouseEvents: true
       }).addTo(map);
       
-      // Lock the line permanently - cannot be removed or modified
+      // Store line data for click handler
+      line.boundaryData = lineData;
       line._locked = true;
       line._permanent = true;
       
-      line.bindTooltip(lineData.description, {
+      // Enhanced tooltip with gradient info
+      line.bindTooltip('<div style="text-align: center;"><strong>' + lineData.name + '</strong><br><small>' + lineData.length + '</small></div>', {
         permanent: false,
         direction: 'center',
         className: 'property-tooltip',
-        sticky: true
+        sticky: true,
+        opacity: 0.95
       });
+      
+      // Click handler to open property panel
+      line.on('click', function(e) {
+        openPropertyPanel(lineData);
+        
+        // Remove active class from all lines
+        propertyLines.forEach(function(l) {
+          if (l._path) {
+            l._path.classList.remove('active');
+          }
+        });
+        
+        // Add active class to clicked line
+        if (line._path) {
+          line._path.classList.add('active');
+        }
+        
+        // Prevent click from propagating to map
+        L.DomEvent.stopPropagation(e);
+      });
+      
+      // Apply gradient effect after adding to DOM
+      setTimeout(function() {
+        if (line._path) {
+          // Create CSS gradient from gradient colors
+          const gradientStr = 'linear-gradient(90deg, ' + lineData.gradientColors.join(', ') + ')';
+          line._path.style.stroke = 'url(#gradient-' + lineData.id + ')';
+          line._path.setAttribute('data-gradient-colors', lineData.gradientColors.join(','));
+          line._path.style.strokeWidth = lineData.thickness;
+        }
+      }, 100);
+      
+      propertyLines.push(line);
     });
     
-    console.log('🔲 Property boundary lines added to map');
+    // Create SVG gradients for each boundary line
+    setTimeout(function() {
+      const svg = document.querySelector('.leaflet-overlay-pane svg');
+      if (svg) {
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        
+        permanentLines.forEach(function(lineData) {
+          const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+          gradient.setAttribute('id', 'gradient-' + lineData.id);
+          gradient.setAttribute('x1', '0%');
+          gradient.setAttribute('y1', '0%');
+          gradient.setAttribute('x2', '100%');
+          gradient.setAttribute('y2', '0%');
+          
+          lineData.gradientColors.forEach(function(color, i) {
+            const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop.setAttribute('offset', (i * 100 / (lineData.gradientColors.length - 1)) + '%');
+            stop.setAttribute('stop-color', color);
+            gradient.appendChild(stop);
+          });
+          
+          defs.appendChild(gradient);
+        });
+        
+        svg.insertBefore(defs, svg.firstChild);
+      }
+    }, 200);
+    
+    console.log('🌈 Magical property boundary lines added to map');
     
     // Zone color mapping
     const zoneColorMap = {
@@ -2604,6 +2975,97 @@ app.get('/', (req, res) => {
       window.currentZoneId = null;
       
       console.log('❌ Closed side panel');
+    });
+    
+    // Property Panel Functions
+    function openPropertyPanel(boundaryData) {
+      const panel = document.getElementById('property-panel');
+      const titleEl = document.getElementById('property-title');
+      const contentEl = document.getElementById('property-panel-content');
+      
+      // Update title
+      titleEl.textContent = boundaryData.name;
+      
+      // Create gradient preview
+      const gradientStyle = 'linear-gradient(90deg, ' + boundaryData.gradientColors.join(', ') + ')';
+      
+      // Build content HTML
+      const content = '<div class="property-info-section">' +
+        '<div class="boundary-gradient-preview" style="background: ' + gradientStyle + ';"></div>' +
+        '<h4>📏 Boundary Details</h4>' +
+        '<div class="property-detail-row">' +
+          '<span class="property-detail-label">Section:</span>' +
+          '<span class="property-detail-value">' + boundaryData.section + '</span>' +
+        '</div>' +
+        '<div class="property-detail-row">' +
+          '<span class="property-detail-label">Length:</span>' +
+          '<span class="property-detail-value">' + boundaryData.length + '</span>' +
+        '</div>' +
+        '<div class="property-detail-row">' +
+          '<span class="property-detail-label">Status:</span>' +
+          '<span class="property-detail-value">✅ Permanent</span>' +
+        '</div>' +
+      '</div>' +
+      
+      '<div class="property-info-section">' +
+        '<h4>🌟 Boundary Features</h4>' +
+        '<ul class="property-features-list">' +
+          boundaryData.features.map(function(feature) {
+            return '<li>' + feature + '</li>';
+          }).join('') +
+        '</ul>' +
+      '</div>' +
+      
+      '<div class="property-info-section">' +
+        '<h4>🏔️ Sulphur Mountain Property</h4>' +
+        '<div class="property-detail-row">' +
+          '<span class="property-detail-label">Total Acreage:</span>' +
+          '<span class="property-detail-value">10.77 acres</span>' +
+        '</div>' +
+        '<div class="property-detail-row">' +
+          '<span class="property-detail-label">APN:</span>' +
+          '<span class="property-detail-value">056-0-010-315</span>' +
+        '</div>' +
+        '<div class="property-detail-row">' +
+          '<span class="property-detail-label">Zoning:</span>' +
+          '<span class="property-detail-value">RE-40 (Rural Estate)</span>' +
+        '</div>' +
+        '<div class="property-detail-row">' +
+          '<span class="property-detail-label">Location:</span>' +
+          '<span class="property-detail-value">Ojai, CA 93023</span>' +
+        '</div>' +
+      '</div>' +
+      
+      '<div class="property-info-section">' +
+        '<h4>✨ Property Highlights</h4>' +
+        '<ul class="property-features-list">' +
+          '<li>Panoramic mountain & valley views</li>' +
+          '<li>Seasonal creek with riparian corridor</li>' +
+          '<li>Mature oak & sycamore trees</li>' +
+          '<li>Gentle rolling topography</li>' +
+          '<li>Multiple building sites</li>' +
+          '<li>Southern exposure for solar</li>' +
+          '<li>Private gated access</li>' +
+          '<li>Rich agricultural soil</li>' +
+        '</ul>' +
+      '</div>';
+      
+      contentEl.innerHTML = content;
+      panel.classList.add('open');
+      
+      console.log('🌈 Opened property panel for:', boundaryData.name);
+    }
+    
+    // Close property panel
+    document.getElementById('close-property-panel').addEventListener('click', function() {
+      document.getElementById('property-panel').classList.remove('open');
+      
+      // Remove active class from all boundary lines
+      document.querySelectorAll('.property-line-magical').forEach(function(path) {
+        path.classList.remove('active');
+      });
+      
+      console.log('❌ Closed property panel');
     });
     
     // Enable swipe-to-close on mobile for the side panel

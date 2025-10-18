@@ -3035,13 +3035,39 @@ app.get('/', (req, res) => {
       
       '<div class="property-info-section">' +
         '<h4>📝 Additional Information</h4>' +
-        '<p style="color: #777; line-height: 1.6;">' +
-          'The property is naturally divided into three strategic sections: Front Left (agriculture/operations), ' +
-          'Middle (livestock/community kitchen), and Right Hillside (lodging/events). ' +
-          'Permitting for the first three key structures is ready for submission. ' +
-          'Total phased development budget exceeds $3M with comprehensive regenerative development plans including ' +
-          'guest lodging capacity for 50+ units and 3 acres dedicated to regenerative agriculture (500+ fruit trees, nursery, livestock).' +
-        '</p>' +
+        '<div style="display: flex; flex-direction: column; gap: 16px;">' +
+          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 14px; border-radius: 8px; border-left: 4px solid #667eea;">' +
+            '<div style="font-weight: 600; color: #667eea; margin-bottom: 8px; font-size: 14px;">🗺️ Property Divisions</div>' +
+            '<div style="color: #555; line-height: 1.7; font-size: 14px;">' +
+              'The property is naturally divided into <strong>three strategic sections</strong>: ' +
+              '<span style="color: #667eea; font-weight: 600;">Front Left</span> (agriculture/operations), ' +
+              '<span style="color: #667eea; font-weight: 600;">Middle</span> (livestock/community kitchen), and ' +
+              '<span style="color: #667eea; font-weight: 600;">Right Hillside</span> (lodging/events).' +
+            '</div>' +
+          '</div>' +
+          
+          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 14px; border-radius: 8px; border-left: 4px solid #4CAF50;">' +
+            '<div style="font-weight: 600; color: #4CAF50; margin-bottom: 8px; font-size: 14px;">✅ Permitting Status</div>' +
+            '<div style="color: #555; line-height: 1.7; font-size: 14px;">' +
+              'Permitting for the <strong>first three key structures</strong> is ready for submission and anticipated to clear quickly.' +
+            '</div>' +
+          '</div>' +
+          
+          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 14px; border-radius: 8px; border-left: 4px solid #FF9800;">' +
+            '<div style="font-weight: 600; color: #FF9800; margin-bottom: 8px; font-size: 14px;">💰 Development Investment</div>' +
+            '<div style="color: #555; line-height: 1.7; font-size: 14px;">' +
+              'Total phased development budget exceeds <strong style="color: #FF9800;">$3 Million</strong> with comprehensive regenerative development plans.' +
+            '</div>' +
+          '</div>' +
+          
+          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 14px; border-radius: 8px; border-left: 4px solid #10B981;">' +
+            '<div style="font-weight: 600; color: #10B981; margin-bottom: 8px; font-size: 14px;">🌱 Development Scope</div>' +
+            '<div style="color: #555; line-height: 1.7; font-size: 14px;">' +
+              'Plans include guest lodging capacity for <strong>50+ units</strong> and <strong>3 acres</strong> dedicated to regenerative agriculture ' +
+              '(500+ fruit trees, nursery, livestock).' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
       '</div>';
       
       contentEl.innerHTML = content;

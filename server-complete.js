@@ -2720,15 +2720,6 @@ app.get('/', (req, res) => {
       boundaryCoordinates.push(boundaryCoordinates[0]);
     }
     
-    // Use complementary colors that flow naturally into each other
-    var gradientColors = [
-      '#6366F1',  // Indigo
-      '#8B5CF6',  // Purple  
-      '#EC4899',  // Pink
-      '#F59E0B',  // Amber
-      '#10B981'   // Emerald
-    ];
-    
     var propertyLines = [];
     
     // Create base golden glow line
@@ -2738,104 +2729,63 @@ app.get('/', (req, res) => {
       opacity: 0.5,
       className: 'property-line-blur',
       interactive: false,
-      lineCap: 'butt',
+      lineCap: 'round',
       lineJoin: 'round',
       smoothFactor: 1.5
     }).addTo(map);
     
-    // Create ultra-smooth gradient with massive overlap to hide all endpoints
-    var totalCoords = boundaryCoordinates.length;
-    var coordsPerColor = Math.floor(totalCoords / gradientColors.length);
+    // Create ONE single continuous line (no segments, no endpoints!)
+    var mainLine = L.polyline(boundaryCoordinates, {
+      color: '#8B5CF6',
+      weight: 14,
+      opacity: 1,
+      className: 'property-line-magical property-line-gradient',
+      interactive: true,
+      bubblingMouseEvents: true,
+      lineCap: 'round',
+      lineJoin: 'round',
+      smoothFactor: 1.5
+    }).addTo(map);
     
-    // Create many thin layers with staggered starts/ends for natural fade effect
-    gradientColors.forEach(function(color, colorIndex) {
-      var colorCenter = colorIndex * coordsPerColor + Math.floor(coordsPerColor / 2);
-      
-      // Create 8 layers per color with different lengths and opacities
-      for (var layer = 0; layer < 8; layer++) {
-        // Each layer is progressively shorter and more transparent
-        var layerOpacity = [0.5, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1][layer];
-        var layerExtend = coordsPerColor * (1.2 - layer * 0.15);
-        
-        var startIdx = Math.max(0, Math.floor(colorCenter - layerExtend / 2));
-        var endIdx = Math.min(totalCoords, Math.floor(colorCenter + layerExtend / 2));
-        
-        // Handle wrapping for last color
-        if (colorIndex === gradientColors.length - 1 && endIdx >= totalCoords) {
-          endIdx = totalCoords;
-        }
-        
-        var layerCoords = boundaryCoordinates.slice(startIdx, endIdx);
-        
-        if (layerCoords.length > 1) {
-          var gradientLayer = L.polyline(layerCoords, {
-            color: color,
-            weight: 14,
-            opacity: layerOpacity,
-            className: 'property-line-gradient-layer',
-            interactive: layer === 0 && colorIndex === 0,
-            bubblingMouseEvents: true,
-            lineCap: 'butt',
-            lineJoin: 'round',
-            smoothFactor: 2.0
-          }).addTo(map);
-          
-          if (layer === 0 && colorIndex === 0) {
-            gradientLayer._locked = true;
-            gradientLayer._permanent = true;
-            
-            gradientLayer.on('click', function(e) {
-              openPropertyPanel();
-              L.DomEvent.stopPropagation(e);
-            });
-            
-            propertyLines.push(gradientLayer);
-          }
-        }
+    mainLine._locked = true;
+    mainLine._permanent = true;
+    propertyLines.push(mainLine);
+    
+    mainLine.on('click', function(e) {
+      openPropertyPanel();
+      if (mainLine._path) {
+        mainLine._path.classList.add('active');
       }
+      L.DomEvent.stopPropagation(e);
     });
     
-    // Add extremely fine transition layers at every color boundary
+    // Apply CSS-based gradient animation
     setTimeout(function() {
-      for (var i = 0; i < gradientColors.length; i++) {
-        var currentColor = gradientColors[i];
-        var nextColor = gradientColors[(i + 1) % gradientColors.length];
-        
-        var transitionCenter = (i + 1) * coordsPerColor;
-        if (i === gradientColors.length - 1) transitionCenter = totalCoords - 5;
-        
-        // Create 10 ultra-thin transition layers
-        for (var t = 0; t < 10; t++) {
-          var tOpacity = 0.08 - t * 0.005;
-          var tExtend = coordsPerColor * (0.5 - t * 0.03);
-          
-          var tStart = Math.max(0, Math.floor(transitionCenter - tExtend / 2));
-          var tEnd = Math.min(totalCoords, Math.floor(transitionCenter + tExtend / 2));
-          
-          var tCoords = boundaryCoordinates.slice(tStart, tEnd);
-          
-          if (tCoords.length > 1) {
-            // Alternate between current and next color for blending
-            var tColor = t % 2 === 0 ? currentColor : nextColor;
-            
-            L.polyline(tCoords, {
-              color: tColor,
-              weight: 14,
-              opacity: tOpacity,
-              className: 'property-line-ultrafine-transition',
-              interactive: false,
-              lineCap: 'butt',
-              lineJoin: 'round',
-              smoothFactor: 2.5
-            }).addTo(map);
+      if (mainLine._path) {
+        // Inject CSS animation for smooth color flow
+        var style = document.createElement('style');
+        style.textContent = '
+          @keyframes rainbow-flow {
+            0% { stroke: #6366F1; }
+            20% { stroke: #8B5CF6; }
+            40% { stroke: #EC4899; }
+            60% { stroke: #F59E0B; }
+            80% { stroke: #10B981; }
+            100% { stroke: #6366F1; }
           }
-        }
+          .property-line-gradient {
+            animation: rainbow-flow 10s ease-in-out infinite;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+          }
+        ';
+        document.head.appendChild(style);
+        
+        console.log('✨ CSS rainbow animation applied to single continuous line');
       }
-      
-      console.log('✨ Ultra-fine transition layers applied');
-    }, 100);
+    }, 200);
     
-    console.log('🌈 Smooth gradient boundary created with ' + gradientColors.length + ' complementary colors');
+    console.log('🌈 Single continuous rainbow boundary line created');
     
     console.log('🌈 Continuous flowing rainbow boundary created');
     

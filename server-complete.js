@@ -3036,37 +3036,42 @@ app.get('/', (req, res) => {
       '<div class="property-info-section">' +
         '<h4>📝 Additional Information</h4>' +
         '<div style="display: flex; flex-direction: column; gap: 16px;">' +
-          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 14px; border-radius: 8px; border-left: 4px solid #667eea;">' +
-            '<div style="font-weight: 600; color: #667eea; margin-bottom: 8px; font-size: 14px;">🗺️ Property Divisions</div>' +
-            '<div style="color: #555; line-height: 1.7; font-size: 14px;">' +
-              'The property is naturally divided into <strong>three strategic sections</strong>: ' +
-              '<span style="color: #667eea; font-weight: 600;">Front Left</span> (agriculture/operations), ' +
-              '<span style="color: #667eea; font-weight: 600;">Middle</span> (livestock/community kitchen), and ' +
-              '<span style="color: #667eea; font-weight: 600;">Right Hillside</span> (lodging/events).' +
+          
+          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #667eea;">' +
+            '<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; font-size: 14px;">🗺️ Property Layout</div>' +
+            '<div style="color: #555; line-height: 1.8; font-size: 14px;">' +
+              '<p style="margin: 0 0 10px 0;">The property is naturally divided into <strong>three strategic sections</strong>, each optimized for specific uses:</p>' +
+              '<p style="margin: 0 0 6px 0; padding-left: 12px;"><span style="color: #667eea; font-weight: 600;">• Front Left Section:</span> Agriculture and operations hub</p>' +
+              '<p style="margin: 0 0 6px 0; padding-left: 12px;"><span style="color: #667eea; font-weight: 600;">• Middle Section:</span> Livestock and community kitchen facilities</p>' +
+              '<p style="margin: 0 0 0 0; padding-left: 12px;"><span style="color: #667eea; font-weight: 600;">• Right Hillside:</span> Guest lodging and event spaces</p>' +
             '</div>' +
           '</div>' +
           
-          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 14px; border-radius: 8px; border-left: 4px solid #4CAF50;">' +
-            '<div style="font-weight: 600; color: #4CAF50; margin-bottom: 8px; font-size: 14px;">✅ Permitting Status</div>' +
-            '<div style="color: #555; line-height: 1.7; font-size: 14px;">' +
-              'Permitting for the <strong>first three key structures</strong> is ready for submission and anticipated to clear quickly.' +
+          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #4CAF50;">' +
+            '<div style="font-weight: 600; color: #4CAF50; margin-bottom: 10px; font-size: 14px;">✅ Permitting & Development Status</div>' +
+            '<div style="color: #555; line-height: 1.8; font-size: 14px;">' +
+              '<p style="margin: 0 0 10px 0;">Permitting for the <strong>first three key structures</strong> is ready for submission.</p>' +
+              '<p style="margin: 0;">The permitting process is anticipated to clear quickly, allowing construction to begin on schedule.</p>' +
             '</div>' +
           '</div>' +
           
-          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 14px; border-radius: 8px; border-left: 4px solid #FF9800;">' +
-            '<div style="font-weight: 600; color: #FF9800; margin-bottom: 8px; font-size: 14px;">💰 Development Investment</div>' +
-            '<div style="color: #555; line-height: 1.7; font-size: 14px;">' +
-              'Total phased development budget exceeds <strong style="color: #FF9800;">$3 Million</strong> with comprehensive regenerative development plans.' +
+          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #FF9800;">' +
+            '<div style="font-weight: 600; color: #FF9800; margin-bottom: 10px; font-size: 14px;">💰 Investment Overview</div>' +
+            '<div style="color: #555; line-height: 1.8; font-size: 14px;">' +
+              '<p style="margin: 0 0 10px 0;">The total phased development budget exceeds <strong style="color: #FF9800;">$3 Million</strong>.</p>' +
+              '<p style="margin: 0;">This investment supports comprehensive regenerative development plans across all property sections.</p>' +
             '</div>' +
           '</div>' +
           
-          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 14px; border-radius: 8px; border-left: 4px solid #10B981;">' +
-            '<div style="font-weight: 600; color: #10B981; margin-bottom: 8px; font-size: 14px;">🌱 Development Scope</div>' +
-            '<div style="color: #555; line-height: 1.7; font-size: 14px;">' +
-              'Plans include guest lodging capacity for <strong>50+ units</strong> and <strong>3 acres</strong> dedicated to regenerative agriculture ' +
-              '(500+ fruit trees, nursery, livestock).' +
+          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #10B981;">' +
+            '<div style="font-weight: 600; color: #10B981; margin-bottom: 10px; font-size: 14px;">🌱 Regenerative Agriculture & Lodging</div>' +
+            '<div style="color: #555; line-height: 1.8; font-size: 14px;">' +
+              '<p style="margin: 0 0 10px 0;"><strong>Guest Lodging:</strong> Plans include capacity for <strong>50+ diverse units</strong> featuring glamping, chalets, domes, and yurts.</p>' +
+              '<p style="margin: 0 0 10px 0;"><strong>Agriculture:</strong> <strong>3 acres</strong> dedicated to regenerative farming with over 500 fruit trees.</p>' +
+              '<p style="margin: 0;"><strong>Livestock & Nursery:</strong> Integrated permaculture system with livestock programs and plant nursery.</p>' +
             '</div>' +
           '</div>' +
+          
         '</div>' +
       '</div>';
       

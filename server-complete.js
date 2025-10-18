@@ -2720,70 +2720,78 @@ app.get('/', (req, res) => {
       boundaryCoordinates.push(boundaryCoordinates[0]);
     }
     
-    // Create rainbow effect with multiple colored polylines (this works with Leaflet!)
-    var rainbowColors = [
-      {color: '#9C27B0', name: 'Purple'},
-      {color: '#2196F3', name: 'Blue'},
-      {color: '#00BCD4', name: 'Cyan'},
-      {color: '#4CAF50', name: 'Green'},
-      {color: '#FFC107', name: 'Amber'}
+    // Use complementary colors that flow naturally into each other
+    var gradientColors = [
+      '#6366F1',  // Indigo
+      '#8B5CF6',  // Purple  
+      '#EC4899',  // Pink
+      '#F59E0B',  // Amber
+      '#10B981'   // Emerald
     ];
     
     var propertyLines = [];
     
-    // Create base wide golden glow line for beautiful shine effect
+    // Create base golden glow line
     var blurLine = L.polyline(boundaryCoordinates, {
       color: '#FFD700',
       weight: 20,
       opacity: 0.5,
       className: 'property-line-blur',
       interactive: false,
-      lineCap: 'round',
+      lineCap: 'butt',
       lineJoin: 'round',
       smoothFactor: 1.5
     }).addTo(map);
     
-    // Calculate how many coordinates per color segment
+    // Create multiple thin semi-transparent layers to simulate smooth gradient
+    // Each layer covers part of the boundary with fade effect
+    var numLayers = gradientColors.length * 2;
     var totalCoords = boundaryCoordinates.length;
-    var coordsPerColor = Math.floor(totalCoords / rainbowColors.length);
     
-    // Create overlapping colored segments for rainbow effect
-    rainbowColors.forEach(function(colorData, index) {
-      var startIdx = index * coordsPerColor;
-      var endIdx = (index === rainbowColors.length - 1) ? totalCoords : (index + 1) * coordsPerColor + 3;
-      
-      var segmentCoords = boundaryCoordinates.slice(startIdx, endIdx);
-      
-      var colorLine = L.polyline(segmentCoords, {
-        color: colorData.color,
-        weight: 14,
-        opacity: 1,
-        className: 'property-line-magical property-line-segment',
-        interactive: true,
-        bubblingMouseEvents: true,
-        lineCap: 'round',
-        lineJoin: 'round',
-        smoothFactor: 1.5
-      }).addTo(map);
-      
-      colorLine._locked = true;
-      colorLine._permanent = true;
-      
-      // Click handler for each segment
-      colorLine.on('click', function(e) {
-        openPropertyPanel();
-        propertyLines.forEach(function(line) {
-          if (line._path) {
-            line._path.classList.add('active');
+    gradientColors.forEach(function(color, colorIndex) {
+      // Create 2 layers per color for smoother blending
+      for (var layer = 0; layer < 2; layer++) {
+        var layerIndex = colorIndex * 2 + layer;
+        var layerOpacity = layer === 0 ? 0.6 : 0.4;
+        
+        // Calculate which part of the boundary this layer covers
+        var startPercent = (layerIndex / numLayers) * 100;
+        var endPercent = ((layerIndex + 2.5) / numLayers) * 100;
+        
+        var startIdx = Math.floor((startPercent / 100) * totalCoords);
+        var endIdx = Math.min(Math.ceil((endPercent / 100) * totalCoords), totalCoords);
+        
+        if (endIdx > startIdx) {
+          var layerCoords = boundaryCoordinates.slice(startIdx, endIdx);
+          
+          var gradientLayer = L.polyline(layerCoords, {
+            color: color,
+            weight: 14,
+            opacity: layerOpacity,
+            className: 'property-line-gradient-layer',
+            interactive: layer === 0 && colorIndex === 0,
+            bubblingMouseEvents: true,
+            lineCap: 'butt',
+            lineJoin: 'round',
+            smoothFactor: 1.5
+          }).addTo(map);
+          
+          if (layer === 0 && colorIndex === 0) {
+            gradientLayer._locked = true;
+            gradientLayer._permanent = true;
+            
+            gradientLayer.on('click', function(e) {
+              openPropertyPanel();
+              L.DomEvent.stopPropagation(e);
+            });
+            
+            propertyLines.push(gradientLayer);
           }
-        });
-        L.DomEvent.stopPropagation(e);
-      });
-      
-      propertyLines.push(colorLine);
+        }
+      }
     });
     
-    console.log('🌈 Rainbow boundary created with ' + rainbowColors.length + ' color segments');
+    console.log('🌈 Smooth gradient boundary created with ' + gradientColors.length + ' complementary colors');
     
     console.log('🌈 Continuous flowing rainbow boundary created');
     

@@ -2699,52 +2699,124 @@ app.get('/', (req, res) => {
     
     console.log('📊 Loaded', zones.length, 'project zones and', permanentLines.length, 'property lines');
     
-    // Rainbow colors for smooth gradient transition
-    const rainbowColors = [
+    // Create ONE continuous boundary path by ordering all coordinates in sequence
+    // This ensures smooth color flow with no visible endpoints
+    const boundaryCoordinates = [];
+    
+    // Add all coordinates in order to form complete perimeter
+    permanentLines.forEach(function(lineData) {
+      // Add all points except last (to avoid duplication with next segment's first point)
+      for (var i = 0; i < lineData.coordinates.length - 1; i++) {
+        boundaryCoordinates.push(lineData.coordinates[i]);
+      }
+    });
+    
+    // Add the very last coordinate to close the loop
+    if (permanentLines.length > 0) {
+      var lastLine = permanentLines[permanentLines.length - 1];
+      var lastCoord = lastLine.coordinates[lastLine.coordinates.length - 1];
+      boundaryCoordinates.push(lastCoord);
+      // Connect back to start to close the boundary
+      boundaryCoordinates.push(boundaryCoordinates[0]);
+    }
+    
+    // Create multiple overlapping lines with different colors and blur for smooth blending
+    var rainbowColors = [
       '#9C27B0', '#673AB7', '#3F51B5', '#2196F3',
       '#03A9F4', '#00BCD4', '#26C6DA', '#4CAF50',
       '#8BC34A', '#CDDC39', '#FDD835', '#FFC107',
-      '#FF8F00', '#FF6F00', '#E65100', '#9C27B0'
+      '#FF8F00', '#FF6F00', '#E65100'
     ];
     
-    // Create thicker colored lines that blend together to form rainbow gradient
-    const propertyLines = [];
+    var propertyLines = [];
     
-    permanentLines.forEach(function(lineData, index) {
-      // Each segment gets a color from the rainbow array
-      const colorIndex = Math.floor((index / permanentLines.length) * (rainbowColors.length - 1));
-      const color = rainbowColors[colorIndex];
-      
-      const line = L.polyline(lineData.coordinates, {
-        color: color,
-        weight: 16,
-        opacity: 0.95,
-        className: 'property-line-magical',
-        interactive: true,
-        bubblingMouseEvents: true,
-        lineCap: 'round',
-        lineJoin: 'round',
-        smoothFactor: 1.0
-      }).addTo(map);
-      
-      line._locked = true;
-      line._permanent = true;
-      
-      // Click handler for unified property panel
-      line.on('click', function(e) {
-        openPropertyPanel();
-        propertyLines.forEach(function(l) {
-          if (l._path) {
-            l._path.classList.add('active');
-          }
-        });
-        L.DomEvent.stopPropagation(e);
-      });
-      
-      propertyLines.push(line);
+    // Create base wide blurred line for color blending
+    var blurLine = L.polyline(boundaryCoordinates, {
+      color: '#9C27B0',
+      weight: 20,
+      opacity: 0.4,
+      className: 'property-line-blur',
+      interactive: false,
+      lineCap: 'round',
+      lineJoin: 'round',
+      smoothFactor: 1.5
+    }).addTo(map);
+    
+    // Create main visible line
+    var mainLine = L.polyline(boundaryCoordinates, {
+      color: '#9C27B0',
+      weight: 14,
+      opacity: 1,
+      className: 'property-line-magical property-line-main',
+      interactive: true,
+      bubblingMouseEvents: true,
+      lineCap: 'round',
+      lineJoin: 'round',
+      smoothFactor: 1.5
+    }).addTo(map);
+    
+    mainLine._locked = true;
+    mainLine._permanent = true;
+    propertyLines.push(mainLine);
+    
+    // Click handler
+    mainLine.on('click', function(e) {
+      openPropertyPanel();
+      if (mainLine._path) {
+        mainLine._path.classList.add('active');
+      }
+      L.DomEvent.stopPropagation(e);
     });
     
-    console.log('🌈 Thick rainbow gradient property boundary added');
+    // Apply animated gradient effect
+    setTimeout(function() {
+      var svg = document.querySelector('.leaflet-overlay-pane svg');
+      if (svg && mainLine._path && blurLine._path) {
+        var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        
+        // Create animated gradient that flows around the perimeter
+        var gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        gradient.setAttribute('id', 'flowing-rainbow');
+        gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
+        
+        // Set gradient to span entire property
+        gradient.setAttribute('x1', '0%');
+        gradient.setAttribute('y1', '0%');
+        gradient.setAttribute('x2', '100%');
+        gradient.setAttribute('y2', '100%');
+        
+        // Add color stops for smooth rainbow
+        var stops = [
+          {offset: '0%', color: '#9C27B0'},
+          {offset: '15%', color: '#3F51B5'},
+          {offset: '30%', color: '#00BCD4'},
+          {offset: '45%', color: '#4CAF50'},
+          {offset: '60%', color: '#CDDC39'},
+          {offset: '75%', color: '#FFC107'},
+          {offset: '90%', color: '#FF6F00'},
+          {offset: '100%', color: '#9C27B0'}
+        ];
+        
+        stops.forEach(function(stopData) {
+          var stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+          stop.setAttribute('offset', stopData.offset);
+          stop.setAttribute('stop-color', stopData.color);
+          gradient.appendChild(stop);
+        });
+        
+        defs.appendChild(gradient);
+        svg.insertBefore(defs, svg.firstChild);
+        
+        // Apply gradient to both lines
+        mainLine._path.setAttribute('stroke', 'url(#flowing-rainbow)');
+        blurLine._path.setAttribute('stroke', 'url(#flowing-rainbow)');
+        
+        // Add blur filter for smooth blending
+        blurLine._path.style.filter = 'blur(4px)';
+      }
+    }, 300);
+    
+    console.log('🌈 Continuous flowing rainbow boundary created');
     
     // Zone color mapping
     const zoneColorMap = {

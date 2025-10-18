@@ -1295,55 +1295,10 @@ app.get('/', (req, res) => {
     }
     
     .property-line-magical:hover {
-      filter: drop-shadow(0 0 20px gold) 
-              drop-shadow(0 0 30px currentColor) 
-              drop-shadow(0 0 40px rgba(255, 215, 0, 0.8))
-              brightness(1.3);
-      animation: sparkle-dance 0.6s ease-in-out, sparkle-particles 1s ease-in-out infinite;
+      filter: brightness(1.2);
       stroke-width: 12 !important;
     }
     
-    @keyframes sparkle-dance {
-      0%, 100% { 
-        filter: drop-shadow(0 0 20px gold) 
-                drop-shadow(0 0 30px currentColor) 
-                drop-shadow(0 0 40px rgba(255, 215, 0, 0.8))
-                brightness(1.3); 
-      }
-      25% { 
-        filter: drop-shadow(0 0 25px gold) 
-                drop-shadow(0 0 35px currentColor) 
-                drop-shadow(0 0 45px rgba(255, 215, 0, 0.9))
-                brightness(1.4);
-      }
-      50% { 
-        filter: drop-shadow(0 0 30px gold) 
-                drop-shadow(0 0 40px currentColor) 
-                drop-shadow(0 0 50px rgba(255, 215, 0, 1))
-                brightness(1.5);
-      }
-      75% { 
-        filter: drop-shadow(0 0 25px gold) 
-                drop-shadow(0 0 35px currentColor) 
-                drop-shadow(0 0 45px rgba(255, 215, 0, 0.9))
-                brightness(1.4);
-      }
-    }
-    
-    @keyframes sparkle-particles {
-      0% { 
-        opacity: 1;
-        transform: scale(1);
-      }
-      50% { 
-        opacity: 0.8;
-        transform: scale(1.05);
-      }
-      100% { 
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
     
     .property-line-magical.active {
       filter: drop-shadow(0 0 25px gold) 
@@ -2744,10 +2699,38 @@ app.get('/', (req, res) => {
     
     console.log('📊 Loaded', zones.length, 'project zones and', permanentLines.length, 'property lines');
     
-    // Add magical interactive property boundary as ONE continuous rainbow line
+    // Add base property boundary lines (original - simple and clean)
     const propertyLines = [];
     
-    // Create one unified gradient that flows around the entire property
+    permanentLines.forEach(function(lineData, index) {
+      const line = L.polyline(lineData.coordinates, {
+        color: '#FF0000',
+        weight: 6,
+        opacity: 0.6,
+        className: 'property-line-base',
+        interactive: false,
+        bubblingMouseEvents: false
+      }).addTo(map);
+      
+      line._locked = true;
+      line._permanent = true;
+      propertyLines.push(line);
+    });
+    
+    // Create ONE continuous overlay path that connects all boundary points
+    const allCoordinates = [];
+    permanentLines.forEach(function(lineData) {
+      lineData.coordinates.forEach(function(coord) {
+        allCoordinates.push(coord);
+      });
+    });
+    
+    // Close the loop by connecting back to start
+    if (allCoordinates.length > 0) {
+      allCoordinates.push(allCoordinates[0]);
+    }
+    
+    // Create rainbow gradient colors
     const rainbowColors = [
       '#9C27B0', '#673AB7', '#3F51B5', '#2196F3',
       '#03A9F4', '#00BCD4', '#26C6DA', '#4CAF50',
@@ -2755,55 +2738,37 @@ app.get('/', (req, res) => {
       '#FF8F00', '#FF6F00', '#E65100', '#9C27B0'
     ];
     
-    permanentLines.forEach(function(lineData, index) {
-      const line = L.polyline(lineData.coordinates, {
-        color: rainbowColors[index % rainbowColors.length],
-        weight: 10,
-        opacity: 0.95,
-        className: 'property-line-magical',
-        interactive: true,
-        bubblingMouseEvents: true,
-        lineCap: 'round',
-        lineJoin: 'round',
-        smoothFactor: 1.5
-      }).addTo(map);
-      
-      line._locked = true;
-      line._permanent = true;
-      
-      // Click handler to open unified property panel
-      line.on('click', function(e) {
-        openPropertyPanel();
-        
-        // Add active class to all lines
-        propertyLines.forEach(function(l) {
-          if (l._path) {
-            l._path.classList.add('active');
-          }
-        });
-        
-        L.DomEvent.stopPropagation(e);
-      });
-      
-      // Apply gradient to create flowing effect
-      setTimeout(function() {
-        if (line._path) {
-          line._path.style.stroke = 'url(#rainbow-gradient)';
-          line._path.style.strokeWidth = '10';
-          line._path.style.strokeLinecap = 'round';
-          line._path.style.strokeLinejoin = 'round';
-        }
-      }, 100);
-      
-      propertyLines.push(line);
+    // Create ONE continuous gradient overlay line
+    const overlayLine = L.polyline(allCoordinates, {
+      color: '#9C27B0',
+      weight: 12,
+      opacity: 0.9,
+      className: 'property-line-magical',
+      interactive: true,
+      bubblingMouseEvents: true,
+      lineCap: 'round',
+      lineJoin: 'round',
+      smoothFactor: 1.0
+    }).addTo(map);
+    
+    overlayLine._locked = true;
+    overlayLine._permanent = true;
+    
+    // Click handler for unified property panel
+    overlayLine.on('click', function(e) {
+      openPropertyPanel();
+      if (overlayLine._path) {
+        overlayLine._path.classList.add('active');
+      }
+      L.DomEvent.stopPropagation(e);
     });
     
-    // Create ONE unified rainbow gradient for entire property perimeter
+    // Apply gradient to the continuous overlay line
     setTimeout(function() {
       const svg = document.querySelector('.leaflet-overlay-pane svg');
-      if (svg) {
+      if (svg && overlayLine._path) {
+        // Create gradient definition
         const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        
         const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
         gradient.setAttribute('id', 'rainbow-gradient');
         gradient.setAttribute('x1', '0%');
@@ -2820,10 +2785,16 @@ app.get('/', (req, res) => {
         
         defs.appendChild(gradient);
         svg.insertBefore(defs, svg.firstChild);
+        
+        // Apply gradient to overlay line
+        overlayLine._path.style.stroke = 'url(#rainbow-gradient)';
+        overlayLine._path.style.strokeWidth = '12';
+        overlayLine._path.style.strokeLinecap = 'round';
+        overlayLine._path.style.strokeLinejoin = 'round';
       }
     }, 200);
     
-    console.log('🌈 Unified magical property boundary line added to map');
+    console.log('🌈 Continuous gradient overlay line added over property boundary');
     
     // Zone color mapping
     const zoneColorMap = {

@@ -2743,98 +2743,96 @@ app.get('/', (req, res) => {
       smoothFactor: 1.5
     }).addTo(map);
     
-    // Create many thin semi-transparent layers for ultra-smooth transitions
+    // Create ultra-smooth gradient with massive overlap to hide all endpoints
     var totalCoords = boundaryCoordinates.length;
     var coordsPerColor = Math.floor(totalCoords / gradientColors.length);
     
-    // Create 4 layers per color with different opacities for smooth blending
+    // Create many thin layers with staggered starts/ends for natural fade effect
     gradientColors.forEach(function(color, colorIndex) {
-      var colorStart = colorIndex * coordsPerColor;
-      var colorEnd = (colorIndex === gradientColors.length - 1) ? totalCoords : (colorIndex + 1) * coordsPerColor;
+      var colorCenter = colorIndex * coordsPerColor + Math.floor(coordsPerColor / 2);
       
-      // Create 4 overlapping layers per color with decreasing opacity
-      for (var layer = 0; layer < 4; layer++) {
-        var layerOpacity = [0.7, 0.5, 0.3, 0.2][layer];
-        var extendAmount = Math.floor(coordsPerColor * (0.3 - layer * 0.05));
+      // Create 8 layers per color with different lengths and opacities
+      for (var layer = 0; layer < 8; layer++) {
+        // Each layer is progressively shorter and more transparent
+        var layerOpacity = [0.5, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1][layer];
+        var layerExtend = coordsPerColor * (1.2 - layer * 0.15);
         
-        var startIdx = Math.max(0, colorStart - extendAmount);
-        var endIdx = Math.min(totalCoords, colorEnd + extendAmount);
+        var startIdx = Math.max(0, Math.floor(colorCenter - layerExtend / 2));
+        var endIdx = Math.min(totalCoords, Math.floor(colorCenter + layerExtend / 2));
+        
+        // Handle wrapping for last color
+        if (colorIndex === gradientColors.length - 1 && endIdx >= totalCoords) {
+          endIdx = totalCoords;
+        }
         
         var layerCoords = boundaryCoordinates.slice(startIdx, endIdx);
         
-        var gradientLayer = L.polyline(layerCoords, {
-          color: color,
-          weight: 14,
-          opacity: layerOpacity,
-          className: 'property-line-gradient-layer',
-          interactive: layer === 0 && colorIndex === 0,
-          bubblingMouseEvents: true,
-          lineCap: 'butt',
-          lineJoin: 'round',
-          smoothFactor: 1.5
-        }).addTo(map);
-        
-        if (layer === 0 && colorIndex === 0) {
-          gradientLayer._locked = true;
-          gradientLayer._permanent = true;
+        if (layerCoords.length > 1) {
+          var gradientLayer = L.polyline(layerCoords, {
+            color: color,
+            weight: 14,
+            opacity: layerOpacity,
+            className: 'property-line-gradient-layer',
+            interactive: layer === 0 && colorIndex === 0,
+            bubblingMouseEvents: true,
+            lineCap: 'butt',
+            lineJoin: 'round',
+            smoothFactor: 2.0
+          }).addTo(map);
           
-          gradientLayer.on('click', function(e) {
-            openPropertyPanel();
-            L.DomEvent.stopPropagation(e);
-          });
-          
-          propertyLines.push(gradientLayer);
+          if (layer === 0 && colorIndex === 0) {
+            gradientLayer._locked = true;
+            gradientLayer._permanent = true;
+            
+            gradientLayer.on('click', function(e) {
+              openPropertyPanel();
+              L.DomEvent.stopPropagation(e);
+            });
+            
+            propertyLines.push(gradientLayer);
+          }
         }
-      }
-      
-      // Add transition blend layers between colors
-      if (colorIndex < gradientColors.length - 1) {
-        var nextColor = gradientColors[colorIndex + 1];
-        var transitionStart = Math.floor(colorEnd - coordsPerColor * 0.15);
-        var transitionEnd = Math.floor(colorEnd + coordsPerColor * 0.15);
-        
-        var transitionCoords = boundaryCoordinates.slice(transitionStart, transitionEnd);
-        
-        // Create subtle blend layer at transition point
-        var blendLayer = L.polyline(transitionCoords, {
-          color: color,
-          weight: 14,
-          opacity: 0.25,
-          className: 'property-line-transition',
-          interactive: false,
-          lineCap: 'butt',
-          lineJoin: 'round',
-          smoothFactor: 1.5
-        }).addTo(map);
       }
     });
     
-    // Add final smooth overlay layer to hide any remaining sharp edges
+    // Add extremely fine transition layers at every color boundary
     setTimeout(function() {
-      // Create ultra-thin semi-transparent overlay segments
-      gradientColors.forEach(function(color, colorIndex) {
-        var colorStart = colorIndex * coordsPerColor;
-        var colorEnd = (colorIndex === gradientColors.length - 1) ? totalCoords : (colorIndex + 1) * coordsPerColor;
-        var extendAmount = Math.floor(coordsPerColor * 0.4);
+      for (var i = 0; i < gradientColors.length; i++) {
+        var currentColor = gradientColors[i];
+        var nextColor = gradientColors[(i + 1) % gradientColors.length];
         
-        var startIdx = Math.max(0, colorStart - extendAmount);
-        var endIdx = Math.min(totalCoords, colorEnd + extendAmount);
+        var transitionCenter = (i + 1) * coordsPerColor;
+        if (i === gradientColors.length - 1) transitionCenter = totalCoords - 5;
         
-        var overlayCoords = boundaryCoordinates.slice(startIdx, endIdx);
-        
-        var overlayLayer = L.polyline(overlayCoords, {
-          color: color,
-          weight: 13,
-          opacity: 0.15,
-          className: 'property-line-smooth-overlay',
-          interactive: false,
-          lineCap: 'butt',
-          lineJoin: 'round',
-          smoothFactor: 2.0
-        }).addTo(map);
-      });
+        // Create 10 ultra-thin transition layers
+        for (var t = 0; t < 10; t++) {
+          var tOpacity = 0.08 - t * 0.005;
+          var tExtend = coordsPerColor * (0.5 - t * 0.03);
+          
+          var tStart = Math.max(0, Math.floor(transitionCenter - tExtend / 2));
+          var tEnd = Math.min(totalCoords, Math.floor(transitionCenter + tExtend / 2));
+          
+          var tCoords = boundaryCoordinates.slice(tStart, tEnd);
+          
+          if (tCoords.length > 1) {
+            // Alternate between current and next color for blending
+            var tColor = t % 2 === 0 ? currentColor : nextColor;
+            
+            L.polyline(tCoords, {
+              color: tColor,
+              weight: 14,
+              opacity: tOpacity,
+              className: 'property-line-ultrafine-transition',
+              interactive: false,
+              lineCap: 'butt',
+              lineJoin: 'round',
+              smoothFactor: 2.5
+            }).addTo(map);
+          }
+        }
+      }
       
-      console.log('✨ Smooth gradient overlay applied');
+      console.log('✨ Ultra-fine transition layers applied');
     }, 100);
     
     console.log('🌈 Smooth gradient boundary created with ' + gradientColors.length + ' complementary colors');

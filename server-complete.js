@@ -290,6 +290,157 @@ const PROJECT_ZONES = [
     ]
   },
   {
+    id: "events-gatherings-hub",
+    name: "Events & Gatherings Hub",
+    emoji: "🎪",
+    position: [34.433509, -119.154720],
+    polygon: [[34.4335, -119.1548], [34.4340, -119.1548], [34.4340, -119.1543], [34.4335, -119.1543]],
+    type: "events",
+    budget: "$850,000",
+    timeline: "Phase 1-3 (0-20 months)",
+    monthlyRevenue: "$35,000",
+    roi: "495% annual ROI",
+    description: "Strategic events and gatherings infrastructure designed as a major revenue hub for retreats, ceremonies, festivals, workshops, and collaborative gatherings—central to community ethos and diversified income streams.",
+    
+    venues: [
+      {
+        name: "McQueen's Garage - Hybrid Event Venue",
+        size: "3,200 sq. ft. steel-frame warehouse",
+        location: "Right Hillside Section, end of property",
+        uses: "Retreats, sound journeys, ceremonies, music performances, private dinners, seasonal festivals",
+        features: "Hybrid indoor-outdoor flow, creekside communal kitchen access, ceremonial area proximity",
+        revenue: "$8,000/month (from Month 14)"
+      },
+      {
+        name: "Main Residence Compound",
+        size: "5,000–7,200 sq. ft. + green lawn/open yard",
+        location: "Central property hub",
+        uses: "Executive hosting, retreat operations, immersive experiences, VIP residencies",
+        features: "Vintage pool structure, spacious grounds for communal gatherings",
+        revenue: "Included in retreat packages"
+      },
+      {
+        name: "Sacred Ceremonial Zones",
+        location: "Throughout property under mature oak trees",
+        uses: "Purification, healing, bonding, sound healing, breathwork, movement, sacred circles",
+        features: "Full-scale ceremonial kiva, sweat lodges, sacred fire circles, ritual zones",
+        revenue: "$4,000/month (from Month 20)"
+      },
+      {
+        name: "Community Zones",
+        location: "Creekside and shaded areas",
+        uses: "Communal meals, culinary workshops, spontaneous interaction, play",
+        features: "Shaded communal kitchen, creekside dining with long tables and benches",
+        revenue: "Supports overall event revenue"
+      }
+    ],
+    
+    eventTypes: [
+      {
+        format: "Weekend Retreats",
+        capacity: "15-40 people",
+        frequency: "Monthly",
+        revenue: "Ticketed with lodging packages",
+        phase: "Phase 2+"
+      },
+      {
+        format: "Ceremonies (Cacao, Full Moon)",
+        capacity: "10-30 people",
+        frequency: "Bi-weekly",
+        revenue: "Pay-per-ceremony",
+        phase: "Phase 1+"
+      },
+      {
+        format: "Festivals",
+        capacity: "50-150 attendees",
+        frequency: "Quarterly",
+        revenue: "Entry fee + vendor fees",
+        phase: "Phase 2+"
+      },
+      {
+        format: "Workshops & Classes",
+        capacity: "15-30 attendees",
+        frequency: "Weekly/Regular",
+        revenue: "Ticketed sessions (yoga, breathwork, permaculture, natural building, sacred art, dance)",
+        phase: "Phase 1 (from Month 6)"
+      },
+      {
+        format: "Farm-to-Table Dinners",
+        capacity: "Varies",
+        frequency: "Regular",
+        revenue: "Ticketed dinners with farm produce",
+        phase: "Phase 2 (from Month 16)"
+      },
+      {
+        format: "Private Event Rentals",
+        capacity: "Varies",
+        frequency: "Ad hoc",
+        revenue: "Site fees (weddings, private functions)",
+        phase: "Phase 2+"
+      }
+    ],
+    
+    features: [
+      "Multiple dedicated event venues across property",
+      "McQueen's Garage: 3,200 sq. ft. hybrid indoor-outdoor space",
+      "Main Residence: 5,000-7,200 sq. ft. executive hosting compound",
+      "Sacred ceremonial zones with kivas and fire circles",
+      "Community kitchen and creekside dining areas",
+      "Capacity for 10-150 attendees depending on event type",
+      "Monthly retreats, bi-weekly ceremonies, quarterly festivals",
+      "Weekly workshops in yoga, breathwork, permaculture, art",
+      "Farm-to-table dinner series with on-site produce",
+      "Private event rental opportunities (weddings, gatherings)",
+      "Educational partnerships and workshop monetization",
+      "Virtual events via 3D digital twin platform",
+      "Experiential onboarding for community members",
+      "Event collaboration with wellness operators"
+    ],
+    
+    revenueStreams: [
+      "Pilot Events/Workshops: $2,500/month (from Month 6, Phase 1)",
+      "Creative Workshop Center Events: $1,500/month (from Month 6, Phase 1)",
+      "McQueen's Garage Events & Studio: $8,000/month (from Month 14, Phase 2)",
+      "Farm-to-Table Dinners & Retreats: $7,000/month (from Month 16, Phase 2)",
+      "Full Retreat Hosting Packages: $35,000/month (from Month 18, Phase 3)",
+      "Ceremonial Programs: $4,000/month (from Month 20, Phase 3)",
+      "Educational Partnerships: $70,000-$335,000/year annual potential"
+    ],
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0-6)",
+        deliverables: "Pilot events, workshops, ceremony spaces",
+        monthlyRevenue: "$2,500-$4,000",
+        status: "Foundation building"
+      },
+      {
+        phase: "Phase 2 (Months 12-18)",
+        deliverables: "McQueen's Garage completion, farm dinners, retreat infrastructure",
+        monthlyRevenue: "$15,000-$20,000",
+        status: "Retreat & community infrastructure"
+      },
+      {
+        phase: "Phase 3 (Months 18-24)",
+        deliverables: "Full retreat packages, ceremonial programs, 50+ lodging units",
+        monthlyRevenue: "$35,000+",
+        status: "Full eco-village operation"
+      }
+    ],
+    
+    communityEngagement: [
+      "Experiential onboarding through workshops and retreats",
+      "Entry point for land experience and compatibility assessment",
+      "Event collaboration partnerships with wellness operators",
+      "Job Board task roles for event organization (micro-jobs)",
+      "Event participation path (exchange hours for rewards/tokens)",
+      "Public website /events page for RSVP and listings",
+      "Member dashboard with Upcoming Events widget",
+      "Virtual events via interactive 3D digital twin",
+      "Global access bridged with on-site experiences"
+    ]
+  },
+  {
     id: "livestock-program", 
     name: "Livestock & Dairy Program",
     emoji: "🐄",
@@ -2840,7 +2991,8 @@ app.get('/', (req, res) => {
       ceremonial: '#E91E63',
       wellness: '#00BCD4',
       landscape: '#8BC34A',
-      beekeeping: '#FFD700'  // Golden yellow for beekeeping
+      beekeeping: '#FFD700',  // Golden yellow for beekeeping
+      events: '#FF6B6B'  // Coral red for events and gatherings
     };
     
     // Store original positions for reset functionality
@@ -4598,6 +4750,7 @@ const PROJECT_FOLDER_MAP = {
   'wellness-facilities': 'Wellness & Spa Facilities',
   'mushroom-cultivation': 'Mushroom Cultivation',
   'beekeeping-program': 'Beekeeping & Honey Production',
+  'events-gatherings-hub': 'Events & Gatherings Hub',
   'livestock-program': 'Livestock & Dairy Program',
   'creative-workshop-center': 'Creative Workshop & Art Creation Center',
   'glamping-creek-village': 'Creek-Side Glamping & Lodging Village',
@@ -4729,9 +4882,13 @@ app.use((err, req, res, next) => {
 // Start server with comprehensive error handling (only if not in Vercel serverless environment)
 if (process.env.VERCEL !== '1') {
   const server = app.listen(PORT, '0.0.0.0', () => {
+    const totalInvestment = PROJECT_ZONES.reduce((sum, zone) => {
+      const budget = parseInt(zone.budget.replace(/[$,]/g, ''));
+      return sum + budget;
+    }, 0);
     console.log('🚀 EcoVillageBuilder Interactive Map Server');
     console.log(`🌐 Server running on port ${PORT}`);
-    console.log(`📊 Serving ${PROJECT_ZONES.length} project zones ($7.75M total investment)`);
+    console.log(`📊 Serving ${PROJECT_ZONES.length} project zones ($${(totalInvestment/1000000).toFixed(2)}M total investment)`);
     console.log(`🔲 ${PERMANENT_PROPERTY_LINES.length} permanent property boundary lines`);
     console.log('✨ Ready for investor presentations and interactive exploration');
   });

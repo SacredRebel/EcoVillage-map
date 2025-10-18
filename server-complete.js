@@ -1994,25 +1994,15 @@ app.get('/', (req, res) => {
     .property-panel-title {
       display: flex;
       align-items: center;
-      gap: 12px;
       padding-right: 40px;
-    }
-    
-    .property-icon {
-      font-size: 32px;
-      animation: rainbow-spin 3s linear infinite;
-    }
-    
-    @keyframes rainbow-spin {
-      0% { filter: hue-rotate(0deg); }
-      100% { filter: hue-rotate(360deg); }
     }
     
     .property-panel-title h3 {
       margin: 0;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 600;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
+      line-height: 1.4;
     }
     
     .property-panel-content {
@@ -2057,8 +2047,9 @@ app.get('/', (req, res) => {
     
     .property-detail-row {
       display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
+      flex-direction: column;
+      gap: 6px;
+      padding: 12px 0;
       border-bottom: 1px solid #f0f0f0;
     }
     
@@ -2067,33 +2058,52 @@ app.get('/', (req, res) => {
     }
     
     .property-detail-label {
-      font-weight: 500;
-      color: #555;
+      font-weight: 600;
+      color: #667eea;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     .property-detail-value {
       color: #333;
-      font-weight: 600;
+      font-weight: 500;
+      line-height: 1.6;
+      font-size: 15px;
     }
     
     .property-features-list {
       list-style: none;
       padding: 0;
-      margin: 10px 0 0 0;
+      margin: 12px 0 0 0;
     }
     
     .property-features-list li {
-      padding: 8px 0 8px 25px;
+      padding: 12px 0 12px 30px;
       position: relative;
-      color: #555;
-      line-height: 1.5;
+      color: #444;
+      line-height: 1.7;
+      font-size: 14px;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    
+    .property-features-list li:last-child {
+      border-bottom: none;
     }
     
     .property-features-list li:before {
       content: "✨";
       position: absolute;
       left: 0;
-      font-size: 14px;
+      font-size: 16px;
+      top: 12px;
+    }
+    
+    .property-features-list li strong {
+      color: #667eea;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 4px;
     }
     
     .boundary-gradient-preview {
@@ -2109,6 +2119,33 @@ app.get('/', (req, res) => {
       .property-panel {
         width: 100vw;
         right: -100vw;
+      }
+      
+      .property-panel-title h3 {
+        font-size: 18px;
+      }
+      
+      .property-panel-content {
+        padding: 20px 16px;
+      }
+      
+      .property-info-section {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      
+      .property-info-section h4 {
+        font-size: 15px;
+        margin-bottom: 12px;
+      }
+      
+      .property-detail-value {
+        font-size: 14px;
+      }
+      
+      .property-features-list li {
+        font-size: 13px;
+        padding: 10px 0 10px 28px;
       }
     }
     
@@ -2560,7 +2597,6 @@ app.get('/', (req, res) => {
   <div id="property-panel" class="property-panel">
     <div class="property-panel-header">
       <div class="property-panel-title">
-        <span class="property-icon">🌈</span>
         <h3 id="property-title">Property Boundary</h3>
       </div>
       <button class="close-panel" id="close-property-panel">&times;</button>

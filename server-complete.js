@@ -2726,7 +2726,7 @@ app.get('/', (req, res) => {
     var blurLine = L.polyline(boundaryCoordinates, {
       color: '#FFD700',
       weight: 10,
-      opacity: 0.2,
+      opacity: 0.4,
       className: 'property-line-blur',
       interactive: false,
       lineCap: 'round',
@@ -2736,7 +2736,7 @@ app.get('/', (req, res) => {
     
     // Create ONE single continuous line (no segments, no endpoints!)
     var mainLine = L.polyline(boundaryCoordinates, {
-      color: '#2D2838',
+      color: '#607D8B',
       weight: 8,
       opacity: 1,
       className: 'property-line-magical property-line-gradient',

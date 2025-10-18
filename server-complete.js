@@ -2772,7 +2772,12 @@ app.get('/', (req, res) => {
     setTimeout(function() {
       var svg = document.querySelector('.leaflet-overlay-pane svg');
       if (svg && mainLine._path && blurLine._path) {
-        var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        // Check if defs already exists
+        var defs = svg.querySelector('defs');
+        if (!defs) {
+          defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+          svg.insertBefore(defs, svg.firstChild);
+        }
         
         // Create gradient that flows around the perimeter
         var gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
@@ -2803,19 +2808,21 @@ app.get('/', (req, res) => {
         });
         
         defs.appendChild(gradient);
-        svg.insertBefore(defs, svg.firstChild);
         
-        // Apply rainbow gradient to main inner line
-        mainLine._path.style.stroke = 'url(#flowing-rainbow)';
-        mainLine._path.style.strokeWidth = '14';
-        mainLine._path.removeAttribute('stroke');
+        // Apply rainbow gradient to main inner line using setAttribute
+        mainLine._path.setAttribute('stroke', 'url(#flowing-rainbow)');
+        mainLine._path.setAttribute('stroke-width', '14');
         
         // Keep blur line as golden with transparency for shine-through
-        blurLine._path.style.stroke = 'rgba(255, 215, 0, 0.6)'; // Gold with 60% opacity
+        blurLine._path.setAttribute('stroke', 'rgba(255, 215, 0, 0.6)');
+        blurLine._path.setAttribute('stroke-width', '20');
         blurLine._path.style.filter = 'blur(6px)';
-        blurLine._path.style.strokeWidth = '20';
+        
+        console.log('✅ Rainbow gradient applied to boundary line');
+      } else {
+        console.log('❌ Failed to apply gradient - elements not found');
       }
-    }, 300);
+    }, 500);
     
     console.log('🌈 Continuous flowing rainbow boundary created');
     

@@ -1297,8 +1297,9 @@ app.get('/', (req, res) => {
     .property-line-magical:hover {
       filter: drop-shadow(0 0 20px gold) 
               drop-shadow(0 0 30px currentColor) 
+              drop-shadow(0 0 40px rgba(255, 215, 0, 0.8))
               brightness(1.3);
-      animation: sparkle-dance 0.6s ease-in-out;
+      animation: sparkle-dance 0.6s ease-in-out, sparkle-particles 1s ease-in-out infinite;
       stroke-width: 12 !important;
     }
     
@@ -1306,22 +1307,41 @@ app.get('/', (req, res) => {
       0%, 100% { 
         filter: drop-shadow(0 0 20px gold) 
                 drop-shadow(0 0 30px currentColor) 
+                drop-shadow(0 0 40px rgba(255, 215, 0, 0.8))
                 brightness(1.3); 
       }
       25% { 
         filter: drop-shadow(0 0 25px gold) 
                 drop-shadow(0 0 35px currentColor) 
+                drop-shadow(0 0 45px rgba(255, 215, 0, 0.9))
                 brightness(1.4);
       }
       50% { 
         filter: drop-shadow(0 0 30px gold) 
                 drop-shadow(0 0 40px currentColor) 
+                drop-shadow(0 0 50px rgba(255, 215, 0, 1))
                 brightness(1.5);
       }
       75% { 
         filter: drop-shadow(0 0 25px gold) 
                 drop-shadow(0 0 35px currentColor) 
+                drop-shadow(0 0 45px rgba(255, 215, 0, 0.9))
                 brightness(1.4);
+      }
+    }
+    
+    @keyframes sparkle-particles {
+      0% { 
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% { 
+        opacity: 0.8;
+        transform: scale(1.05);
+      }
+      100% { 
+        opacity: 1;
+        transform: scale(1);
       }
     }
     
@@ -2724,99 +2744,86 @@ app.get('/', (req, res) => {
     
     console.log('📊 Loaded', zones.length, 'project zones and', permanentLines.length, 'property lines');
     
-    // Add magical interactive property boundary lines with rainbow gradients
+    // Add magical interactive property boundary as ONE continuous rainbow line
     const propertyLines = [];
     
+    // Create one unified gradient that flows around the entire property
+    const rainbowColors = [
+      '#9C27B0', '#673AB7', '#3F51B5', '#2196F3',
+      '#03A9F4', '#00BCD4', '#26C6DA', '#4CAF50',
+      '#8BC34A', '#CDDC39', '#FDD835', '#FFC107',
+      '#FF8F00', '#FF6F00', '#E65100', '#9C27B0'
+    ];
+    
     permanentLines.forEach(function(lineData, index) {
-      // Create gradient color - use first color as base
-      const baseColor = lineData.gradientColors[0];
-      
       const line = L.polyline(lineData.coordinates, {
-        color: baseColor,
-        weight: lineData.thickness,
-        opacity: 0.9,
+        color: rainbowColors[index % rainbowColors.length],
+        weight: 10,
+        opacity: 0.95,
         className: 'property-line-magical',
         interactive: true,
-        bubblingMouseEvents: true
+        bubblingMouseEvents: true,
+        lineCap: 'round',
+        lineJoin: 'round',
+        smoothFactor: 1.5
       }).addTo(map);
       
-      // Store line data for click handler
-      line.boundaryData = lineData;
       line._locked = true;
       line._permanent = true;
       
-      // Enhanced tooltip with gradient info
-      line.bindTooltip('<div style="text-align: center;"><strong>' + lineData.name + '</strong><br><small>' + lineData.length + '</small></div>', {
-        permanent: false,
-        direction: 'center',
-        className: 'property-tooltip',
-        sticky: true,
-        opacity: 0.95
-      });
-      
-      // Click handler to open property panel
+      // Click handler to open unified property panel
       line.on('click', function(e) {
-        openPropertyPanel(lineData);
+        openPropertyPanel();
         
-        // Remove active class from all lines
+        // Add active class to all lines
         propertyLines.forEach(function(l) {
           if (l._path) {
-            l._path.classList.remove('active');
+            l._path.classList.add('active');
           }
         });
         
-        // Add active class to clicked line
-        if (line._path) {
-          line._path.classList.add('active');
-        }
-        
-        // Prevent click from propagating to map
         L.DomEvent.stopPropagation(e);
       });
       
-      // Apply gradient effect after adding to DOM
+      // Apply gradient to create flowing effect
       setTimeout(function() {
         if (line._path) {
-          // Create CSS gradient from gradient colors
-          const gradientStr = 'linear-gradient(90deg, ' + lineData.gradientColors.join(', ') + ')';
-          line._path.style.stroke = 'url(#gradient-' + lineData.id + ')';
-          line._path.setAttribute('data-gradient-colors', lineData.gradientColors.join(','));
-          line._path.style.strokeWidth = lineData.thickness;
+          line._path.style.stroke = 'url(#rainbow-gradient)';
+          line._path.style.strokeWidth = '10';
+          line._path.style.strokeLinecap = 'round';
+          line._path.style.strokeLinejoin = 'round';
         }
       }, 100);
       
       propertyLines.push(line);
     });
     
-    // Create SVG gradients for each boundary line
+    // Create ONE unified rainbow gradient for entire property perimeter
     setTimeout(function() {
       const svg = document.querySelector('.leaflet-overlay-pane svg');
       if (svg) {
         const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
         
-        permanentLines.forEach(function(lineData) {
-          const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-          gradient.setAttribute('id', 'gradient-' + lineData.id);
-          gradient.setAttribute('x1', '0%');
-          gradient.setAttribute('y1', '0%');
-          gradient.setAttribute('x2', '100%');
-          gradient.setAttribute('y2', '0%');
-          
-          lineData.gradientColors.forEach(function(color, i) {
-            const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-            stop.setAttribute('offset', (i * 100 / (lineData.gradientColors.length - 1)) + '%');
-            stop.setAttribute('stop-color', color);
-            gradient.appendChild(stop);
-          });
-          
-          defs.appendChild(gradient);
+        const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        gradient.setAttribute('id', 'rainbow-gradient');
+        gradient.setAttribute('x1', '0%');
+        gradient.setAttribute('y1', '0%');
+        gradient.setAttribute('x2', '100%');
+        gradient.setAttribute('y2', '100%');
+        
+        rainbowColors.forEach(function(color, i) {
+          const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+          stop.setAttribute('offset', (i * 100 / (rainbowColors.length - 1)) + '%');
+          stop.setAttribute('stop-color', color);
+          gradient.appendChild(stop);
         });
         
+        defs.appendChild(gradient);
         svg.insertBefore(defs, svg.firstChild);
       }
     }, 200);
     
-    console.log('🌈 Magical property boundary lines added to map');
+    console.log('🌈 Unified magical property boundary line added to map');
     
     // Zone color mapping
     const zoneColorMap = {
@@ -2977,83 +2984,56 @@ app.get('/', (req, res) => {
       console.log('❌ Closed side panel');
     });
     
-    // Property Panel Functions
-    function openPropertyPanel(boundaryData) {
+    // Property Panel Functions - Unified for entire property
+    function openPropertyPanel() {
       const panel = document.getElementById('property-panel');
       const titleEl = document.getElementById('property-title');
       const contentEl = document.getElementById('property-panel-content');
       
       // Update title
-      titleEl.textContent = boundaryData.name;
+      titleEl.textContent = 'Sulphur Mountain Property';
       
-      // Create gradient preview
-      const gradientStyle = 'linear-gradient(90deg, ' + boundaryData.gradientColors.join(', ') + ')';
-      
-      // Build content HTML
+      // Build unified property content HTML with blanks
       const content = '<div class="property-info-section">' +
-        '<div class="boundary-gradient-preview" style="background: ' + gradientStyle + ';"></div>' +
-        '<h4>📏 Boundary Details</h4>' +
-        '<div class="property-detail-row">' +
-          '<span class="property-detail-label">Section:</span>' +
-          '<span class="property-detail-value">' + boundaryData.section + '</span>' +
-        '</div>' +
-        '<div class="property-detail-row">' +
-          '<span class="property-detail-label">Length:</span>' +
-          '<span class="property-detail-value">' + boundaryData.length + '</span>' +
-        '</div>' +
-        '<div class="property-detail-row">' +
-          '<span class="property-detail-label">Status:</span>' +
-          '<span class="property-detail-value">✅ Permanent</span>' +
-        '</div>' +
-      '</div>' +
-      
-      '<div class="property-info-section">' +
-        '<h4>🌟 Boundary Features</h4>' +
-        '<ul class="property-features-list">' +
-          boundaryData.features.map(function(feature) {
-            return '<li>' + feature + '</li>';
-          }).join('') +
-        '</ul>' +
-      '</div>' +
-      
-      '<div class="property-info-section">' +
-        '<h4>🏔️ Sulphur Mountain Property</h4>' +
+        '<h4>🏔️ Property Details</h4>' +
         '<div class="property-detail-row">' +
           '<span class="property-detail-label">Total Acreage:</span>' +
-          '<span class="property-detail-value">10.77 acres</span>' +
+          '<span class="property-detail-value">_____</span>' +
         '</div>' +
         '<div class="property-detail-row">' +
           '<span class="property-detail-label">APN:</span>' +
-          '<span class="property-detail-value">056-0-010-315</span>' +
+          '<span class="property-detail-value">_____</span>' +
         '</div>' +
         '<div class="property-detail-row">' +
           '<span class="property-detail-label">Zoning:</span>' +
-          '<span class="property-detail-value">RE-40 (Rural Estate)</span>' +
+          '<span class="property-detail-value">_____</span>' +
         '</div>' +
         '<div class="property-detail-row">' +
           '<span class="property-detail-label">Location:</span>' +
-          '<span class="property-detail-value">Ojai, CA 93023</span>' +
+          '<span class="property-detail-value">_____</span>' +
         '</div>' +
       '</div>' +
       
       '<div class="property-info-section">' +
-        '<h4>✨ Property Highlights</h4>' +
+        '<h4>✨ Property Features</h4>' +
         '<ul class="property-features-list">' +
-          '<li>Panoramic mountain & valley views</li>' +
-          '<li>Seasonal creek with riparian corridor</li>' +
-          '<li>Mature oak & sycamore trees</li>' +
-          '<li>Gentle rolling topography</li>' +
-          '<li>Multiple building sites</li>' +
-          '<li>Southern exposure for solar</li>' +
-          '<li>Private gated access</li>' +
-          '<li>Rich agricultural soil</li>' +
+          '<li>_____</li>' +
+          '<li>_____</li>' +
+          '<li>_____</li>' +
+          '<li>_____</li>' +
+          '<li>_____</li>' +
         '</ul>' +
+      '</div>' +
+      
+      '<div class="property-info-section">' +
+        '<h4>📝 Additional Information</h4>' +
+        '<p style="color: #777; line-height: 1.6;">_____</p>' +
       '</div>';
       
       contentEl.innerHTML = content;
       panel.classList.add('open');
       
-      console.log('🌈 Opened property panel for:', boundaryData.name);
+      console.log('🌈 Opened unified property panel');
     }
     
     // Close property panel

@@ -2699,38 +2699,7 @@ app.get('/', (req, res) => {
     
     console.log('📊 Loaded', zones.length, 'project zones and', permanentLines.length, 'property lines');
     
-    // Add base property boundary lines (original - simple and clean)
-    const propertyLines = [];
-    
-    permanentLines.forEach(function(lineData, index) {
-      const line = L.polyline(lineData.coordinates, {
-        color: '#FF0000',
-        weight: 6,
-        opacity: 0.6,
-        className: 'property-line-base',
-        interactive: false,
-        bubblingMouseEvents: false
-      }).addTo(map);
-      
-      line._locked = true;
-      line._permanent = true;
-      propertyLines.push(line);
-    });
-    
-    // Create ONE continuous overlay path that connects all boundary points
-    const allCoordinates = [];
-    permanentLines.forEach(function(lineData) {
-      lineData.coordinates.forEach(function(coord) {
-        allCoordinates.push(coord);
-      });
-    });
-    
-    // Close the loop by connecting back to start
-    if (allCoordinates.length > 0) {
-      allCoordinates.push(allCoordinates[0]);
-    }
-    
-    // Create rainbow gradient colors
+    // Rainbow colors for smooth gradient transition
     const rainbowColors = [
       '#9C27B0', '#673AB7', '#3F51B5', '#2196F3',
       '#03A9F4', '#00BCD4', '#26C6DA', '#4CAF50',
@@ -2738,63 +2707,44 @@ app.get('/', (req, res) => {
       '#FF8F00', '#FF6F00', '#E65100', '#9C27B0'
     ];
     
-    // Create ONE continuous gradient overlay line
-    const overlayLine = L.polyline(allCoordinates, {
-      color: '#9C27B0',
-      weight: 12,
-      opacity: 0.9,
-      className: 'property-line-magical',
-      interactive: true,
-      bubblingMouseEvents: true,
-      lineCap: 'round',
-      lineJoin: 'round',
-      smoothFactor: 1.0
-    }).addTo(map);
+    // Create thicker colored lines that blend together to form rainbow gradient
+    const propertyLines = [];
     
-    overlayLine._locked = true;
-    overlayLine._permanent = true;
-    
-    // Click handler for unified property panel
-    overlayLine.on('click', function(e) {
-      openPropertyPanel();
-      if (overlayLine._path) {
-        overlayLine._path.classList.add('active');
-      }
-      L.DomEvent.stopPropagation(e);
+    permanentLines.forEach(function(lineData, index) {
+      // Each segment gets a color from the rainbow array
+      const colorIndex = Math.floor((index / permanentLines.length) * (rainbowColors.length - 1));
+      const color = rainbowColors[colorIndex];
+      
+      const line = L.polyline(lineData.coordinates, {
+        color: color,
+        weight: 16,
+        opacity: 0.95,
+        className: 'property-line-magical',
+        interactive: true,
+        bubblingMouseEvents: true,
+        lineCap: 'round',
+        lineJoin: 'round',
+        smoothFactor: 1.0
+      }).addTo(map);
+      
+      line._locked = true;
+      line._permanent = true;
+      
+      // Click handler for unified property panel
+      line.on('click', function(e) {
+        openPropertyPanel();
+        propertyLines.forEach(function(l) {
+          if (l._path) {
+            l._path.classList.add('active');
+          }
+        });
+        L.DomEvent.stopPropagation(e);
+      });
+      
+      propertyLines.push(line);
     });
     
-    // Apply gradient to the continuous overlay line
-    setTimeout(function() {
-      const svg = document.querySelector('.leaflet-overlay-pane svg');
-      if (svg && overlayLine._path) {
-        // Create gradient definition
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-        gradient.setAttribute('id', 'rainbow-gradient');
-        gradient.setAttribute('x1', '0%');
-        gradient.setAttribute('y1', '0%');
-        gradient.setAttribute('x2', '100%');
-        gradient.setAttribute('y2', '100%');
-        
-        rainbowColors.forEach(function(color, i) {
-          const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-          stop.setAttribute('offset', (i * 100 / (rainbowColors.length - 1)) + '%');
-          stop.setAttribute('stop-color', color);
-          gradient.appendChild(stop);
-        });
-        
-        defs.appendChild(gradient);
-        svg.insertBefore(defs, svg.firstChild);
-        
-        // Apply gradient to overlay line
-        overlayLine._path.style.stroke = 'url(#rainbow-gradient)';
-        overlayLine._path.style.strokeWidth = '12';
-        overlayLine._path.style.strokeLinecap = 'round';
-        overlayLine._path.style.strokeLinejoin = 'round';
-      }
-    }, 200);
-    
-    console.log('🌈 Continuous gradient overlay line added over property boundary');
+    console.log('🌈 Thick rainbow gradient property boundary added');
     
     // Zone color mapping
     const zoneColorMap = {

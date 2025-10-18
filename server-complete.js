@@ -2774,16 +2774,16 @@ app.get('/', (req, res) => {
       if (svg && mainLine._path && blurLine._path) {
         var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
         
-        // Create animated gradient that flows around the perimeter
+        // Create gradient that flows around the perimeter
         var gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
         gradient.setAttribute('id', 'flowing-rainbow');
-        gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
+        gradient.setAttribute('gradientUnits', 'objectBoundingBox');
         
-        // Set gradient to span entire property
-        gradient.setAttribute('x1', '0%');
-        gradient.setAttribute('y1', '0%');
-        gradient.setAttribute('x2', '100%');
-        gradient.setAttribute('y2', '100%');
+        // Set gradient to span entire boundary (0 to 1 for objectBoundingBox)
+        gradient.setAttribute('x1', '0');
+        gradient.setAttribute('y1', '0');
+        gradient.setAttribute('x2', '1');
+        gradient.setAttribute('y2', '1');
         
         // Add color stops for smooth, clean rainbow (not overwhelming)
         var stops = [
@@ -2806,8 +2806,9 @@ app.get('/', (req, res) => {
         svg.insertBefore(defs, svg.firstChild);
         
         // Apply rainbow gradient to main inner line
-        mainLine._path.setAttribute('stroke', 'url(#flowing-rainbow)');
+        mainLine._path.style.stroke = 'url(#flowing-rainbow)';
         mainLine._path.style.strokeWidth = '14';
+        mainLine._path.removeAttribute('stroke');
         
         // Keep blur line as golden with transparency for shine-through
         blurLine._path.style.stroke = 'rgba(255, 215, 0, 0.6)'; // Gold with 60% opacity

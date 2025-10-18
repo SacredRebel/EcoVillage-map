@@ -2736,8 +2736,8 @@ app.get('/', (req, res) => {
     
     // Create ONE single continuous line (no segments, no endpoints!)
     var mainLine = L.polyline(boundaryCoordinates, {
-      color: '#8B5CF6',
-      weight: 14,
+      color: '#7C3AED',
+      weight: 10,
       opacity: 1,
       className: 'property-line-magical property-line-gradient',
       interactive: true,

@@ -2955,47 +2955,185 @@ app.get('/', (req, res) => {
       // Update title
       titleEl.textContent = 'Sulphur Mountain Property';
       
-      // Build unified property content HTML with blanks
-      const content = '<div class="property-info-section">' +
+      // Build unified property content HTML with actual data
+      const content = '<div class="image-gallery-section" style="margin-bottom: 20px;">' +
+        '<h4 style="margin-bottom: 12px; color: #7C3AED;">📸 Property Gallery</h4>' +
+        '<div class="carousel-container">' +
+          '<div class="carousel-main" id="property-carousel-main">' +
+            '<div class="carousel-loading">Loading images...</div>' +
+          '</div>' +
+          '<div class="carousel-thumbnails" id="property-carousel-thumbnails"></div>' +
+        '</div>' +
+      '</div>' +
+      
+      '<div class="property-info-section">' +
         '<h4>🏔️ Property Details</h4>' +
         '<div class="property-detail-row">' +
           '<span class="property-detail-label">Total Acreage:</span>' +
-          '<span class="property-detail-value">_____</span>' +
+          '<span class="property-detail-value">9.47 acres (marketed as 10 acres)</span>' +
         '</div>' +
         '<div class="property-detail-row">' +
           '<span class="property-detail-label">APN:</span>' +
-          '<span class="property-detail-value">_____</span>' +
+          '<span class="property-detail-value">Ventura County, CA</span>' +
         '</div>' +
         '<div class="property-detail-row">' +
           '<span class="property-detail-label">Zoning:</span>' +
-          '<span class="property-detail-value">_____</span>' +
+          '<span class="property-detail-value">Unique Upper Ojai Zoning (Residential, Agricultural, Community)</span>' +
         '</div>' +
         '<div class="property-detail-row">' +
           '<span class="property-detail-label">Location:</span>' +
-          '<span class="property-detail-value">_____</span>' +
+          '<span class="property-detail-value">11962 Sulphur Mountain Road, Upper Ojai, CA</span>' +
         '</div>' +
       '</div>' +
       
       '<div class="property-info-section">' +
         '<h4>✨ Property Features</h4>' +
         '<ul class="property-features-list">' +
-          '<li>_____</li>' +
-          '<li>_____</li>' +
-          '<li>_____</li>' +
-          '<li>_____</li>' +
-          '<li>_____</li>' +
+          '<li><strong>Valuation:</strong> Current value $2.3M | Projected ARV $6.9M+ (Phase 3 completion)</li>' +
+          '<li><strong>Water Access:</strong> Active on-site well producing 17 GPM, connected to structures</li>' +
+          '<li><strong>Power:</strong> Two live power lines currently connected</li>' +
+          '<li><strong>Sewer:</strong> Main residence connected to city sewer system</li>' +
+          '<li><strong>Views:</strong> Unobstructed panoramic views of Topa-Topa Mountains ("Ojai Pink Moment")</li>' +
         '</ul>' +
       '</div>' +
       
       '<div class="property-info-section">' +
         '<h4>📝 Additional Information</h4>' +
-        '<p style="color: #777; line-height: 1.6;">_____</p>' +
+        '<p style="color: #777; line-height: 1.6;">' +
+          'The property is naturally divided into three strategic sections: Front Left (agriculture/operations), ' +
+          'Middle (livestock/community kitchen), and Right Hillside (lodging/events). ' +
+          'Permitting for the first three key structures is ready for submission. ' +
+          'Total phased development budget exceeds $3M with comprehensive regenerative development plans including ' +
+          'guest lodging capacity for 50+ units and 3 acres dedicated to regenerative agriculture (500+ fruit trees, nursery, livestock).' +
+        '</p>' +
       '</div>';
       
       contentEl.innerHTML = content;
       panel.classList.add('open');
       
-      console.log('🌈 Opened unified property panel');
+      // Load property images
+      loadPropertyImages();
+      
+      console.log('🌈 Opened unified property panel with gallery');
+    }
+    
+    // Load property images from Supabase
+    function loadPropertyImages() {
+      const propertyId = 'property';
+      const bucketName = 'zone-images';
+      const folderPath = 'Property/Map';
+      
+      console.log('📸 Loading property images from:', folderPath);
+      
+      // Get reference to main carousel and thumbnails
+      const mainCarousel = document.getElementById('property-carousel-main');
+      const thumbnailsContainer = document.getElementById('property-carousel-thumbnails');
+      
+      if (!mainCarousel || !thumbnailsContainer) {
+        console.log('❌ Property carousel containers not found');
+        return;
+      }
+      
+      // List all files in the Property/Map folder
+      window.supabase.storage
+        .from(bucketName)
+        .list(folderPath, {
+          limit: 100,
+          offset: 0,
+          sortBy: { column: 'name', order: 'asc' }
+        })
+        .then(({ data: files, error }) => {
+          if (error) {
+            console.error('❌ Error listing property images:', error);
+            mainCarousel.innerHTML = '<div class="carousel-loading">No images available</div>';
+            return;
+          }
+          
+          if (!files || files.length === 0) {
+            console.log('ℹ️ No property images found');
+            mainCarousel.innerHTML = '<div class="carousel-loading">No images available yet</div>';
+            return;
+          }
+          
+          console.log('✅ Found', files.length, 'property images');
+          
+          // Filter image files only
+          const imageFiles = files.filter(file => 
+            file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) && !file.name.startsWith('.')
+          );
+          
+          if (imageFiles.length === 0) {
+            mainCarousel.innerHTML = '<div class="carousel-loading">No images available yet</div>';
+            return;
+          }
+          
+          // Get public URLs for all images
+          const imageUrls = imageFiles.map(file => {
+            const { data } = window.supabase.storage
+              .from(bucketName)
+              .getPublicUrl(folderPath + '/' + file.name);
+            return data.publicUrl;
+          });
+          
+          // Initialize property carousel with images
+          initializePropertyCarousel(imageUrls);
+        });
+    }
+    
+    // Initialize property image carousel
+    function initializePropertyCarousel(imageUrls) {
+      const mainCarousel = document.getElementById('property-carousel-main');
+      const thumbnailsContainer = document.getElementById('property-carousel-thumbnails');
+      let currentIndex = 0;
+      
+      // Create main image display
+      mainCarousel.innerHTML = '<img src="' + imageUrls[0] + '" alt="Property Image" class="carousel-image" id="property-main-image">';
+      
+      // Create thumbnails
+      thumbnailsContainer.innerHTML = '';
+      imageUrls.forEach((url, index) => {
+        const thumb = document.createElement('div');
+        thumb.className = 'carousel-thumbnail' + (index === 0 ? ' active' : '');
+        thumb.style.backgroundImage = 'url(' + url + ')';
+        thumb.addEventListener('click', () => {
+          currentIndex = index;
+          updatePropertyCarousel();
+        });
+        thumbnailsContainer.appendChild(thumb);
+      });
+      
+      // Update carousel function
+      function updatePropertyCarousel() {
+        const mainImage = document.getElementById('property-main-image');
+        if (mainImage) {
+          mainImage.src = imageUrls[currentIndex];
+        }
+        
+        // Update thumbnail active state
+        const thumbnails = thumbnailsContainer.querySelectorAll('.carousel-thumbnail');
+        thumbnails.forEach((thumb, i) => {
+          if (i === currentIndex) {
+            thumb.classList.add('active');
+          } else {
+            thumb.classList.remove('active');
+          }
+        });
+      }
+      
+      // Add keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        if (!document.getElementById('property-panel').classList.contains('open')) return;
+        
+        if (e.key === 'ArrowLeft') {
+          currentIndex = (currentIndex - 1 + imageUrls.length) % imageUrls.length;
+          updatePropertyCarousel();
+        } else if (e.key === 'ArrowRight') {
+          currentIndex = (currentIndex + 1) % imageUrls.length;
+          updatePropertyCarousel();
+        }
+      });
+      
+      console.log('✅ Property carousel initialized with', imageUrls.length, 'images');
     }
     
     // Close property panel

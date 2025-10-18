@@ -2730,11 +2730,11 @@ app.get('/', (req, res) => {
     
     var propertyLines = [];
     
-    // Create base wide blurred line for color blending
+    // Create base wide golden glow line for beautiful shine effect
     var blurLine = L.polyline(boundaryCoordinates, {
-      color: '#9C27B0',
+      color: '#FFD700',
       weight: 20,
-      opacity: 0.4,
+      opacity: 0.5,
       className: 'property-line-blur',
       interactive: false,
       lineCap: 'round',
@@ -2785,16 +2785,14 @@ app.get('/', (req, res) => {
         gradient.setAttribute('x2', '100%');
         gradient.setAttribute('y2', '100%');
         
-        // Add color stops for smooth rainbow
+        // Add color stops for smooth, clean rainbow (not overwhelming)
         var stops = [
-          {offset: '0%', color: '#9C27B0'},
-          {offset: '15%', color: '#3F51B5'},
-          {offset: '30%', color: '#00BCD4'},
-          {offset: '45%', color: '#4CAF50'},
-          {offset: '60%', color: '#CDDC39'},
-          {offset: '75%', color: '#FFC107'},
-          {offset: '90%', color: '#FF6F00'},
-          {offset: '100%', color: '#9C27B0'}
+          {offset: '0%', color: '#9C27B0'},    // Purple
+          {offset: '20%', color: '#2196F3'},   // Blue
+          {offset: '40%', color: '#00BCD4'},   // Cyan
+          {offset: '60%', color: '#4CAF50'},   // Green
+          {offset: '80%', color: '#FFC107'},   // Amber
+          {offset: '100%', color: '#9C27B0'}   // Back to Purple
         ];
         
         stops.forEach(function(stopData) {
@@ -2807,12 +2805,14 @@ app.get('/', (req, res) => {
         defs.appendChild(gradient);
         svg.insertBefore(defs, svg.firstChild);
         
-        // Apply gradient to both lines
+        // Apply rainbow gradient to main inner line
         mainLine._path.setAttribute('stroke', 'url(#flowing-rainbow)');
-        blurLine._path.setAttribute('stroke', 'url(#flowing-rainbow)');
+        mainLine._path.style.strokeWidth = '14';
         
-        // Add blur filter for smooth blending
-        blurLine._path.style.filter = 'blur(4px)';
+        // Keep blur line as golden with transparency for shine-through
+        blurLine._path.style.stroke = 'rgba(255, 215, 0, 0.6)'; // Gold with 60% opacity
+        blurLine._path.style.filter = 'blur(6px)';
+        blurLine._path.style.strokeWidth = '20';
       }
     }, 300);
     

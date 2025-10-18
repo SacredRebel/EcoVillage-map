@@ -2115,6 +2115,12 @@ app.get('/', (req, res) => {
       border: 2px solid white;
     }
     
+    /* Project Links Hover Effects */
+    .property-panel-content a[href]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
     @media (max-width: 768px) {
       .property-panel {
         width: 100vw;
@@ -3069,6 +3075,54 @@ app.get('/', (req, res) => {
               '<p style="margin: 0 0 10px 0;"><strong>Guest Lodging:</strong> Plans include capacity for <strong>50+ diverse units</strong> featuring glamping, chalets, domes, and yurts.</p>' +
               '<p style="margin: 0 0 10px 0;"><strong>Agriculture:</strong> <strong>3 acres</strong> dedicated to regenerative farming with over 500 fruit trees.</p>' +
               '<p style="margin: 0;"><strong>Livestock & Nursery:</strong> Integrated permaculture system with livestock programs and plant nursery.</p>' +
+            '</div>' +
+          '</div>' +
+          
+        '</div>' +
+      '</div>' +
+      
+      '<div class="property-info-section">' +
+        '<h4>🔗 Project Links & Partners</h4>' +
+        '<div style="display: flex; flex-direction: column; gap: 20px;">' +
+          
+          '<div>' +
+            '<div style="font-weight: 600; color: #667eea; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; gap: 8px;">' +
+              '<span style="font-size: 18px;">🏔️</span> Sulphur Mountain Projects' +
+            '</div>' +
+            '<div style="display: flex; flex-direction: column; gap: 10px;">' +
+              '<a href="https://sulphurmountainroad.vercel.app/" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s ease; font-size: 14px; font-weight: 500;">' +
+                '<span style="font-size: 18px;">🌐</span>' +
+                '<span>Sulphur Mountain Website</span>' +
+                '<span style="margin-left: auto; font-size: 16px;">→</span>' +
+              '</a>' +
+              '<div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%); color: #6c757d; border-radius: 8px; font-size: 14px; font-weight: 500;">' +
+                '<span style="font-size: 18px;">🚀</span>' +
+                '<span>Sulphur Onboarding Platform</span>' +
+                '<span style="margin-left: auto; font-style: italic; font-size: 12px;">Coming Soon...</span>' +
+              '</div>' +
+              '<a href="https://eco-village-map.vercel.app/" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s ease; font-size: 14px; font-weight: 500;">' +
+                '<span style="font-size: 18px;">🗺️</span>' +
+                '<span>Interactive Map</span>' +
+                '<span style="margin-left: auto; font-size: 16px;">→</span>' +
+              '</a>' +
+            '</div>' +
+          '</div>' +
+          
+          '<div style="border-top: 2px dashed #e9ecef; padding-top: 16px;">' +
+            '<div style="font-weight: 600; color: #10B981; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; gap: 8px;">' +
+              '<span style="font-size: 18px;">🤝</span> Partners' +
+            '</div>' +
+            '<div style="display: flex; flex-direction: column; gap: 10px;">' +
+              '<a href="https://santa-maria.vercel.app/" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s ease; font-size: 14px; font-weight: 500;">' +
+                '<span style="font-size: 18px;">🏝️</span>' +
+                '<span>Santa Maria</span>' +
+                '<span style="margin-left: auto; font-size: 16px;">→</span>' +
+              '</a>' +
+              '<div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%); color: #6c757d; border-radius: 8px; font-size: 14px; font-weight: 500;">' +
+                '<span style="font-size: 18px;">🌺</span>' +
+                '<span>Lemuria.life</span>' +
+                '<span style="margin-left: auto; font-style: italic; font-size: 12px;">Coming Soon...</span>' +
+              '</div>' +
             '</div>' +
           '</div>' +
           

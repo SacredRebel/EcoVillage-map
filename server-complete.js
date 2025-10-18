@@ -2764,21 +2764,19 @@ app.get('/', (req, res) => {
       if (mainLine._path) {
         // Inject CSS animation for smooth color flow
         var style = document.createElement('style');
-        style.textContent = '
-          @keyframes rainbow-flow {
-            0% { stroke: #6366F1; }
-            20% { stroke: #8B5CF6; }
-            40% { stroke: #EC4899; }
-            60% { stroke: #F59E0B; }
-            80% { stroke: #10B981; }
-            100% { stroke: #6366F1; }
-          }
-          .property-line-gradient {
-            animation: rainbow-flow 10s ease-in-out infinite;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-          }
-        ';
+        style.textContent = '@keyframes rainbow-flow {' +
+          '0% { stroke: #6366F1; }' +
+          '20% { stroke: #8B5CF6; }' +
+          '40% { stroke: #EC4899; }' +
+          '60% { stroke: #F59E0B; }' +
+          '80% { stroke: #10B981; }' +
+          '100% { stroke: #6366F1; }' +
+          '}' +
+          '.property-line-gradient {' +
+          'animation: rainbow-flow 10s ease-in-out infinite;' +
+          'stroke-linecap: round;' +
+          'stroke-linejoin: round;' +
+          '}';
         document.head.appendChild(style);
         
         console.log('✨ CSS rainbow animation applied to single continuous line');

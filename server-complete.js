@@ -1,4 +1,5 @@
 // EcoVillageBuilder - Complete Working Implementation
+import 'dotenv/config';
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -9,10 +10,20 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Supabase configuration
+// Supabase configuration - Load from .env file
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
-const SUPABASE_BUCKET = 'eco-village-images';
+const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'eco-village-images';
+
+// Log Supabase config status (for debugging)
+if (process.env.VERCEL !== '1') {
+  if (SUPABASE_URL === 'https://your-project.supabase.co') {
+    console.log('⚠️  WARNING: Supabase URL not configured! Images will not load.');
+    console.log('💡 Run: .\\setup-supabase-quick.ps1 to configure Supabase');
+  } else {
+    console.log('✅ Supabase configured:', SUPABASE_URL.substring(0, 30) + '...');
+  }
+}
 
 // Only log startup message when running locally
 if (process.env.VERCEL !== '1') {

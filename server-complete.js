@@ -3807,49 +3807,98 @@ app.get('/', (req, res) => {
     async function loadZoneImages(zoneId) {
       const categories = ['current', 'vision'];
       
+      // Map zone ID to folder name (from PROJECT_FOLDER_MAP)
+      const folderMap = {
+        'agricultural-hub': 'Agricultural Hub',
+        'community-hub': 'Community Hub',
+        'beekeeping': 'Beekeeping & Honey Production',
+        'mushroom-cultivation': 'Mushroom Cultivation',
+        'ceremonial-infrastructure': 'Ceremonial Infrastructure',
+        'wellness-spa': 'Wellness & Spa Facilities',
+        'main-residence': 'Main Residence Compound',
+        'retreat-village': 'Retreat Village',
+        'infrastructure': 'Infrastructure & Utilities',
+        'mcqueens-garage': 'McQueen\\'s Garage & Creative',
+        'livestock-program': 'Livestock & Dairy Program',
+        'creative-workshop-center': 'Creative Workshop & Art Creation Center',
+        'glamping-creek-village': 'Creek-Side Glamping & Lodging Village',
+        'gatelodge-operations-hub': 'Sulphur Mountain Gatelodge (Operations ADU)',
+        'tropical-dome-greenhouse': 'Tropical Dome Greenhouse',
+        'sulphur-mountain-sanctuary': 'Sulphur Mountain Sanctuary The Living Landscape',
+        'farmstead-produce-stand': 'Farmstead Produce Stand & Online Hub'
+      };
+      
+      const folderName = folderMap[zoneId] || zoneId;
+      
       for (const category of categories) {
         try {
-          const response = await fetch(\`/api/images/\${zoneId}/\${category}\`);
-          const data = await response.json();
-          
-          const container = document.getElementById(\`\${category}-images\`);
+          const container = document.getElementById(category + '-images');
           if (!container) continue;
           
-          // Get saved index before rebuilding
-          const carousel = container.querySelector('[data-category]');
-          const savedIndex = carousel ? parseInt(carousel.dataset.currentIndex || '0', 10) : 0;
+          // Show loading state
+          container.innerHTML = '<div class="loading-images">🔍 Checking for images...</div>';
           
-          // Check if data has subcategories
-          if (data.hasSubcategories && data.subcategories) {
-            container.innerHTML = createSubcategoryGallery(data, zoneId, category);
-            initializeSubcategoryNavigation(category);
-          } else if (data.images && data.images.length > 0) {
-            container.innerHTML = createImageCarousel(data.images, zoneId, category);
+          // Try to discover images by testing common URL patterns
+          const baseUrl = 'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/';
+          const folderPath = folderName + '/' + category.toLowerCase() + '/';
+          
+          // Generate many possible image filenames
+          const patterns = [];
+          
+          // Try common patterns
+          for (let i = 1; i <= 50; i++) {
+            patterns.push(i + '.jpg', i + '.jpeg', i + '.png', i + '.webp',
+                         'image' + i + '.jpg', 'image' + i + '.png',
+                         'photo' + i + '.jpg', 'photo' + i + '.png');
+          }
+          
+          // Try descriptive names (common words in zone images)
+          const commonWords = ['space', 'view', 'area', 'building', 'structure', 'plan', 'design',
+                               'interior', 'exterior', 'concept', 'render', 'photo', 'current', 'vision',
+                               'main', 'detail', 'wide', 'close', 'aerial', 'ground'];
+          commonWords.forEach(word => {
+            patterns.push(word + '.jpg', word + '.jpeg', word + '.png',
+                         word + ' 1.jpg', word + ' 2.jpg', word + '1.jpg', word + '2.jpg');
+          });
+          
+          // Test which images actually exist (in batches to avoid overwhelming)
+          const foundImages = [];
+          for (let i = 0; i < patterns.length; i += 20) {
+            const batch = patterns.slice(i, i + 20);
+            const results = await Promise.all(batch.map(async (filename) => {
+              const url = baseUrl + folderPath + encodeURIComponent(filename);
+              try {
+                const response = await fetch(url, { method: 'HEAD' });
+                if (response.ok) return url;
+              } catch (e) {}
+              return null;
+            }));
+            foundImages.push(...results.filter(url => url !== null));
+            
+            // Stop if we found enough
+            if (foundImages.length >= 30) break;
+          }
+          
+          console.log('Found ' + foundImages.length + ' images for ' + zoneId + '/' + category);
+          
+          if (foundImages.length > 0) {
+            container.innerHTML = createImageCarousel(foundImages, zoneId, category);
             initializeCarousel(category);
-            // Restore saved index
-            if (savedIndex > 0 && savedIndex < data.images.length) {
-              switchToIndex(category, savedIndex);
-            }
           } else {
-            container.innerHTML = \`
-              <div class="no-images-message">
-                <div style="font-size: 48px; opacity: 0.3; margin-bottom: 10px;">📷</div>
-                <div>No images yet for this category</div>
-                <div style="font-size: 13px; opacity: 0.7; margin-top: 5px;">
-                  Add images to: images/\${zoneId}/\${category}/
-                </div>
-              </div>
-            \`;
+            container.innerHTML = '<div class="no-images-message">' +
+              '<div style="font-size: 48px; opacity: 0.3; margin-bottom: 10px;">📷</div>' +
+              '<div>No images found for this category</div>' +
+              '<div style="font-size: 13px; opacity: 0.7; margin-top: 5px;">' +
+              'Searched: images/' + folderName + '/' + category + '/' +
+              '</div></div>';
           }
         } catch (error) {
-          console.error(\`Error loading \${category} images:\`, error);
-          const container = document.getElementById(\`\${category}-images\`);
+          console.error('Error loading ' + category + ' images:', error);
+          const container = document.getElementById(category + '-images');
           if (container) {
-            container.innerHTML = \`
-              <div class="no-images-message">
-                <div style="color: #e74c3c;">⚠️ Error loading images</div>
-              </div>
-            \`;
+            container.innerHTML = '<div class="no-images-message">' +
+              '<div style="color: #e74c3c;">⚠️ Error checking for images</div>' +
+              '</div>';
           }
         }
       }
@@ -5013,6 +5062,7 @@ const PROJECT_FOLDER_MAP = {
 };
 
 // API endpoint to get images for a specific zone (Supabase Storage)
+// Uses direct URL checking since listing API requires permissions we don't have
 app.get('/api/images/:zoneId/:category', async (req, res) => {
   try {
     const { zoneId, category } = req.params;
@@ -5022,96 +5072,61 @@ app.get('/api/images/:zoneId/:category', async (req, res) => {
     
     // Images are stored in 'images/' subfolder in bucket, and category folders are lowercase
     const categoryFolder = category.toLowerCase(); // 'current' or 'vision'
-    const folderPath = 'images/' + folderName + '/' + categoryFolder;
+    const basePath = 'images/' + folderName + '/' + categoryFolder + '/';
+    const baseUrl = SUPABASE_URL + '/storage/v1/object/public/' + SUPABASE_BUCKET + '/';
     
-    // Fetch file list from Supabase Storage
-    const supabaseUrl = SUPABASE_URL + '/storage/v1/object/list/' + SUPABASE_BUCKET + '?prefix=' + encodeURIComponent(folderPath);
+    // Since we can't list files (no permissions), we'll try common image filenames
+    // This checks if images exist by attempting to access them
+    const commonPatterns = [
+      // Common naming patterns
+      ...Array.from({length: 30}, (_, i) => (i + 1) + '.jpg'),
+      ...Array.from({length: 30}, (_, i) => (i + 1) + '.jpeg'),
+      ...Array.from({length: 30}, (_, i) => (i + 1) + '.png'),
+      ...Array.from({length: 20}, (_, i) => 'image' + (i + 1) + '.jpg'),
+      ...Array.from({length: 20}, (_, i) => 'image' + (i + 1) + '.png'),
+      // Zone-specific patterns based on folder name
+      ...Array.from({length: 15}, (_, i) => folderName.toLowerCase().replace(/[\s&]/g, '-') + '-' + categoryFolder + '-' + (i + 1) + '.jpg'),
+      ...Array.from({length: 15}, (_, i) => folderName.toLowerCase().replace(/[\s&]/g, '-') + '-' + (i + 1) + '.jpg')
+    ];
     
-    try {
-      const response = await fetch(supabaseUrl, {
-        headers: {
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-          'apikey': SUPABASE_ANON_KEY
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Supabase fetch failed');
-      }
-      
-      const files = await response.json();
-      
-      // Filter image files and organize by subfolder
-      const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg)$/i;
-      const organizedImages = {};
-      const rootImages = [];
-      
-      files.forEach(function(file) {
-        if (file.name && imageExtensions.test(file.name)) {
-          const pathParts = file.name.split('/');
-          const fileName = pathParts[pathParts.length - 1];
-          
-          // Check if image is in a subfolder
-          if (pathParts.length > 3) {
-            const subfolder = pathParts[2];
-            if (!organizedImages[subfolder]) {
-              organizedImages[subfolder] = [];
-            }
-            organizedImages[subfolder].push(
-              SUPABASE_URL + '/storage/v1/object/public/' + SUPABASE_BUCKET + '/' + file.name
-            );
-          } else {
-            rootImages.push(
-              SUPABASE_URL + '/storage/v1/object/public/' + SUPABASE_BUCKET + '/' + file.name
-            );
+    // Check which images actually exist
+    const foundImages = [];
+    
+    // Check in batches to avoid overwhelming the server
+    for (let i = 0; i < commonPatterns.length; i += 10) {
+      const batch = commonPatterns.slice(i, i + 10);
+      const checks = batch.map(async (filename) => {
+        const url = baseUrl + basePath + filename;
+        try {
+          const response = await fetch(url, { method: 'HEAD' });
+          if (response.ok) {
+            return url;
           }
+        } catch (e) {
+          // Image doesn't exist
         }
+        return null;
       });
       
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      const results = await Promise.all(checks);
+      foundImages.push(...results.filter(url => url !== null));
       
-      // Return subcategories if they exist
-      if (Object.keys(organizedImages).length > 0) {
-        const subcategories = {};
-        Object.keys(organizedImages).forEach(function(subfolder) {
-          subcategories[subfolder] = {
-            images: organizedImages[subfolder],
-            count: organizedImages[subfolder].length
-          };
-        });
-        
-        res.json({
-          success: true,
-          zoneId: zoneId,
-          category: category,
-          folderName: folderName,
-          hasSubcategories: true,
-          subcategories: subcategories,
-          totalCount: Object.values(subcategories).reduce(function(sum, sub) { return sum + sub.count; }, 0)
-        });
-      } else {
-        // Return root images
-        res.json({
-          success: true,
-          zoneId: zoneId,
-          category: category,
-          folderName: folderName,
-          hasSubcategories: false,
-          images: rootImages,
-          count: rootImages.length
-        });
-      }
-    } catch (err) {
-      // Return empty if Supabase fetch fails
-      res.json({
-        success: true,
-        zoneId: zoneId,
-        category: category,
-        hasSubcategories: false,
-        images: [],
-        count: 0
-      });
+      // Stop early if we found enough images
+      if (foundImages.length >= 50) break;
     }
+    
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    
+    res.json({
+      success: true,
+      zoneId: zoneId,
+      category: category,
+      folderName: folderName,
+      hasSubcategories: false,
+      images: foundImages,
+      count: foundImages.length,
+      note: 'Using direct URL checking (listing API unavailable)'
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

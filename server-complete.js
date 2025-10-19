@@ -554,8 +554,8 @@ const PROJECT_ZONES = [
   {
     id: "tropical-dome-greenhouse",
     name: "Tropical Dome Greenhouse",
-    emoji: "🫧",
-    position: [34.432982, -119.156728],
+    emoji: "🌴",
+    position: [34.432888, -119.156763],
     type: "agriculture",
     budget: "$120,000",
     timeline: "Phase 1 (6-12 months)",

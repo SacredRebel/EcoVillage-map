@@ -552,6 +552,138 @@ const PROJECT_ZONES = [
     ]
   },
   {
+    id: "tropical-dome-greenhouse",
+    name: "Tropical Dome Greenhouse",
+    emoji: "🫧",
+    position: [34.432982, -119.156728],
+    type: "agriculture",
+    budget: "$120,000",
+    timeline: "Phase 1 (6-12 months)",
+    monthlyRevenue: "$4,200",
+    roi: "420% annual ROI",
+    description: "Geodesic dome greenhouse for year-round tropical plant cultivation, propagation station, and seedling nursery - enabling exotic fruit production and plant starts in a controlled microclimate.",
+    
+    tropicalFruitTrees: [
+      {
+        name: "Avocado",
+        propagation: "Air-layering and seed propagation",
+        products: "Grafted saplings, fruit production"
+      },
+      {
+        name: "Banana & Plantain",
+        propagation: "Cloning via pup division",
+        products: "Pups for sale, fresh fruit"
+      },
+      {
+        name: "Citrus (Lemon, Lime, Orange, Grapefruit)",
+        propagation: "Budding onto rootstock",
+        products: "Grafted citrus saplings, fresh fruit"
+      },
+      {
+        name: "Fig",
+        propagation: "Easy rooting from cuttings",
+        products: "Rooted cuttings, fresh and dried figs"
+      },
+      {
+        name: "Mango",
+        propagation: "Grafting and air-layering",
+        products: "Grafted mango saplings, fresh fruit"
+      },
+      {
+        name: "Guava",
+        propagation: "Air-layering technique",
+        products: "Air-layered starts, fresh fruit"
+      },
+      {
+        name: "Pomegranate",
+        propagation: "Cuttings and root suckers",
+        products: "Rooted cuttings, fresh fruit"
+      },
+      {
+        name: "Mulberry",
+        propagation: "Easy rooting from cuttings",
+        products: "Rooted cuttings, fresh fruit"
+      },
+      {
+        name: "Papaya",
+        propagation: "Seed propagation",
+        products: "Seedlings, fresh fruit"
+      }
+    ],
+    
+    perennialHerbsMedicinals: [
+      "Rosemary - Fresh culinary herb, medicinal bundles",
+      "Lavender - Fresh/dried flowers, essential oils",
+      "Mint varieties - Fresh culinary use, herbal teas",
+      "Echinacea - Medicinal plant starts, dried roots",
+      "Holy Basil (Tulsi) - Sacred plant starts, herbal tea",
+      "Thyme - Fresh culinary herb, medicinal use",
+      "Sage - Fresh/dried bundles, smudge sticks",
+      "Oregano - Fresh culinary herb, medicinal tinctures"
+    ],
+    
+    features: [
+      "Geodesic dome structure for optimal growing conditions",
+      "Climate-controlled tropical microclimate year-round",
+      "Dedicated propagation station for cuttings and grafting",
+      "Seedling nursery with grow lights and heat mats",
+      "Misting system for tropical humidity control",
+      "Specialized growing benches and vertical growing systems",
+      "Tissue culture and cloning propagation area",
+      "Educational workshops on tropical plant care",
+      "Grafting and air-layering demonstration space",
+      "Temperature and humidity monitoring systems"
+    ],
+    
+    physicalProducts: [
+      {
+        category: "Propagated Plants & Saplings",
+        items: [
+          "Grafted tropical fruit tree saplings (avocado, mango, citrus)",
+          "Rooted cuttings (fig, pomegranate, mulberry)",
+          "Banana and plantain pups",
+          "Air-layered tropical starts (guava, mango)",
+          "Medicinal and culinary herb starts"
+        ]
+      },
+      {
+        category: "Fresh Tropical Produce",
+        items: [
+          "Fresh tropical fruits (seasonal availability)",
+          "Fresh culinary and medicinal herbs",
+          "Exotic flowers for arrangements",
+          "Specialty greens and microgreens"
+        ]
+      },
+      {
+        category: "Propagation Supplies & Kits",
+        items: [
+          "Grafting kits (tape, knife, sealant, instructions)",
+          "Propagation starter kits with rooting hormone",
+          "Seedling grow kits with soil and containers",
+          "Plant cloning stations and supplies"
+        ]
+      },
+      {
+        category: "Value-Added Products",
+        items: [
+          "Dried herbs (culinary and medicinal bundles)",
+          "Herbal teas and tea blends",
+          "Fresh herb bouquets",
+          "Specialty plant collections (citrus variety pack, herb garden starter)"
+        ]
+      }
+    ],
+    
+    revenueStreams: [
+      "Tropical fruit tree saplings: $1,500/month",
+      "Herb and medicinal plant starts: $800/month",
+      "Fresh produce and herbs: $600/month",
+      "Propagation kits and supplies: $500/month",
+      "Educational workshops: $800/month"
+    ]
+  },
+  {
     id: "sulphur-mountain-sanctuary",
     name: "Sulphur Mountain Sanctuary: The Living Landscape",
     emoji: "🌺",
@@ -4755,6 +4887,7 @@ const PROJECT_FOLDER_MAP = {
   'creative-workshop-center': 'Creative Workshop & Art Creation Center',
   'glamping-creek-village': 'Creek-Side Glamping & Lodging Village',
   'gatelodge-operations-hub': 'Sulphur Mountain Gatelodge (Operations ADU)',
+  'tropical-dome-greenhouse': 'Tropical Dome Greenhouse',
   'sulphur-mountain-sanctuary': 'Sulphur Mountain Sanctuary The Living Landscape',
   'farmstead-produce-stand': 'Farmstead Produce Stand & Online Hub'
 };

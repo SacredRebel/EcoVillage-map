@@ -2014,7 +2014,7 @@ app.get('/', (req, res) => {
             }
           }
           
-          /* ===== LIGHTBOX STYLES ===== */
+          /* ===== ENHANCED LIGHTBOX WITH ZOOM ===== */
           #image-lightbox {
             position: fixed;
             top: 0;
@@ -2027,7 +2027,8 @@ app.get('/', (req, res) => {
             justify-content: center;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: opacity;
           }
           
           #image-lightbox.active {
@@ -2043,28 +2044,52 @@ app.get('/', (req, res) => {
             height: 100%;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(10px);
-            cursor: pointer;
+            cursor: zoom-out;
           }
           
           .lightbox-content {
             position: relative;
             z-index: 1;
-            max-width: 95vw;
-            max-height: 95vh;
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+            touch-action: none;
+          }
+          
+          .lightbox-image-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
           }
           
           .lightbox-image {
-            max-width: 100%;
+            max-width: 95vw;
             max-height: 95vh;
             object-fit: contain;
-            border-radius: 8px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            transition: opacity 0.3s ease, transform 0.3s ease;
+            border-radius: 4px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: zoom-in;
             user-select: none;
             -webkit-user-drag: none;
+            will-change: transform;
+          }
+          
+          .lightbox-image.zoomed {
+            cursor: grab;
+            max-width: none;
+            max-height: none;
+          }
+          
+          .lightbox-image.zoomed.dragging {
+            cursor: grabbing;
           }
           
           .lightbox-loading {
@@ -2157,6 +2182,66 @@ app.get('/', (req, res) => {
             border: 1px solid rgba(255, 255, 255, 0.1);
           }
           
+          /* Zoom Controls */
+          .lightbox-zoom-controls {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            display: flex;
+            gap: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+          }
+          
+          #image-lightbox.active .lightbox-zoom-controls {
+            opacity: 1;
+          }
+          
+          .zoom-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            user-select: none;
+          }
+          
+          .zoom-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.1);
+          }
+          
+          .zoom-btn:active {
+            transform: scale(0.95);
+          }
+          
+          .zoom-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+          }
+          
+          .zoom-level-indicator {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 60px;
+            text-align: center;
+          }
+          
           /* Mobile lightbox optimizations */
           @media (max-width: 768px) {
             .lightbox-close {
@@ -2187,8 +2272,24 @@ app.get('/', (req, res) => {
               font-size: 14px;
             }
             
+            .lightbox-zoom-controls {
+              bottom: 70px;
+              gap: 8px;
+            }
+            
+            .zoom-btn {
+              width: 40px;
+              height: 40px;
+              font-size: 18px;
+            }
+            
             .lightbox-image {
+              max-width: 100vw;
               max-height: 90vh;
+            }
+            
+            .lightbox-overlay {
+              cursor: default;
             }
           }
           
@@ -4042,7 +4143,7 @@ app.get('/', (req, res) => {
     
     // ===== LIGHTBOX SYSTEM FOR FULL-SIZE IMAGE VIEWING =====
     
-    // Create lightbox HTML (append to body once)
+    // Create enhanced lightbox HTML with zoom controls
     function ensureLightboxExists() {
       if (document.getElementById('image-lightbox')) return;
       
@@ -4051,7 +4152,9 @@ app.get('/', (req, res) => {
       lightbox.innerHTML = '<div class="lightbox-overlay"></div>' +
         '<button class="lightbox-close" aria-label="Close">&times;</button>' +
         '<div class="lightbox-content">' +
-          '<img class="lightbox-image" src="" alt="Full size image">' +
+          '<div class="lightbox-image-container">' +
+            '<img class="lightbox-image" src="" alt="Full size image">' +
+          '</div>' +
           '<div class="lightbox-loading"><div class="loading-spinner"></div></div>' +
         '</div>' +
         '<button class="lightbox-nav lightbox-prev" aria-label="Previous">' +
@@ -4060,6 +4163,12 @@ app.get('/', (req, res) => {
         '<button class="lightbox-nav lightbox-next" aria-label="Next">' +
           '<span>&#8250;</span>' +
         '</button>' +
+        '<div class="lightbox-zoom-controls">' +
+          '<button class="zoom-btn zoom-out" aria-label="Zoom Out" title="Zoom Out">-</button>' +
+          '<div class="zoom-level-indicator">100%</div>' +
+          '<button class="zoom-btn zoom-in" aria-label="Zoom In" title="Zoom In">+</button>' +
+          '<button class="zoom-btn zoom-reset" aria-label="Reset Zoom" title="Reset Zoom">⟲</button>' +
+        '</div>' +
         '<div class="lightbox-counter">' +
           '<span class="lightbox-current">1</span> / <span class="lightbox-total">1</span>' +
         '</div>';

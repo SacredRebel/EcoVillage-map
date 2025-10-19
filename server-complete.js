@@ -3537,8 +3537,8 @@ app.get('/', (req, res) => {
     // Load property images from Supabase
     function loadPropertyImages() {
       const propertyId = 'property';
-      const bucketName = 'zone-images';
-      const folderPath = 'Property/Map';
+      const bucketName = 'eco-village-images';
+      const folderPath = 'images/Property/Map';
       
       console.log('📸 Loading property images from:', folderPath);
       
@@ -5019,7 +5019,10 @@ app.get('/api/images/:zoneId/:category', async (req, res) => {
     
     // Map project ID to actual folder name
     const folderName = PROJECT_FOLDER_MAP[zoneId] || zoneId;
-    const folderPath = folderName + '/' + category;
+    
+    // Images are stored in 'images/' subfolder in bucket, and category folders are lowercase
+    const categoryFolder = category.toLowerCase(); // 'current' or 'vision'
+    const folderPath = 'images/' + folderName + '/' + categoryFolder;
     
     // Fetch file list from Supabase Storage
     const supabaseUrl = SUPABASE_URL + '/storage/v1/object/list/' + SUPABASE_BUCKET + '?prefix=' + encodeURIComponent(folderPath);

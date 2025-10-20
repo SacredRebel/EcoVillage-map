@@ -3545,11 +3545,7 @@ app.get('/', (req, res) => {
     
     // Load property images from Supabase
     function loadPropertyImages() {
-      const propertyId = 'property';
-      const bucketName = 'eco-village-images';
-      const folderPath = 'images/Property/Map';
-      
-      console.log('📸 Loading property images from:', folderPath);
+      console.log('📸 Loading property images from image-urls.js');
       
       // Get reference to main carousel and thumbnails
       const mainCarousel = document.getElementById('property-carousel-main');
@@ -3560,67 +3556,58 @@ app.get('/', (req, res) => {
         return;
       }
       
-      // List all files in the Property/Map folder
-      window.supabase.storage
-        .from(bucketName)
-        .list(folderPath, {
-          limit: 100,
-          offset: 0,
-          sortBy: { column: 'name', order: 'asc' }
-        })
-        .then(({ data: files, error }) => {
-          if (error) {
-            console.error('❌ Error listing property images:', error);
-            mainCarousel.innerHTML = '<div class="carousel-loading">No images available</div>';
-            return;
-          }
-          
-          if (!files || files.length === 0) {
+      // Use pre-configured property images from IMAGE_URLS
+      fetch('/api/images/property/current')
+        .then(response => response.json())
+        .then(data => {
+          if (!data.success || !data.images || data.images.length === 0) {
             console.log('ℹ️ No property images found');
             mainCarousel.innerHTML = '<div class="carousel-loading">No images available yet</div>';
             return;
           }
           
-          console.log('✅ Found', files.length, 'property images');
-          
-          // Filter image files only
-          const imageFiles = files.filter(file => 
-            file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) && !file.name.startsWith('.')
-          );
-          
-          if (imageFiles.length === 0) {
-            mainCarousel.innerHTML = '<div class="carousel-loading">No images available yet</div>';
-            return;
-          }
-          
-          // Get public URLs for all images
-          const imageUrls = imageFiles.map(file => {
-            const { data } = window.supabase.storage
-              .from(bucketName)
-              .getPublicUrl(folderPath + '/' + file.name);
-            return data.publicUrl;
-          });
+          console.log('✅ Found', data.images.length, 'property images');
           
           // Initialize property carousel with images
-          initializePropertyCarousel(imageUrls);
+          initializePropertyCarousel(data.images);
+        })
+        .catch(error => {
+          console.error('❌ Error loading property images:', error);
+          mainCarousel.innerHTML = '<div class="carousel-loading">Error loading images</div>';
         });
     }
     
-    // Initialize property image carousel
+    // Initialize property image carousel with optimized performance
     function initializePropertyCarousel(imageUrls) {
       const mainCarousel = document.getElementById('property-carousel-main');
       const thumbnailsContainer = document.getElementById('property-carousel-thumbnails');
       let currentIndex = 0;
       
-      // Create main image display
-      mainCarousel.innerHTML = '<img src="' + imageUrls[0] + '" alt="Property Image" class="carousel-image" id="property-main-image">';
+      // Create main image display with loading optimization
+      const mainImg = document.createElement('img');
+      mainImg.src = imageUrls[0];
+      mainImg.alt = 'Property Image';
+      mainImg.className = 'carousel-image';
+      mainImg.id = 'property-main-image';
+      mainImg.style.cursor = 'pointer';
+      mainImg.loading = 'eager';
+      mainImg.decoding = 'async';
       
-      // Create thumbnails
+      // Click to zoom
+      mainImg.addEventListener('click', () => {
+        openImageLightbox('property', currentIndex, imageUrls);
+      });
+      
+      mainCarousel.innerHTML = '';
+      mainCarousel.appendChild(mainImg);
+      
+      // Create thumbnails with loading optimization
       thumbnailsContainer.innerHTML = '';
       imageUrls.forEach((url, index) => {
         const thumb = document.createElement('div');
         thumb.className = 'carousel-thumbnail' + (index === 0 ? ' active' : '');
-        thumb.style.backgroundImage = 'url(' + url + ')';
+        thumb.style.backgroundImage = 'url("' + url + '")';
+        thumb.dataset.index = index;
         thumb.addEventListener('click', () => {
           currentIndex = index;
           updatePropertyCarousel();
@@ -3628,21 +3615,22 @@ app.get('/', (req, res) => {
         thumbnailsContainer.appendChild(thumb);
       });
       
-      // Update carousel function
+      // Update carousel function with smooth transitions
       function updatePropertyCarousel() {
         const mainImage = document.getElementById('property-main-image');
         if (mainImage) {
+          // Fade transition
+          mainImage.style.opacity = '0.5';
           mainImage.src = imageUrls[currentIndex];
+          mainImage.onload = () => {
+            mainImage.style.opacity = '1';
+          };
         }
         
         // Update thumbnail active state
         const thumbnails = thumbnailsContainer.querySelectorAll('.carousel-thumbnail');
         thumbnails.forEach((thumb, i) => {
-          if (i === currentIndex) {
-            thumb.classList.add('active');
-          } else {
-            thumb.classList.remove('active');
-          }
+          thumb.classList.toggle('active', i === currentIndex);
         });
       }
       
@@ -3973,8 +3961,9 @@ app.get('/', (req, res) => {
              fetchpriority="\${index === 0 ? 'high' : 'low'}"
              sizes="(max-width: 768px) 100vw, 580px"
              decoding="async"
-             onclick="openImageLightbox('\${category}', \${index})"
-             style="cursor: pointer;">
+             style="cursor: pointer;"
+             data-lightbox-category="\${category}"
+             data-lightbox-index="\${index}">
       \`).join('');
       
       const thumbnails = images.map((src, index) => \`
@@ -4025,7 +4014,7 @@ app.get('/', (req, res) => {
       if (!carousel.dataset.currentIndex) carousel.dataset.currentIndex = '0';
       
       // Mark images as loaded when ready (removes blur smoothly)
-      images.forEach((img) => {
+      images.forEach((img, index) => {
         const markLoaded = () => img.classList.add('loaded');
         if (img.complete && img.naturalWidth > 0) {
           if (typeof img.decode === 'function') {
@@ -4037,6 +4026,11 @@ app.get('/', (req, res) => {
           img.addEventListener('load', markLoaded, { once: true });
           img.addEventListener('error', markLoaded, { once: true });
         }
+        
+        // Add click listener to open lightbox
+        img.addEventListener('click', () => {
+          openImageLightbox(category, index);
+        });
       });
       
       // Preload adjacent images for instant nav
@@ -4121,33 +4115,38 @@ app.get('/', (req, res) => {
       if (newIndex < 0) newIndex = images.length - 1;
       if (newIndex >= images.length) newIndex = 0;
       
-      const overlay = carousel.querySelector('.carousel-loading');
-      if (overlay) overlay.classList.add('active');
-      
       const target = images[newIndex];
-      if (target) {
-        try {
-          if (typeof target.decode === 'function') {
-            await target.decode().catch(() => {});
-          } else if (!target.complete) {
-            await new Promise((res) => {
-              target.addEventListener('load', res, { once: true });
-              target.addEventListener('error', res, { once: true });
-            });
-          }
-        } finally {
-          target.classList.add('loaded');
-        }
-      }
       
-      images.forEach((img, i) => img.classList.toggle('active', i === newIndex));
-      thumbnails.forEach((thumb, i) => thumb.classList.toggle('active', i === newIndex));
-      const counter = carousel.querySelector('.current-slide');
-      if (counter) counter.textContent = String(newIndex + 1);
-      carousel.dataset.currentIndex = String(newIndex);
-      preloadAdjacent(category, newIndex);
-      if (overlay) overlay.classList.remove('active');
-      setTimeout(() => { carousel.dataset.navBusy = '0'; }, 120);
+      // Use requestAnimationFrame for smoother transitions
+      requestAnimationFrame(() => {
+        // Fast toggle without waiting
+        images.forEach((img, i) => {
+          if (i === newIndex) {
+            img.classList.add('active');
+          } else {
+            img.classList.remove('active');
+          }
+        });
+        thumbnails.forEach((thumb, i) => {
+          if (i === newIndex) {
+            thumb.classList.add('active');
+          } else {
+            thumb.classList.remove('active');
+          }
+        });
+        
+        const counter = carousel.querySelector('.current-slide');
+        if (counter) counter.textContent = String(newIndex + 1);
+        carousel.dataset.currentIndex = String(newIndex);
+        
+        // Preload adjacent images asynchronously
+        requestAnimationFrame(() => {
+          preloadAdjacent(category, newIndex);
+        });
+        
+        // Release lock quickly
+        setTimeout(() => { carousel.dataset.navBusy = '0'; }, 50);
+      });
     }
     
     // Navigate carousel
@@ -4290,6 +4289,51 @@ app.get('/', (req, res) => {
         if (e.key === 'ArrowRight') navigateToImage(currentIndex + 1);
       });
       
+      // Zoom functionality
+      let zoomLevel = 1;
+      const zoomIn = lightbox.querySelector('.zoom-in');
+      const zoomOut = lightbox.querySelector('.zoom-out');
+      const zoomReset = lightbox.querySelector('.zoom-reset');
+      const zoomIndicator = lightbox.querySelector('.zoom-level-indicator');
+      const imageContainer = lightbox.querySelector('.lightbox-image-container');
+      
+      function updateZoom(newLevel) {
+        zoomLevel = Math.max(1, Math.min(3, newLevel)); // Clamp between 1x and 3x
+        img.style.transform = 'scale(' + zoomLevel + ')';
+        zoomIndicator.textContent = Math.round(zoomLevel * 100) + '%';
+        
+        // Enable/disable overflow panning when zoomed
+        if (zoomLevel > 1) {
+          imageContainer.style.overflow = 'auto';
+          imageContainer.style.cursor = 'move';
+        } else {
+          imageContainer.style.overflow = 'hidden';
+          imageContainer.style.cursor = 'pointer';
+        }
+      }
+      
+      if (zoomIn) zoomIn.addEventListener('click', () => updateZoom(zoomLevel + 0.25));
+      if (zoomOut) zoomOut.addEventListener('click', () => updateZoom(zoomLevel - 0.25));
+      if (zoomReset) zoomReset.addEventListener('click', () => updateZoom(1));
+      
+      // Double-click to zoom
+      img.addEventListener('dblclick', () => {
+        if (zoomLevel === 1) {
+          updateZoom(2);
+        } else {
+          updateZoom(1);
+        }
+      });
+      
+      // Mouse wheel zoom
+      imageContainer.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) {
+          e.preventDefault();
+          const delta = e.deltaY > 0 ? -0.1 : 0.1;
+          updateZoom(zoomLevel + delta);
+        }
+      }, { passive: false });
+      
       // Touch/swipe navigation
       const content = lightbox.querySelector('.lightbox-content');
       content.addEventListener('touchstart', (e) => {
@@ -4299,7 +4343,7 @@ app.get('/', (req, res) => {
       }, { passive: true });
       
       content.addEventListener('touchmove', (e) => {
-        if (!touchStartX) return;
+        if (!touchStartX || zoomLevel > 1) return; // Disable swipe when zoomed
         const dx = e.touches[0].clientX - touchStartX;
         const dy = e.touches[0].clientY - touchStartY;
         
@@ -4319,7 +4363,7 @@ app.get('/', (req, res) => {
         
         const dx = e.changedTouches[0].clientX - touchStartX;
         img.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-        img.style.transform = '';
+        img.style.transform = 'scale(' + zoomLevel + ')';
         
         // Swipe threshold: 80px
         if (Math.abs(dx) > 80) {
@@ -4333,6 +4377,13 @@ app.get('/', (req, res) => {
         touchStartX = 0;
         isDragging = false;
       }, { passive: true });
+      
+      // Reset zoom when changing images
+      const originalNavigate = navigateToImage;
+      navigateToImage = function(index) {
+        updateZoom(1);
+        originalNavigate(index);
+      };
     }
     
     // Wrapper function to open lightbox from carousel

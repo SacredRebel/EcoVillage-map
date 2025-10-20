@@ -1,6 +1,8 @@
 // EcoVillageBuilder - Complete Working Implementation
 import 'dotenv/config';
 import express from 'express';
+import compression from 'compression';
+import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { IMAGE_URLS } from './image-urls.js';
@@ -10,6 +12,12 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+
+// Performance & Security Middleware
+app.use(compression({ level: 6, threshold: 1024 })); // Compress responses
+app.use(cors()); // Enable CORS for all routes
+app.use(express.json({ limit: '10mb' })); // Parse JSON bodies
+app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Parse URL-encoded bodies
 
 // Supabase configuration - Load from .env file
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
@@ -3817,7 +3825,24 @@ app.get('/', (req, res) => {
           const response = await fetch('/api/images/' + zoneId + '/' + category);
           const data = await response.json();
           
-          if (data.images && data.images.length > 0) {
+          // Check if this category has subcategories
+          if (data.hasSubcategories && data.subcategoryData) {
+            // Create subcategory structure for display
+            const subcategoryInfo = {};
+            for (const [subcat, images] of Object.entries(data.subcategoryData)) {
+              subcategoryInfo[subcat] = {
+                images: images,
+                count: images.length
+              };
+            }
+            container.innerHTML = createSubcategoryGallery({subcategories: subcategoryInfo}, zoneId, category);
+            // Initialize carousels for all subcategories
+            Object.keys(subcategoryInfo).forEach(subcat => {
+              initializeCarousel(category + '-' + subcat);
+            });
+            console.log('Loaded ' + data.count + ' images in ' + data.subcategories.length + ' subcategories for ' + zoneId + '/' + category);
+          } else if (data.images && data.images.length > 0) {
+            // Regular single-level images
             container.innerHTML = createImageCarousel(data.images, zoneId, category);
             initializeCarousel(category);
             console.log('Loaded ' + data.images.length + ' images for ' + zoneId + '/' + category);
@@ -5000,6 +5025,7 @@ const PROJECT_FOLDER_MAP = {
 
 // API endpoint to get images for a specific zone
 // Uses configuration file (image-urls.js) with direct URLs from Supabase
+// Supports subcategories for zones like infrastructure, main-residence, retreat-village
 app.get('/api/images/:zoneId/:category', async (req, res) => {
   try {
     const { zoneId, category } = req.params;
@@ -5007,23 +5033,43 @@ app.get('/api/images/:zoneId/:category', async (req, res) => {
     
     // Get images from configuration
     const zoneImages = IMAGE_URLS[zoneId] || {};
-    const images = zoneImages[categoryLower] || [];
+    let categoryData = zoneImages[categoryLower];
     
-    res.setHeader('Cache-Control', 'public, max-age=3600');
+    // Check if category data has subcategories (is an object with subcategory keys)
+    let hasSubcategories = false;
+    let images = [];
+    let subcategories = null;
+    
+    if (categoryData && typeof categoryData === 'object' && !Array.isArray(categoryData)) {
+      // This category has subcategories
+      hasSubcategories = true;
+      subcategories = Object.keys(categoryData);
+      // Flatten all subcategory images into one array for backward compatibility
+      images = Object.values(categoryData).flat();
+    } else if (Array.isArray(categoryData)) {
+      // Regular array of images
+      images = categoryData;
+    }
+    
+    // Aggressive caching for images (1 year) since URLs contain content hash
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Access-Control-Allow-Origin', '*');
     
     res.json({
       success: true,
       zoneId: zoneId,
       category: category,
+      hasSubcategories: hasSubcategories,
+      subcategories: subcategories,
       images: images,
       count: images.length,
+      subcategoryData: hasSubcategories ? categoryData : null,
       note: 'Using configured URLs from image-urls.js'
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // Serve static images with strong caching
 app.use(
   '/images',

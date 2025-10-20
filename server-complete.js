@@ -1135,7 +1135,7 @@ app.get('/', (req, res) => {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>EcoVillageBuilder - Sulphur Mountain Interactive Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -2313,7 +2313,52 @@ app.get('/', (req, res) => {
             }
           }
           
-          /* Responsive Design */
+          /* Comprehensive Responsive Design for All Mobile Devices */
+          
+          /* Small phones (iPhone SE, Galaxy S series) - 320-375px */
+          @media (max-width: 375px) {
+            .side-panel {
+              width: 100vw;
+              left: -100vw;
+            }
+            
+            .panel-header {
+              padding: 12px 16px;
+            }
+            
+            .panel-header h2 {
+              font-size: 16px;
+            }
+            
+            .carousel-main {
+              height: 240px;
+            }
+            
+            .carousel-nav {
+              width: 36px;
+              height: 36px;
+              font-size: 16px;
+            }
+            
+            .carousel-thumbnail {
+              width: 50px;
+              height: 38px;
+            }
+            
+            .gallery-tab {
+              padding: 8px 12px;
+              font-size: 12px;
+            }
+          }
+          
+          /* Standard phones (iPhone 12-14, most Android) - 376-428px */
+          @media (min-width: 376px) and (max-width: 428px) {
+            .carousel-main {
+              height: 280px;
+            }
+          }
+          
+          /* Large phones & small tablets - up to 768px */
           @media (max-width: 768px) {
             .side-panel {
               width: 100vw;
@@ -2335,28 +2380,85 @@ app.get('/', (req, res) => {
             
             .carousel-main {
               height: 300px;
+              transition: transform 0.3s ease-out;
             }
             
             .carousel-thumbnail {
               width: 60px;
               height: 45px;
+              transition: all 0.2s ease;
+            }
+            
+            .carousel-thumbnail:active {
+              transform: scale(0.95);
             }
             
             .carousel-nav {
-              width: 40px;
-              height: 40px;
-              font-size: 18px;
+              width: 44px;
+              height: 44px;
+              font-size: 20px;
+              background: rgba(0,0,0,0.6);
+              backdrop-filter: blur(8px);
+              transition: all 0.2s ease;
+            }
+            
+            .carousel-nav:active {
+              transform: scale(0.9);
+              background: rgba(0,0,0,0.8);
             }
 
-            /* Larger zoom controls on mobile for better touch targets */
+            /* Larger touch targets for mobile */
             .leaflet-control-zoom a {
-              width: 42px;
-              height: 42px;
-              line-height: 42px;
-              font-size: 20px;
+              width: 48px;
+              height: 48px;
+              line-height: 48px;
+              font-size: 22px;
             }
             .leaflet-control-zoom {
               border-radius: 12px;
+            }
+            
+            /* Smooth panel transitions */
+            .side-panel.open,
+            .property-panel.open {
+              animation: slideInFromLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            
+            @keyframes slideInFromLeft {
+              from {
+                transform: translateX(-100%);
+                opacity: 0.8;
+              }
+              to {
+                transform: translateX(0);
+                opacity: 1;
+              }
+            }
+          }
+          
+          /* Tablets (iPad, iPad Pro) - 769-1024px */
+          @media (min-width: 769px) and (max-width: 1024px) {
+            .side-panel {
+              width: 480px;
+            }
+            
+            .property-panel {
+              width: 480px;
+            }
+            
+            .carousel-main {
+              height: 380px;
+            }
+          }
+          
+          /* Large tablets & small desktops - 1025-1366px */
+          @media (min-width: 1025px) and (max-width: 1366px) {
+            .side-panel {
+              width: 520px;
+            }
+            
+            .property-panel {
+              width: 520px;
             }
           }
           
@@ -2525,10 +2627,22 @@ app.get('/', (req, res) => {
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     
+    .property-panel.swiping {
+      transition: transform 0s !important;
+    }
+    
     @media (max-width: 768px) {
       .property-panel {
         width: 100vw;
-        right: -100vw;
+        left: -100vw;
+        right: auto;
+        transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s ease-out;
+        will-change: left, transform;
+      }
+      
+      .property-panel.open {
+        left: 0;
+        right: auto;
       }
       
       .property-panel-title h3 {
@@ -3041,13 +3155,24 @@ app.get('/', (req, res) => {
       zoomAnimation: true,
       fadeAnimation: true,
       markerZoomAnimation: true,
+      // Ultra-smooth mobile inertia (iPhone Maps-style)
       inertia: true,
-      inertiaDeceleration: 3000,
+      inertiaDeceleration: 2400,
+      inertiaMaxSpeed: 1800,
+      easeLinearity: 0.15,
+      // Smooth zoom with fine control
       zoomSnap: 0.25,
-      zoomDelta: 0.25,
-      wheelDebounceTime: 20,
-      wheelPxPerZoomLevel: 90,
-      tapTolerance: 15
+      zoomDelta: 0.5,
+      wheelDebounceTime: 40,
+      wheelPxPerZoomLevel: 120,
+      // Touch optimization
+      tapTolerance: 20,
+      tapHold: true,
+      touchZoom: true,
+      bounceAtZoomLimits: true,
+      // Performance
+      worldCopyJump: false,
+      maxBoundsViscosity: 0.5
     });
     
     // Add multiple high-resolution tile layers for better zoom coverage
@@ -3093,8 +3218,9 @@ app.get('/', (req, res) => {
     satelliteLayer.addTo(map);
     const layerControl = L.control.layers(baseLayers).addTo(map);
     
-    // Enable mobile swipe-to-close for the side panel
+    // Enable mobile swipe-to-close for both panels
     attachPanelSwipe(map);
+    attachPropertyPanelSwipe();
     
     // Add tile loading indicators and error handling
     satelliteLayer.on('loading', () => {
@@ -3634,6 +3760,66 @@ app.get('/', (req, res) => {
         });
       }
       
+      // Add arrow navigation buttons
+      if (imageUrls.length > 1) {
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'carousel-nav prev';
+        prevBtn.innerHTML = '&#8249;';
+        prevBtn.setAttribute('aria-label', 'Previous image');
+        prevBtn.addEventListener('click', () => {
+          currentIndex = (currentIndex - 1 + imageUrls.length) % imageUrls.length;
+          updatePropertyCarousel();
+        });
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'carousel-nav next';
+        nextBtn.innerHTML = '&#8250;';
+        nextBtn.setAttribute('aria-label', 'Next image');
+        nextBtn.addEventListener('click', () => {
+          currentIndex = (currentIndex + 1) % imageUrls.length;
+          updatePropertyCarousel();
+        });
+        
+        mainCarousel.appendChild(prevBtn);
+        mainCarousel.appendChild(nextBtn);
+        
+        // Add image counter
+        const counter = document.createElement('div');
+        counter.className = 'carousel-counter';
+        counter.innerHTML = '<span class="current-slide">1</span> / <span class="total-slides">' + imageUrls.length + '</span>';
+        mainCarousel.appendChild(counter);
+      }
+      
+      // Add swipe navigation
+      let swipeStartX = 0, swipeStartY = 0;
+      mainCarousel.addEventListener('touchstart', (e) => {
+        swipeStartX = e.touches[0].clientX;
+        swipeStartY = e.touches[0].clientY;
+      }, { passive: true });
+      
+      mainCarousel.addEventListener('touchend', (e) => {
+        const swipeEndX = e.changedTouches[0].clientX;
+        const swipeEndY = e.changedTouches[0].clientY;
+        const dx = swipeEndX - swipeStartX;
+        const dy = swipeEndY - swipeStartY;
+        
+        // Horizontal swipe detection
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+          if (dx > 0) {
+            // Swipe right = previous
+            currentIndex = (currentIndex - 1 + imageUrls.length) % imageUrls.length;
+          } else {
+            // Swipe left = next
+            currentIndex = (currentIndex + 1) % imageUrls.length;
+          }
+          updatePropertyCarousel();
+          
+          // Update counter
+          const counterEl = mainCarousel.querySelector('.current-slide');
+          if (counterEl) counterEl.textContent = currentIndex + 1;
+        }
+      }, { passive: true });
+      
       // Add keyboard navigation
       document.addEventListener('keydown', (e) => {
         if (!document.getElementById('property-panel').classList.contains('open')) return;
@@ -3641,9 +3827,13 @@ app.get('/', (req, res) => {
         if (e.key === 'ArrowLeft') {
           currentIndex = (currentIndex - 1 + imageUrls.length) % imageUrls.length;
           updatePropertyCarousel();
+          const counterEl = mainCarousel.querySelector('.current-slide');
+          if (counterEl) counterEl.textContent = currentIndex + 1;
         } else if (e.key === 'ArrowRight') {
           currentIndex = (currentIndex + 1) % imageUrls.length;
           updatePropertyCarousel();
+          const counterEl = mainCarousel.querySelector('.current-slide');
+          if (counterEl) counterEl.textContent = currentIndex + 1;
         }
       });
       
@@ -3763,6 +3953,117 @@ app.get('/', (req, res) => {
         onStart(e.clientX, e.clientY);
       });
       panel.addEventListener('pointermove', function(e) {
+        onMove(e.clientX, e.clientY, e);
+      });
+      panel.addEventListener('pointerup', onEnd);
+      panel.addEventListener('pointercancel', onEnd);
+    }
+    
+    // Enable swipe-to-close for property panel (iPhone-style smooth closing)
+    function attachPropertyPanelSwipe() {
+      const panel = document.getElementById('property-panel');
+      if (!panel) return;
+      let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0;
+      const SWIPE_THRESHOLD = 80; // px - swipe distance to trigger close
+      const VELOCITY_THRESHOLD = 0.4; // px/ms - fast swipe threshold
+      const ANGLE_THRESHOLD = 20; // px - detect horizontal swipe
+      
+      const onStart = (clientX, clientY) => {
+        if (!panel.classList.contains('open')) return;
+        startX = clientX;
+        startY = clientY;
+        startTime = Date.now();
+        isTracking = true;
+        isSwiping = false;
+        panel.style.transition = 'none';
+      };
+      
+      const onMove = (clientX, clientY, ev) => {
+        if (!isTracking) return;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        
+        if (!isSwiping) {
+          // Detect horizontal swipe
+          if (Math.abs(dx) > ANGLE_THRESHOLD) {
+            if (Math.abs(dx) > Math.abs(dy) * 1.5) {
+              isSwiping = true;
+              panel.classList.add('swiping');
+            }
+          }
+          if (!isSwiping) return;
+        }
+        
+        // Prevent scrolling during swipe
+        if (ev && ev.cancelable) ev.preventDefault();
+        
+        // Only allow left swipe (negative dx for closing)
+        const translateX = Math.min(0, dx);
+        panel.style.transform = 'translateX(' + translateX + 'px)';
+      };
+      
+      const onEnd = () => {
+        if (!isTracking) return;
+        
+        const style = panel.style.transform || '';
+        const match = style.match(/translateX\(([-0-9.]+)px\)/);
+        const translateX = match ? parseFloat(match[1]) : 0;
+        const duration = Date.now() - startTime;
+        const velocity = Math.abs(translateX) / Math.max(duration, 1);
+        
+        // Smooth transition for snap-back or close
+        panel.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), left 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        panel.classList.remove('swiping');
+        
+        // Close if swiped far enough or fast enough
+        const shouldClose = translateX < -SWIPE_THRESHOLD || velocity > VELOCITY_THRESHOLD;
+        
+        if (shouldClose) {
+          // Animate panel out with iPhone-style smooth close
+          panel.style.transform = 'translateX(-100%)';
+          setTimeout(() => {
+            panel.classList.remove('open');
+            panel.style.transform = '';
+            panel.style.transition = '';
+            
+            // Remove active class from boundary lines
+            document.querySelectorAll('.property-line-magical').forEach(path => {
+              path.classList.remove('active');
+            });
+            
+            console.log('👆 Property panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
+          }, 350);
+        } else {
+          // Snap back smoothly
+          panel.style.transform = '';
+          setTimeout(() => {
+            panel.style.transition = '';
+          }, 350);
+        }
+        
+        isTracking = false;
+        isSwiping = false;
+      };
+      
+      // Touch events
+      panel.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        onStart(t.clientX, t.clientY);
+      }, { passive: true });
+      
+      panel.addEventListener('touchmove', (e) => {
+        const t = e.touches[0];
+        onMove(t.clientX, t.clientY, e);
+      }, { passive: false });
+      
+      panel.addEventListener('touchend', onEnd, { passive: true });
+      panel.addEventListener('touchcancel', onEnd, { passive: true });
+      
+      // Pointer events fallback
+      panel.addEventListener('pointerdown', (e) => {
+        onStart(e.clientX, e.clientY);
+      });
+      panel.addEventListener('pointermove', (e) => {
         onMove(e.clientX, e.clientY, e);
       });
       panel.addEventListener('pointerup', onEnd);

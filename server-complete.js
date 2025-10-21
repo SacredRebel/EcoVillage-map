@@ -3218,6 +3218,10 @@ app.get('/', (req, res) => {
     satelliteLayer.addTo(map);
     const layerControl = L.control.layers(baseLayers).addTo(map);
     
+    // Prevent accidental map clicks during panel swipes
+    window.ignoreMapClicksUntil = 0;
+    function suppressMapClicksFor(ms) { window.ignoreMapClicksUntil = Date.now() + ms; }
+
     // Enable mobile swipe-to-close for both panels
     attachPanelSwipe(map);
     attachPropertyPanelSwipe();
@@ -3238,28 +3242,6 @@ app.get('/', (req, res) => {
         map.removeLayer(satelliteLayer);
         googleSatLayer.addTo(map);
         console.log('🔄 Switched to Google satellite tiles');
-      }
-    });
-    
-    // Add zoom level indicator with UI updates
-    const zoomIndicator = document.getElementById('zoom-level');
-    map.on('zoomend', () => {
-      const zoom = map.getZoom();
-      zoomIndicator.textContent = 'Zoom: ' + zoom + '/22';
-      console.log('🔍 Current zoom level:', zoom, '- Max detail available at zoom 22');
-      
-      // Update zoom indicator color based on zoom level
-      const zoomIndicatorDiv = document.getElementById('zoom-indicator');
-      if (zoom >= 20) {
-        console.log('🎯 Ultra high-resolution view activated');
-        zoomIndicatorDiv.style.background = 'linear-gradient(135deg, #E8F5E8 0%, #A5D6A7 100%)';
-        zoomIndicatorDiv.style.borderLeftColor = '#4CAF50';
-      } else if (zoom >= 18) {
-        zoomIndicatorDiv.style.background = 'linear-gradient(135deg, #FFF3E0 0%, #FFCC80 100%)';
-        zoomIndicatorDiv.style.borderLeftColor = '#FF9800';
-      } else {
-        zoomIndicatorDiv.style.background = 'linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)';
-        zoomIndicatorDiv.style.borderLeftColor = '#2196F3';
       }
     });
     
@@ -3324,10 +3306,36 @@ app.get('/', (req, res) => {
     propertyLines.push(mainLine);
     
     mainLine.on('click', function(e) {
+      if (window.ignoreMapClicksUntil && Date.now() < window.ignoreMapClicksUntil) { L.DomEvent.stopPropagation(e); return; }
+      // Close zone panel if open to avoid overlap
+      const side = document.getElementById('side-panel');
+      if (side && side.classList.contains('open')) { side.classList.remove('open'); }
+      // If already open, do nothing
+      const pp = document.getElementById('property-panel');
+      if (pp && pp.classList.contains('open')) { L.DomEvent.stopPropagation(e); return; }
       openPropertyPanel();
-      if (mainLine._path) {
-        mainLine._path.classList.add('active');
-      }
+      if (mainLine._path) { mainLine._path.classList.add('active'); }
+      L.DomEvent.stopPropagation(e);
+    });
+
+    // Add a wide, invisible hit area to make tapping the boundary easier on mobile
+    var hitLine = L.polyline(boundaryCoordinates, {
+      color: '#000',
+      weight: 30,
+      opacity: 0.0001,
+      className: 'property-line-hit',
+      interactive: true,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(map);
+    hitLine.on('click', function(e) {
+      if (window.ignoreMapClicksUntil && Date.now() < window.ignoreMapClicksUntil) { L.DomEvent.stopPropagation(e); return; }
+      const side = document.getElementById('side-panel');
+      if (side && side.classList.contains('open')) { side.classList.remove('open'); }
+      const pp = document.getElementById('property-panel');
+      if (pp && pp.classList.contains('open')) { L.DomEvent.stopPropagation(e); return; }
+      openPropertyPanel();
+      if (mainLine._path) { mainLine._path.classList.add('active'); }
       L.DomEvent.stopPropagation(e);
     });
     
@@ -3423,8 +3431,12 @@ app.get('/', (req, res) => {
       }).addTo(map);
       zoneMarkers.push(marker);
       
-      // Add click handlers for interactive side panel
-      const clickHandler = () => openSidePanel(zone);
+      // Add click handlers for interactive side panel (guard against swipe-ending ghost clicks)
+      const clickHandler = (e) => {
+        if (window.ignoreMapClicksUntil && Date.now() < window.ignoreMapClicksUntil) { L.DomEvent.stopPropagation(e); return; }
+        openSidePanel(zone);
+        L.DomEvent.stopPropagation(e);
+      };
       marker.on('click', clickHandler);
       polygon.on('click', clickHandler);
       
@@ -3473,6 +3485,12 @@ app.get('/', (req, res) => {
       const panel = document.getElementById('side-panel');
       const content = document.getElementById('panel-content');
       const hero = document.getElementById('project-hero');
+      // Ensure property panel is closed so panels are standalone
+      const propPanel = document.getElementById('property-panel');
+      if (propPanel && propPanel.classList.contains('open')) {
+        propPanel.classList.remove('open', 'swiping');
+        propPanel.style.transform = '';
+      }
       
       // Get zone color for theming
       const zoneColor = zoneColorMap[zone.type] || '#333';
@@ -3524,6 +3542,12 @@ app.get('/', (req, res) => {
       const panel = document.getElementById('property-panel');
       const titleEl = document.getElementById('property-title');
       const contentEl = document.getElementById('property-panel-content');
+      // Ensure zone side panel is closed so panels do not overlap
+      const sidePanel = document.getElementById('side-panel');
+      if (sidePanel && sidePanel.classList.contains('open')) {
+        sidePanel.classList.remove('open', 'swiping');
+        sidePanel.style.transform = '';
+      }
       
       // Update title
       titleEl.textContent = 'Sulphur Mountain Property';
@@ -3842,7 +3866,11 @@ app.get('/', (req, res) => {
     
     // Close property panel
     document.getElementById('close-property-panel').addEventListener('click', function() {
-      document.getElementById('property-panel').classList.remove('open');
+      const panel = document.getElementById('property-panel');
+      panel.classList.remove('open', 'swiping');
+      panel.style.transform = '';
+      panel.style.transition = '';
+      if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250);
       
       // Remove active class from all boundary lines
       document.querySelectorAll('.property-line-magical').forEach(function(path) {
@@ -3934,9 +3962,14 @@ app.get('/', (req, res) => {
         isSwiping = false;
       };
       
-      // Touch events
+      // Touch events (edge-only)
       panel.addEventListener('touchstart', function(e) {
         const t = e.touches[0];
+        const target = e.target;
+        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
+        const rect = panel.getBoundingClientRect();
+        const EDGE = 28;
+        if ((rect.right - t.clientX) > EDGE) return;
         onStart(t.clientX, t.clientY);
       }, { passive: true });
       
@@ -3945,18 +3978,23 @@ app.get('/', (req, res) => {
         onMove(t.clientX, t.clientY, e);
       }, { passive: false });
       
-      panel.addEventListener('touchend', onEnd, { passive: true });
-      panel.addEventListener('touchcancel', onEnd, { passive: true });
+      panel.addEventListener('touchend', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); }, { passive: true });
+      panel.addEventListener('touchcancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); }, { passive: true });
       
       // Pointer events fallback
       panel.addEventListener('pointerdown', function(e) {
+        const target = e.target;
+        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
+        const rect = panel.getBoundingClientRect();
+        const EDGE = 28;
+        if ((rect.right - e.clientX) > EDGE) return;
         onStart(e.clientX, e.clientY);
       });
       panel.addEventListener('pointermove', function(e) {
         onMove(e.clientX, e.clientY, e);
       });
-      panel.addEventListener('pointerup', onEnd);
-      panel.addEventListener('pointercancel', onEnd);
+      panel.addEventListener('pointerup', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); });
+      panel.addEventListener('pointercancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); });
     }
     
     // Enable swipe-to-close for property panel (iPhone-style smooth closing)
@@ -4045,9 +4083,14 @@ app.get('/', (req, res) => {
         isSwiping = false;
       };
       
-      // Touch events
+      // Touch events (edge-only)
       panel.addEventListener('touchstart', (e) => {
         const t = e.touches[0];
+        const target = e.target;
+        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
+        const rect = panel.getBoundingClientRect();
+        const EDGE = 28;
+        if ((rect.right - t.clientX) > EDGE) return;
         onStart(t.clientX, t.clientY);
       }, { passive: true });
       
@@ -4061,13 +4104,18 @@ app.get('/', (req, res) => {
       
       // Pointer events fallback
       panel.addEventListener('pointerdown', (e) => {
+        const target = e.target;
+        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
+        const rect = panel.getBoundingClientRect();
+        const EDGE = 28;
+        if ((rect.right - e.clientX) > EDGE) return;
         onStart(e.clientX, e.clientY);
       });
       panel.addEventListener('pointermove', (e) => {
         onMove(e.clientX, e.clientY, e);
       });
-      panel.addEventListener('pointerup', onEnd);
-      panel.addEventListener('pointercancel', onEnd);
+      panel.addEventListener('pointerup', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); });
+      panel.addEventListener('pointercancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); });
     }
     
     // Enhanced image gallery tab functionality
@@ -4372,13 +4420,15 @@ app.get('/', (req, res) => {
         };
 
         // Touch
-        main.addEventListener('touchstart', (e) => { const t = e.touches[0]; onStart(t.clientX, t.clientY); }, { passive: true });
-        main.addEventListener('touchmove', (e) => { const t = e.touches[0]; onMove(t.clientX, t.clientY, e); }, { passive: false });
-        main.addEventListener('touchend', (e) => { const t = e.changedTouches[0]; onEnd(t.clientX, t.clientY); });
+        main.addEventListener('touchstart', (e) => { const t = e.touches[0]; onStart(t.clientX, t.clientY); e.stopPropagation(); }, { passive: true });
+        main.addEventListener('touchmove', (e) => { const t = e.touches[0]; onMove(t.clientX, t.clientY, e); e.stopPropagation(); }, { passive: false });
+        main.addEventListener('touchend', (e) => { const t = e.changedTouches[0]; onEnd(t.clientX, t.clientY); e.stopPropagation(); });
         // Pointer fallback
-        main.addEventListener('pointerdown', (e) => onStart(e.clientX, e.clientY));
-        main.addEventListener('pointermove', (e) => onMove(e.clientX, e.clientY, e));
-        main.addEventListener('pointerup', (e) => onEnd(e.clientX, e.clientY));
+        main.addEventListener('pointerdown', (e) => { onStart(e.clientX, e.clientY); e.stopPropagation(); });
+        main.addEventListener('pointermove', (e) => { onMove(e.clientX, e.clientY, e); e.stopPropagation(); });
+        main.addEventListener('pointerup', (e) => { onEnd(e.clientX, e.clientY); e.stopPropagation(); });
+        // Ensure best behavior on mobile
+        try { main.style.touchAction = 'pan-y'; } catch(_){}
       }
     }
 
@@ -4635,49 +4685,103 @@ app.get('/', (req, res) => {
         }
       }, { passive: false });
       
-      // Touch/swipe navigation
+      // Touch/swipe navigation + vertical dismiss
       const content = lightbox.querySelector('.lightbox-content');
+      let isHorizontal = false, isVertical = false;
       content.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) return; // handled by pinch logic below
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
-        isDragging = false;
+        isDragging = false; isHorizontal = false; isVertical = false;
       }, { passive: true });
       
       content.addEventListener('touchmove', (e) => {
-        if (!touchStartX || zoomLevel > 1) return; // Disable swipe when zoomed
+        if (e.touches.length === 2) return; // pinch separate
+        if (!touchStartX) return;
         const dx = e.touches[0].clientX - touchStartX;
         const dy = e.touches[0].clientY - touchStartY;
+        const absX = Math.abs(dx), absY = Math.abs(dy);
         
-        // Detect horizontal swipe
-        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
-          isDragging = true;
-          img.style.transform = 'translateX(' + dx + 'px)';
-          img.style.transition = 'none';
-        }
-      }, { passive: true });
-      
-      content.addEventListener('touchend', (e) => {
-        if (!isDragging) {
-          touchStartX = 0;
-          return;
-        }
-        
-        const dx = e.changedTouches[0].clientX - touchStartX;
-        img.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-        img.style.transform = 'scale(' + zoomLevel + ')';
-        
-        // Swipe threshold: 80px
-        if (Math.abs(dx) > 80) {
-          if (dx > 0) {
-            navigateToImage(currentIndex - 1); // Swipe right = previous
-          } else {
-            navigateToImage(currentIndex + 1); // Swipe left = next
+        if (!isHorizontal && !isVertical) {
+          if (absX > 16 || absY > 16) {
+            if (absX > absY) { isHorizontal = true; }
+            else { isVertical = true; }
           }
         }
         
-        touchStartX = 0;
-        isDragging = false;
+        if (isHorizontal && zoomLevel === 1) {
+          isDragging = true;
+          img.style.transition = 'none';
+          img.style.transform = 'translateX(' + dx + 'px)';
+          e.stopPropagation();
+          e.preventDefault?.();
+        } else if (isVertical && zoomLevel === 1) {
+          isDragging = true;
+          const translate = Math.max(-120, Math.min(120, dy));
+          const opacity = Math.max(0.3, 1 - Math.abs(translate) / 160);
+          content.style.transform = 'translateY(' + translate + 'px)';
+          content.style.transition = 'none';
+          content.style.opacity = String(opacity);
+          e.stopPropagation();
+          e.preventDefault?.();
+        }
+      }, { passive: false });
+      
+      content.addEventListener('touchend', (e) => {
+        const dx = (e.changedTouches[0]?.clientX || 0) - (touchStartX || 0);
+        const dy = (e.changedTouches[0]?.clientY || 0) - (touchStartY || 0);
+        if (isHorizontal && zoomLevel === 1) {
+          img.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+          img.style.transform = 'scale(' + zoomLevel + ')';
+          if (Math.abs(dx) > 80) {
+            navigateToImage(currentIndex + (dx < 0 ? 1 : -1));
+          }
+        } else if (isVertical && zoomLevel === 1) {
+          content.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+          if (Math.abs(dy) > 80) {
+            closeLightbox();
+          } else {
+            content.style.transform = '';
+            content.style.opacity = '1';
+          }
+        }
+        touchStartX = 0; touchStartY = 0; isDragging = false; isHorizontal = false; isVertical = false;
       }, { passive: true });
+
+      // Pinch-to-zoom (touch)
+      let pinchStartDistance = 0;
+      function distance(t1, t2) {
+        const dx = t2.clientX - t1.clientX; const dy = t2.clientY - t1.clientY; return Math.hypot(dx, dy);
+      }
+      imageContainer.style.touchAction = 'none';
+      imageContainer.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          pinchStartDistance = distance(e.touches[0], e.touches[1]);
+        }
+      }, { passive: true });
+      imageContainer.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          const d = distance(e.touches[0], e.touches[1]);
+          if (pinchStartDistance > 0) {
+            const scaleDelta = d / pinchStartDistance;
+            const newLevel = Math.min(3, Math.max(1, zoomLevel * scaleDelta));
+            updateZoom(newLevel);
+          }
+        }
+      }, { passive: false });
+      imageContainer.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) {
+          pinchStartDistance = 0;
+        }
+      }, { passive: true });
+
+      // Tap outside image inside content closes
+      content.addEventListener('click', (e) => {
+        if (!e.target.closest('.lightbox-image') && !e.target.closest('.lightbox-zoom-controls') && !e.target.closest('.lightbox-nav')) {
+          closeLightbox();
+        }
+      });
       
       // Reset zoom when changing images
       const originalNavigate = navigateToImage;

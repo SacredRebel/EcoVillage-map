@@ -3992,10 +3992,12 @@ app.get('/', (req, res) => {
       if (!panel) return;
       let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0, startNearEdge = false;
       let currentTranslate = 0;
-      const EDGE = 48; // px - widened edge for easier grab
+      let rafPending = false;
+      let gesture = null; // 'h' or 'v'
+      const EDGE = 32; // px - narrower edge to avoid accidental grabs
       const SWIPE_THRESHOLD = 44; // px - slightly lower for better feel
       const VELOCITY_THRESHOLD = 0.18; // px/ms - easier close
-      const ANGLE_THRESHOLD = 10; // px - detect horizontal a bit sooner
+      const ANGLE_THRESHOLD = 16; // px - avoid accidental starts
       
       const onStart = (clientX, clientY) => {
         if (!panel.classList.contains('open')) return;
@@ -4007,7 +4009,8 @@ app.get('/', (req, res) => {
         // Remove transition during drag for immediate feedback and kill any open animation
         panel.style.transition = 'none';
         panel.style.animation = 'none';
-        panel.style.touchAction = 'none';
+        rafPending = false;
+        gesture = null;
       };
       
       const onMove = (clientX, clientY, ev) => {
@@ -4016,21 +4019,42 @@ app.get('/', (req, res) => {
         const dy = clientY - startY;
         
         if (!isSwiping) {
-          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.1 && Math.abs(dx) > ANGLE_THRESHOLD;
-          // Allow start anywhere if strong horizontal intent (>72px), otherwise require edge start
-          if (horizontal && (startNearEdge || Math.abs(dx) > 72)) {
+          // Lock gesture axis early to avoid accidental horizontal when scrolling
+          if (!gesture) {
+            const absX = Math.abs(dx), absY = Math.abs(dy);
+            if (absX > 8 || absY > 8) gesture = absX > absY ? 'h' : 'v';
+          }
+          if (gesture === 'v') {
+            // Let vertical scroll proceed, cancel tracking
+            isTracking = false;
+            panel.style.transition = '';
+            panel.style.animation = '';
+            return;
+          }
+          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.3 && Math.abs(dx) > ANGLE_THRESHOLD;
+          const edgeDxOk = startNearEdge ? Math.abs(dx) > 14 : Math.abs(dx) > 120;
+          if (horizontal && edgeDxOk) {
             isSwiping = true;
             panel.classList.add('swiping');
+            panel.style.touchAction = 'none';
           }
           if (!isSwiping) return; // Still waiting to detect direction
         }
         
-        // Prevent default to stop scrolling while swiping
-        if (ev && ev.cancelable) ev.preventDefault();
+        // Prevent default only while swiping to keep vertical scroll smooth otherwise
+        if (isSwiping && ev && ev.cancelable) ev.preventDefault();
         
         // Only allow left swipe (negative dx)
         currentTranslate = Math.min(0, dx);
-        panel.style.transform = 'translateX(' + currentTranslate + 'px)';
+        const width = panel.getBoundingClientRect().width || 1;
+        const next = Math.max(-width, Math.min(0, currentTranslate));
+        if (!rafPending) {
+          rafPending = true;
+          requestAnimationFrame(() => {
+            panel.style.transform = 'translate3d(' + next + 'px,0,0)';
+            rafPending = false;
+          });
+        }
       };
       
       const onEnd = () => {
@@ -4076,6 +4100,8 @@ app.get('/', (req, res) => {
         isTracking = false;
         isSwiping = false;
         currentTranslate = 0;
+        rafPending = false;
+        gesture = null;
       };
       
       // Touch events (edge-only)
@@ -4118,10 +4144,11 @@ app.get('/', (req, res) => {
       if (!panel) return;
       let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0, startNearEdge = false;
       let currentTranslate = 0;
-      const EDGE = 48; // px
+      let rafPending = false;
+      const EDGE = 32; // px - narrower edge to avoid accidental grabs
       const SWIPE_THRESHOLD = 44; // easier close
       const VELOCITY_THRESHOLD = 0.18; // easier close
-      const ANGLE_THRESHOLD = 10; // faster detection
+      const ANGLE_THRESHOLD = 16; // avoid accidental starts
       // Direction: on mobile the property panel opens from left (close left), on desktop it's right (close right)
       const closeToLeft = (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(max-width: 768px)').matches : true;
       
@@ -4143,20 +4170,42 @@ app.get('/', (req, res) => {
         const dy = clientY - startY;
         
         if (!isSwiping) {
-          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > ANGLE_THRESHOLD;
-          if (horizontal && (startNearEdge || Math.abs(dx) > 72)) {
+          if (!gesture) {
+            const absX = Math.abs(dx), absY = Math.abs(dy);
+            if (absX > 8 || absY > 8) gesture = absX > absY ? 'h' : 'v';
+          }
+          if (gesture === 'v') {
+            isTracking = false;
+            panel.style.transition = '';
+            panel.style.animation = '';
+            return;
+          }
+          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.3 && Math.abs(dx) > ANGLE_THRESHOLD;
+          const edgeDxOk = startNearEdge ? Math.abs(dx) > 14 : Math.abs(dx) > 120;
+          if (horizontal && edgeDxOk) {
             isSwiping = true;
             panel.classList.add('swiping');
+            panel.style.touchAction = 'none';
           }
           if (!isSwiping) return;
         }
         
-        // Prevent scrolling during swipe
-        if (ev && ev.cancelable) ev.preventDefault();
+        // Prevent scrolling during swipe only when actually swiping
+        if (isSwiping && ev && ev.cancelable) ev.preventDefault();
         
-        // Direction-aware translate: left on mobile, right on desktop
+        // Direction-aware translate: left on mobile, right on desktop (rAF + clamp)
         currentTranslate = closeToLeft ? Math.min(0, dx) : Math.max(0, dx);
-        panel.style.transform = 'translateX(' + currentTranslate + 'px)';
+        const width = panel.getBoundingClientRect().width || 1;
+        const next = closeToLeft
+          ? Math.max(-width, Math.min(0, currentTranslate))
+          : Math.min(width, Math.max(0, currentTranslate));
+        if (!rafPending) {
+          rafPending = true;
+          requestAnimationFrame(() => {
+            panel.style.transform = 'translate3d(' + next + 'px,0,0)';
+            rafPending = false;
+          });
+        }
       };
       
       const onEnd = () => {
@@ -4343,6 +4392,12 @@ app.get('/', (req, res) => {
           if (aa !== bb) return aa - bb;
           return a.localeCompare(b);
         });
+      } else if (category === 'vision' && zoneId === 'infrastructure') {
+        subcategories.sort((a, b) => {
+          if (a === 'Water' && b !== 'Water') return -1;
+          if (b === 'Water' && a !== 'Water') return 1;
+          return a.localeCompare(b);
+        });
       } else {
         // Default alphabetical for other cases
         subcategories.sort((a, b) => a.localeCompare(b));
@@ -4352,14 +4407,14 @@ app.get('/', (req, res) => {
       const activeSubcategory = subcategories.find(name => (data.subcategories[name]?.count || 0) > 0) || subcategories[0];
       
       // Create sub-navigation tabs
-      const subNavTabs = subcategories.map((subcat) => \`
-        <div class="sub-nav-tab \${subcat === activeSubcategory ? 'active' : ''}" 
-             data-subcategory="\${subcat}"
-             onclick="switchSubcategory('\${category}', '\${subcat}')">
-          \${subcat}
-          <span class="count-badge">\${data.subcategories[subcat].count}</span>
+      const subNavTabs = subcategories.map((subcat) => `
+        <div class="sub-nav-tab ${subcat === activeSubcategory ? 'active' : ''}" 
+             data-subcategory="${subcat}"
+             onclick="switchSubcategory('${category}', '${subcat}')">
+          ${subcat}
+          <span class="count-badge">${data.subcategories[subcat].count}</span>
         </div>
-      \`).join('');
+      `).join('');
       
       // Create content for each subcategory
       const subcategoryContents = subcategories.map((subcat) => {

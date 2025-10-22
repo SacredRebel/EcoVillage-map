@@ -4162,8 +4162,8 @@ app.get('/', (req, res) => {
       panel.addEventListener('pointermove', (e) => {
         onMove(e.clientX, e.clientY, e);
       });
-      panel.addEventListener('pointerup', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof unlockBodyScroll === 'function') unlockBodyScroll(); });
-      panel.addEventListener('pointercancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof unlockBodyScroll === 'function') unlockBodyScroll(); });
+      panel.addEventListener('pointerup', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); });
+      panel.addEventListener('pointercancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); });
     }
     
     // Enhanced image gallery tab functionality

@@ -4407,14 +4407,14 @@ app.get('/', (req, res) => {
       const activeSubcategory = subcategories.find(name => (data.subcategories[name]?.count || 0) > 0) || subcategories[0];
       
       // Create sub-navigation tabs
-      const subNavTabs = subcategories.map((subcat) => `
-        <div class="sub-nav-tab ${subcat === activeSubcategory ? 'active' : ''}" 
-             data-subcategory="${subcat}"
-             onclick="switchSubcategory('${category}', '${subcat}')">
-          ${subcat}
-          <span class="count-badge">${data.subcategories[subcat].count}</span>
+      const subNavTabs = subcategories.map((subcat) => \`
+        <div class=\"sub-nav-tab \${subcat === activeSubcategory ? 'active' : ''}\" 
+             data-subcategory=\"\${subcat}\"
+             onclick=\"switchSubcategory('\${category}', '\${subcat}')\">
+          \${subcat}
+          <span class=\"count-badge\">\${data.subcategories[subcat].count}</span>
         </div>
-      `).join('');
+      \`).join('');
       
       // Create content for each subcategory
       const subcategoryContents = subcategories.map((subcat) => {

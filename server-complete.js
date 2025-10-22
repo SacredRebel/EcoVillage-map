@@ -2052,6 +2052,7 @@ app.get('/', (req, res) => {
             pointer-events: none;
             transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             will-change: opacity;
+            overscroll-behavior: contain;
           }
           
           #image-lightbox.active {
@@ -2096,6 +2097,8 @@ app.get('/', (req, res) => {
             max-width: 95vw;
             max-height: 95vh;
             object-fit: contain;
+            object-position: center center;
+            display: block;
             border-radius: 4px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
             transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2512,6 +2515,14 @@ app.get('/', (req, res) => {
       font-weight: 600;
       letter-spacing: 0.3px;
       line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    @media (max-width: 480px) {
+      .property-panel-title h3 {
+        font-size: 18px;
+      }
     }
     
     .property-panel-content {
@@ -3238,6 +3249,20 @@ app.get('/', (req, res) => {
       document.body.style.touchAction = '';
       document.documentElement.style.overscrollBehaviorY = '';
     }
+    // Ensure correct body scroll state based on UI
+    function ensureBodyScrollState() {
+      try {
+        const sp = document.getElementById('side-panel');
+        const pp = document.getElementById('property-panel');
+        const lb = document.getElementById('image-lightbox');
+        const anyOpen = (sp && sp.classList.contains('open')) || (pp && pp.classList.contains('open')) || (lb && lb.classList.contains('active'));
+        if (anyOpen) {
+          lockBodyScroll();
+        } else {
+          unlockBodyScroll();
+        }
+      } catch(_) {}
+    }
 
     // Enable mobile swipe-to-close for both panels
     attachPanelSwipe(map);
@@ -3539,27 +3564,23 @@ app.get('/', (req, res) => {
       const zoneColor = zoneColorMap[zone.type] || '#333';
       
       // Update compact header with zone color theming (avoid nested template literals)
-      hero.innerHTML = '<div class="project-title" style="color: ' + zoneColor + '; font-size: 26px; font-weight: 700; line-height: 1.2; letter-spacing: 0.2px; margin: 2px 0;">' + (zone.emoji + ' ' + zone.name) + '</div>';
+      hero.innerHTML = '<div class="project-title" style="color: ' + zoneColor + '; font-weight: 700; line-height: 1.2; letter-spacing: 0.1px; margin: 2px 0; font-size: clamp(16px, 3.8vw, 18px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + (zone.emoji + ' ' + zone.name) + '</div>';
       
       // Apply zone color theming to hero background
       hero.style.background = 'linear-gradient(135deg, ' + zoneColor + '15 0%, ' + zoneColor + '25 100%)';
       hero.style.borderLeft = '4px solid ' + zoneColor;
       
-      // Generate comprehensive project details with beautiful spacing
-      content.innerHTML = generateProjectDetails(zone);
-      
-      // Open the panel with animation
+      // Open the panel first for smooth animation, then inject heavy content
       panel.classList.add('open');
       if (typeof lockBodyScroll === 'function') lockBodyScroll();
-      
-      // Set up image gallery tabs
-      setupImageGalleryTabs();
-      
-      // Load images for this zone
-      loadZoneImages(zone.id);
-      
-      // Store current zone
       window.currentZoneId = zone.id;
+      
+      // Defer heavy DOM work to next frame for smoother opening
+      requestAnimationFrame(function() {
+        content.innerHTML = generateProjectDetails(zone);
+        setupImageGalleryTabs();
+        loadZoneImages(zone.id);
+      });
       
       // Initialize gallery state tracking
       if (!window.galleryState) window.galleryState = {};
@@ -3575,6 +3596,7 @@ app.get('/', (req, res) => {
       sp.style.transform = '';
       sp.style.transition = '';
       if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+      if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
       
       // Clear current zone reference
       window.currentZoneId = null;
@@ -3729,12 +3751,13 @@ app.get('/', (req, res) => {
         '</div>' +
       '</div>';
       
-      contentEl.innerHTML = content;
+      // Open first for smooth animation, then inject heavy content
       panel.classList.add('open');
       if (typeof lockBodyScroll === 'function') lockBodyScroll();
-      
-      // Load property images
-      loadPropertyImages();
+      requestAnimationFrame(function() {
+        contentEl.innerHTML = content;
+        loadPropertyImages();
+      });
       
       console.log('🌈 Opened unified property panel with gallery');
     }
@@ -3922,6 +3945,7 @@ app.get('/', (req, res) => {
       panel.style.transition = '';
       if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
       if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250);
+      if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
       
       // Remove active class from all boundary lines
       document.querySelectorAll('.property-line-magical').forEach(function(path) {
@@ -3937,8 +3961,8 @@ app.get('/', (req, res) => {
       if (!panel) return;
       let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0, startNearEdge = false;
       const EDGE = 48; // px - widened edge for easier grab
-      const SWIPE_THRESHOLD = 48; // px - slightly lower for better feel
-      const VELOCITY_THRESHOLD = 0.25; // px/ms - more forgiving
+      const SWIPE_THRESHOLD = 44; // px - slightly lower for better feel
+      const VELOCITY_THRESHOLD = 0.28; // px/ms - iPhone-like
       const ANGLE_THRESHOLD = 12; // px - detect horizontal a bit sooner
       
       const onStart = (clientX, clientY) => {
@@ -3985,7 +4009,7 @@ app.get('/', (req, res) => {
         const velocity = Math.abs(translateX) / duration; // px per ms
         
         // Re-enable transition for smooth snap-back
-        panel.style.transition = 'transform 0.3s ease-out';
+        panel.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
         panel.classList.remove('swiping');
         
         // Close if: swiped far enough OR swiped fast enough
@@ -4000,14 +4024,15 @@ app.get('/', (req, res) => {
             panel.style.transition = '';
             window.currentZoneId = null;
             if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+            if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
             console.log('👆 Panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
-          }, 300);
+          }, 320);
         } else {
           // Snap back to original position
           panel.style.transform = '';
           setTimeout(function() {
             panel.style.transition = '';
-          }, 300);
+          }, 320);
         }
         
         isTracking = false;
@@ -4029,8 +4054,8 @@ app.get('/', (req, res) => {
         onMove(t.clientX, t.clientY, e);
       }, { passive: false });
       
-      panel.addEventListener('touchend', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); }, { passive: true });
-      panel.addEventListener('touchcancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); }, { passive: true });
+      panel.addEventListener('touchend', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchcancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
       
       // Pointer events fallback
       panel.addEventListener('pointerdown', function(e) {
@@ -4043,8 +4068,8 @@ app.get('/', (req, res) => {
       panel.addEventListener('pointermove', function(e) {
         onMove(e.clientX, e.clientY, e);
       });
-      panel.addEventListener('pointerup', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); });
-      panel.addEventListener('pointercancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); });
+      panel.addEventListener('pointerup', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointercancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
     }
     
     // Enable swipe-to-close for property panel (iPhone-style smooth closing)
@@ -4053,8 +4078,8 @@ app.get('/', (req, res) => {
       if (!panel) return;
       let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0, startNearEdge = false;
       const EDGE = 48; // px
-      const SWIPE_THRESHOLD = 48; // easier close
-      const VELOCITY_THRESHOLD = 0.25; // forgiving
+      const SWIPE_THRESHOLD = 44; // easier close
+      const VELOCITY_THRESHOLD = 0.28; // forgiving
       const ANGLE_THRESHOLD = 12; // faster detection
       
       const onStart = (clientX, clientY) => {
@@ -4099,7 +4124,7 @@ app.get('/', (req, res) => {
         const velocity = Math.abs(translateX) / Math.max(duration, 1);
         
         // Smooth transition for snap-back or close
-        panel.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), left 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        panel.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), left 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
         panel.classList.remove('swiping');
         
         // Close if swiped far enough or fast enough
@@ -4113,6 +4138,7 @@ app.get('/', (req, res) => {
             panel.style.transform = '';
             panel.style.transition = '';
             if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+            if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
             
             // Remove active class from boundary lines
             document.querySelectorAll('.property-line-magical').forEach(path => {
@@ -4120,13 +4146,13 @@ app.get('/', (req, res) => {
             });
             
             console.log('👆 Property panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
-          }, 350);
+          }, 320);
         } else {
           // Snap back smoothly
           panel.style.transform = '';
           setTimeout(() => {
             panel.style.transition = '';
-          }, 350);
+          }, 320);
         }
         
         isTracking = false;
@@ -4607,6 +4633,10 @@ app.get('/', (req, res) => {
       const nextBtn = lightbox.querySelector('.lightbox-next');
       const img = lightbox.querySelector('.lightbox-image');
       const loading = lightbox.querySelector('.lightbox-loading');
+      // Hint the browser to load and decode fast
+      try { img.loading = 'eager'; } catch(_) {}
+      try { img.decoding = 'async'; } catch(_) {}
+      try { img.setAttribute('fetchpriority', 'high'); } catch(_) {}
       
       let currentImages = [];
       let currentIndex = 0;
@@ -4618,14 +4648,7 @@ app.get('/', (req, res) => {
       function closeLightbox() {
         lightbox.classList.remove('active');
         document.body.style.overflow = '';
-        // If a panel remains open, keep body locked to avoid bounce
-        try {
-          const sp = document.getElementById('side-panel');
-          const pp = document.getElementById('property-panel');
-          if ((sp && sp.classList.contains('open')) || (pp && pp.classList.contains('open'))) {
-            if (typeof lockBodyScroll === 'function') lockBodyScroll();
-          }
-        } catch(_) {}
+        if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
         setTimeout(() => {
           img.src = '';
           currentImages = [];
@@ -4637,32 +4660,33 @@ app.get('/', (req, res) => {
         if (index < 0 || index >= currentImages.length) return;
         currentIndex = index;
         
-        // Show loading spinner
+        // Show loading spinner and reset transforms/scroll
         loading.classList.add('active');
-        img.style.opacity = '0';
+        const contentEl = lightbox.querySelector('.lightbox-content');
+        if (contentEl) { contentEl.style.transform = ''; contentEl.style.opacity = '1'; }
+        imageContainer.scrollTop = 0; imageContainer.scrollLeft = 0;
         
-        // Load new image
+        // Set source immediately; fade in after decode
         const newSrc = currentImages[index];
-        const tempImg = new Image();
-        tempImg.onload = () => {
-          img.src = newSrc;
+        img.style.transition = 'none';
+        img.style.opacity = '0';
+        img.style.transform = 'scale(1)';
+        if (img.src !== newSrc) img.src = newSrc;
+        const finish = () => {
           loading.classList.remove('active');
+          img.style.transition = 'opacity 200ms ease';
           img.style.opacity = '1';
-          
           // Update counter
           lightbox.querySelector('.lightbox-current').textContent = index + 1;
-          
           // Preload adjacent images
-          if (index > 0) {
-            const prev = new Image();
-            prev.src = currentImages[index - 1];
-          }
-          if (index < currentImages.length - 1) {
-            const next = new Image();
-            next.src = currentImages[index + 1];
-          }
+          if (index > 0) { const prev = new Image(); prev.src = currentImages[index - 1]; }
+          if (index < currentImages.length - 1) { const next = new Image(); next.src = currentImages[index + 1]; }
         };
-        tempImg.src = newSrc;
+        try {
+          if (img.decode) { img.decode().then(finish).catch(finish); }
+          else if (img.complete) { finish(); }
+          else { img.onload = finish; img.onerror = finish; }
+        } catch(_) { finish(); }
         
         // Update nav button visibility
         prevBtn.style.display = index > 0 ? 'flex' : 'none';
@@ -4789,12 +4813,12 @@ app.get('/', (req, res) => {
         if (isHorizontal && zoomLevel === 1) {
           img.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
           img.style.transform = 'scale(' + zoomLevel + ')';
-          if (Math.abs(dx) > 64) {
+          if (Math.abs(dx) > 56) {
             navigateToImage(currentIndex + (dx < 0 ? 1 : -1));
           }
         } else if (isVertical && zoomLevel === 1) {
           content.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
-          if (Math.abs(dy) > 64) {
+          if (Math.abs(dy) > 56) {
             closeLightbox();
           } else {
             content.style.transform = '';
@@ -4848,16 +4872,17 @@ app.get('/', (req, res) => {
     }
     
     // Wrapper function to open lightbox from carousel
-    window.openImageLightbox = function(category, index) {
-      const carousel = document.querySelector('[data-category="' + category + '"]');
-      if (!carousel) return;
-      
-      const images = Array.from(carousel.querySelectorAll('.carousel-image'))
-        .map(function(img) { return img.src; });
-      
-      if (images.length > 0) {
+    window.openImageLightbox = function(category, index, imagesOverride) {
+      let images = Array.isArray(imagesOverride) ? imagesOverride.slice() : null;
+      if (!images) {
+        const carousel = document.querySelector('[data-category="' + category + '"]');
+        if (!carousel) return;
+        images = Array.from(carousel.querySelectorAll('.carousel-image'))
+          .map(function(img) { return img.src; });
+      }
+      if (images && images.length > 0) {
         ensureLightboxExists();
-        window.openLightbox(images, index);
+        window.openLightbox(images, index || 0);
       }
     };
     

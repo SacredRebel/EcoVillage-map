@@ -1404,6 +1404,9 @@ app.get('/', (req, res) => {
             padding: 0 0 80px 0;
             background: transparent;
             margin: 0;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
             height: calc(100vh - 40px);
             overflow-y: auto;
             scroll-behavior: smooth;
@@ -2518,6 +2521,9 @@ app.get('/', (req, res) => {
       height: calc(100vh - 80px);
       overflow-y: auto;
       scroll-behavior: smooth;
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     
     .property-panel-content::-webkit-scrollbar {
@@ -3221,6 +3227,17 @@ app.get('/', (req, res) => {
     // Prevent accidental map clicks during panel swipes
     window.ignoreMapClicksUntil = 0;
     function suppressMapClicksFor(ms) { window.ignoreMapClicksUntil = Date.now() + ms; }
+    // Body scroll lock helpers (avoid footer bounce and stuck scroll on iOS)
+    function lockBodyScroll() {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+      document.documentElement.style.overscrollBehaviorY = 'none';
+    }
+    function unlockBodyScroll() {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.documentElement.style.overscrollBehaviorY = '';
+    }
 
     // Enable mobile swipe-to-close for both panels
     attachPanelSwipe(map);
@@ -3245,6 +3262,32 @@ app.get('/', (req, res) => {
       }
     });
     
+    // Add recenter control (jump back to property)
+    const propertyCenter = [34.433086, -119.155336];
+    const propertyZoom = 17;
+    const recenterControl = L.control({ position: 'bottomright' });
+    recenterControl.onAdd = function(m) {
+      const div = L.DomUtil.create('div', 'leaflet-bar recenter-control');
+      div.innerHTML = '<button type="button" aria-label="Recenter" title="Recenter">⌖</button>';
+      div.style.cursor = 'pointer';
+      const btn = div.querySelector('button');
+      btn.style.width = '48px';
+      btn.style.height = '48px';
+      btn.style.fontSize = '20px';
+      btn.style.lineHeight = '48px';
+      btn.style.border = 'none';
+      btn.style.background = 'white';
+      btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+      btn.style.borderRadius = '8px';
+      L.DomEvent.disableClickPropagation(div);
+      L.DomEvent.on(btn, 'click', function(e) {
+        L.DomEvent.stopPropagation(e);
+        map.flyTo(propertyCenter, propertyZoom, { animate: true, duration: 0.75 });
+      });
+      return div;
+    };
+    recenterControl.addTo(map);
+
     console.log('🛰️ Multi-layer satellite imagery system initialized');
     
     // Load project zones data
@@ -3495,21 +3538,19 @@ app.get('/', (req, res) => {
       // Get zone color for theming
       const zoneColor = zoneColorMap[zone.type] || '#333';
       
-      // Update compact header with zone color theming
-      hero.innerHTML = \`
-        <div class="project-title" style="color: \${zoneColor};">\${zone.emoji} \${zone.name}</div>
-        <div class="project-subtitle" style="border-left-color: \${zoneColor};">\${zone.description}</div>
-      \`;
+      // Update compact header with zone color theming (avoid nested template literals)
+      hero.innerHTML = '<div class="project-title" style="color: ' + zoneColor + '; font-size: 26px; font-weight: 700; line-height: 1.2; letter-spacing: 0.2px; margin: 2px 0;">' + (zone.emoji + ' ' + zone.name) + '</div>';
       
       // Apply zone color theming to hero background
-      hero.style.background = \`linear-gradient(135deg, \${zoneColor}15 0%, \${zoneColor}25 100%)\`;
-      hero.style.borderLeft = \`4px solid \${zoneColor}\`;
+      hero.style.background = 'linear-gradient(135deg, ' + zoneColor + '15 0%, ' + zoneColor + '25 100%)';
+      hero.style.borderLeft = '4px solid ' + zoneColor;
       
       // Generate comprehensive project details with beautiful spacing
       content.innerHTML = generateProjectDetails(zone);
       
       // Open the panel with animation
       panel.classList.add('open');
+      if (typeof lockBodyScroll === 'function') lockBodyScroll();
       
       // Set up image gallery tabs
       setupImageGalleryTabs();
@@ -3529,7 +3570,11 @@ app.get('/', (req, res) => {
     
     // Close panel functionality
     document.getElementById('close-panel').addEventListener('click', () => {
-      document.getElementById('side-panel').classList.remove('open');
+      const sp = document.getElementById('side-panel');
+      sp.classList.remove('open');
+      sp.style.transform = '';
+      sp.style.transition = '';
+      if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
       
       // Clear current zone reference
       window.currentZoneId = null;
@@ -3686,6 +3731,7 @@ app.get('/', (req, res) => {
       
       contentEl.innerHTML = content;
       panel.classList.add('open');
+      if (typeof lockBodyScroll === 'function') lockBodyScroll();
       
       // Load property images
       loadPropertyImages();
@@ -3828,7 +3874,7 @@ app.get('/', (req, res) => {
         const dy = swipeEndY - swipeStartY;
         
         // Horizontal swipe detection
-        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
           if (dx > 0) {
             // Swipe right = previous
             currentIndex = (currentIndex - 1 + imageUrls.length) % imageUrls.length;
@@ -3843,6 +3889,10 @@ app.get('/', (req, res) => {
           if (counterEl) counterEl.textContent = currentIndex + 1;
         }
       }, { passive: true });
+      // Prevent panel swipe while swiping images
+      mainCarousel.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+      mainCarousel.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
+      mainCarousel.addEventListener('touchend', (e) => e.stopPropagation(), { passive: true });
       
       // Add keyboard navigation
       document.addEventListener('keydown', (e) => {
@@ -3870,6 +3920,7 @@ app.get('/', (req, res) => {
       panel.classList.remove('open', 'swiping');
       panel.style.transform = '';
       panel.style.transition = '';
+      if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
       if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250);
       
       // Remove active class from all boundary lines
@@ -3884,10 +3935,11 @@ app.get('/', (req, res) => {
     function attachPanelSwipe(map) {
       const panel = document.getElementById('side-panel');
       if (!panel) return;
-      let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0;
-      const SWIPE_THRESHOLD = 50; // px - reduced from 80 for easier closing
-      const VELOCITY_THRESHOLD = 0.3; // px/ms - fast swipe also closes
-      const ANGLE_THRESHOLD = 15; // px - increased for better detection
+      let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0, startNearEdge = false;
+      const EDGE = 48; // px - widened edge for easier grab
+      const SWIPE_THRESHOLD = 48; // px - slightly lower for better feel
+      const VELOCITY_THRESHOLD = 0.25; // px/ms - more forgiving
+      const ANGLE_THRESHOLD = 12; // px - detect horizontal a bit sooner
       
       const onStart = (clientX, clientY) => {
         if (!panel.classList.contains('open')) return;
@@ -3906,12 +3958,11 @@ app.get('/', (req, res) => {
         const dy = clientY - startY;
         
         if (!isSwiping) {
-          // Detect horizontal swipe (more lenient angle detection)
-          if (Math.abs(dx) > ANGLE_THRESHOLD) {
-            if (Math.abs(dx) > Math.abs(dy) * 1.5) {
-              isSwiping = true;
-              panel.classList.add('swiping');
-            }
+          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > ANGLE_THRESHOLD;
+          // Allow start anywhere if strong horizontal intent (>96px), otherwise require edge start
+          if (horizontal && (startNearEdge || Math.abs(dx) > 96)) {
+            isSwiping = true;
+            panel.classList.add('swiping');
           }
           if (!isSwiping) return; // Still waiting to detect direction
         }
@@ -3948,6 +3999,7 @@ app.get('/', (req, res) => {
             panel.style.transform = '';
             panel.style.transition = '';
             window.currentZoneId = null;
+            if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
             console.log('👆 Panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
           }, 300);
         } else {
@@ -3968,8 +4020,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        const EDGE = 28;
-        if ((rect.right - t.clientX) > EDGE) return;
+        startNearEdge = (rect.right - t.clientX) <= EDGE;
         onStart(t.clientX, t.clientY);
       }, { passive: true });
       
@@ -3986,8 +4037,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        const EDGE = 28;
-        if ((rect.right - e.clientX) > EDGE) return;
+        startNearEdge = (rect.right - e.clientX) <= EDGE;
         onStart(e.clientX, e.clientY);
       });
       panel.addEventListener('pointermove', function(e) {
@@ -4001,10 +4051,11 @@ app.get('/', (req, res) => {
     function attachPropertyPanelSwipe() {
       const panel = document.getElementById('property-panel');
       if (!panel) return;
-      let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0;
-      const SWIPE_THRESHOLD = 80; // px - swipe distance to trigger close
-      const VELOCITY_THRESHOLD = 0.4; // px/ms - fast swipe threshold
-      const ANGLE_THRESHOLD = 20; // px - detect horizontal swipe
+      let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0, startNearEdge = false;
+      const EDGE = 48; // px
+      const SWIPE_THRESHOLD = 48; // easier close
+      const VELOCITY_THRESHOLD = 0.25; // forgiving
+      const ANGLE_THRESHOLD = 12; // faster detection
       
       const onStart = (clientX, clientY) => {
         if (!panel.classList.contains('open')) return;
@@ -4022,12 +4073,10 @@ app.get('/', (req, res) => {
         const dy = clientY - startY;
         
         if (!isSwiping) {
-          // Detect horizontal swipe
-          if (Math.abs(dx) > ANGLE_THRESHOLD) {
-            if (Math.abs(dx) > Math.abs(dy) * 1.5) {
-              isSwiping = true;
-              panel.classList.add('swiping');
-            }
+          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > ANGLE_THRESHOLD;
+          if (horizontal && (startNearEdge || Math.abs(dx) > 96)) {
+            isSwiping = true;
+            panel.classList.add('swiping');
           }
           if (!isSwiping) return;
         }
@@ -4063,6 +4112,7 @@ app.get('/', (req, res) => {
             panel.classList.remove('open');
             panel.style.transform = '';
             panel.style.transition = '';
+            if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
             
             // Remove active class from boundary lines
             document.querySelectorAll('.property-line-magical').forEach(path => {
@@ -4083,14 +4133,13 @@ app.get('/', (req, res) => {
         isSwiping = false;
       };
       
-      // Touch events (edge-only)
+      // Touch events (edge-preferred, but allow strong swipe)
       panel.addEventListener('touchstart', (e) => {
         const t = e.touches[0];
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        const EDGE = 28;
-        if ((rect.right - t.clientX) > EDGE) return;
+        startNearEdge = (rect.right - t.clientX) <= EDGE;
         onStart(t.clientX, t.clientY);
       }, { passive: true });
       
@@ -4099,23 +4148,22 @@ app.get('/', (req, res) => {
         onMove(t.clientX, t.clientY, e);
       }, { passive: false });
       
-      panel.addEventListener('touchend', onEnd, { passive: true });
-      panel.addEventListener('touchcancel', onEnd, { passive: true });
+      panel.addEventListener('touchend', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); }, { passive: true });
+      panel.addEventListener('touchcancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); }, { passive: true });
       
       // Pointer events fallback
       panel.addEventListener('pointerdown', (e) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        const EDGE = 28;
-        if ((rect.right - e.clientX) > EDGE) return;
+        startNearEdge = (rect.right - e.clientX) <= EDGE;
         onStart(e.clientX, e.clientY);
       });
       panel.addEventListener('pointermove', (e) => {
         onMove(e.clientX, e.clientY, e);
       });
-      panel.addEventListener('pointerup', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); });
-      panel.addEventListener('pointercancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); });
+      panel.addEventListener('pointerup', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof unlockBodyScroll === 'function') unlockBodyScroll(); });
+      panel.addEventListener('pointercancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof unlockBodyScroll === 'function') unlockBodyScroll(); });
     }
     
     // Enhanced image gallery tab functionality
@@ -4402,7 +4450,7 @@ app.get('/', (req, res) => {
       const main = carousel.querySelector('.carousel-main');
       if (main) {
         let sx = 0, sy = 0, swiping = false;
-        const THRESH = 50;
+        const THRESH = 40;
         const ANGLE = 12;
         const onStart = (x, y) => { sx = x; sy = y; swiping = false; };
         const onMove = (x, y, ev) => {
@@ -4570,6 +4618,14 @@ app.get('/', (req, res) => {
       function closeLightbox() {
         lightbox.classList.remove('active');
         document.body.style.overflow = '';
+        // If a panel remains open, keep body locked to avoid bounce
+        try {
+          const sp = document.getElementById('side-panel');
+          const pp = document.getElementById('property-panel');
+          if ((sp && sp.classList.contains('open')) || (pp && pp.classList.contains('open'))) {
+            if (typeof lockBodyScroll === 'function') lockBodyScroll();
+          }
+        } catch(_) {}
         setTimeout(() => {
           img.src = '';
           currentImages = [];
@@ -4733,12 +4789,12 @@ app.get('/', (req, res) => {
         if (isHorizontal && zoomLevel === 1) {
           img.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
           img.style.transform = 'scale(' + zoomLevel + ')';
-          if (Math.abs(dx) > 80) {
+          if (Math.abs(dx) > 64) {
             navigateToImage(currentIndex + (dx < 0 ? 1 : -1));
           }
         } else if (isVertical && zoomLevel === 1) {
           content.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
-          if (Math.abs(dy) > 80) {
+          if (Math.abs(dy) > 64) {
             closeLightbox();
           } else {
             content.style.transform = '';

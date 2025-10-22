@@ -1,0 +1,12 @@
+fix(mobile): stop accidental property panel opens, edge-only swipes, iOS-like lightbox gestures
+
+- Block ghost taps after swipes with ignoreMapClicksUntil guards
+- Close other panel on open; panels are now standalone
+- Reset transform/transition to fix white/stuck panel states
+- Edge-only panel swipe (28px) and filter out gallery/tabs to prevent conflicts
+- Stop propagation for carousel touch/pointer events (no panel swipe while swiping images)
+- Increase property boundary hit area for reliable taps
+- Lightbox: vertical swipe-to-dismiss, pinch-to-zoom, tap outside to close
+- Fix tileerror fallback: auto-switch to Google satellite tiles
+
+Files: server-complete.js

@@ -1375,6 +1375,7 @@ app.get('/', (req, res) => {
             align-items: center;
             justify-content: space-between;
             min-height: 56px;
+            touch-action: pan-y;
           }
           
           .close-panel {
@@ -2504,6 +2505,7 @@ app.get('/', (req, res) => {
       align-items: center;
       justify-content: space-between;
       min-height: 56px;
+      touch-action: pan-y;
       z-index: 10;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       backdrop-filter: blur(15px);
@@ -4005,10 +4007,10 @@ app.get('/', (req, res) => {
       const EDGE = 64; // px - larger edge grab area for easier start
       const SWIPE_THRESHOLD = 48; // px - slight loosen
       const VELOCITY_THRESHOLD = 0.3; // px/ms (unused for close, but kept for logs)
-      const ANGLE_THRESHOLD = 10; // px - easier horizontal detection
+      const ANGLE_THRESHOLD = 14; // px - stricter axis lock
       
       const onStart = (clientX, clientY) => {
-        if (!panel.classList.contains('open')) return;
+        if (!panel.classList.contains('open') || !startNearEdge) return;
         startX = clientX;
         startY = clientY;
         startTime = Date.now();
@@ -4033,7 +4035,10 @@ app.get('/', (req, res) => {
           // Lock gesture axis early to avoid accidental horizontal when scrolling
           if (!gesture) {
             const absX = Math.abs(dx), absY = Math.abs(dy);
-            if (absX > 6 || absY > 6) gesture = absX > absY ? 'h' : 'v';
+            if (absX > 10 || absY > 10) {
+              if (absY > absX * 1.2) gesture = 'v';
+              else if (absX > absY * 1.2) gesture = 'h';
+            }
           }
           if (gesture === 'v') {
             // Let vertical scroll proceed, cancel tracking
@@ -4042,10 +4047,13 @@ app.get('/', (req, res) => {
             panel.style.animation = '';
             return;
           }
-          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.1 && Math.abs(dx) > ANGLE_THRESHOLD;
+          const absX = Math.abs(dx), absY = Math.abs(dy);
+          const ratioReq = 2.0;
+          const minDx = 24;
+          const horizontal = absX > absY * ratioReq && absX > ANGLE_THRESHOLD;
           const closingDirOk = dx < 0; // must swipe left to close
-          if (!startNearEdge && Math.abs(dx) < 24) return; // allow hard swipe anywhere (>=24px), or easy start at edge/header
-          if (horizontal && closingDirOk && Math.abs(dx) > 12) {
+          if (!horizontal || !closingDirOk || absX < minDx) return;
+          if (horizontal && closingDirOk) {
             isSwiping = true;
             panel.classList.add('swiping');
             panel.style.touchAction = 'none';
@@ -4136,7 +4144,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = ((t.clientX - rect.left) <= EDGE) || !!target.closest('.panel-header');
+        startNearEdge = (t.clientX - rect.left) <= EDGE;
         onStart(t.clientX, t.clientY);
       }, { passive: true });
       
@@ -4155,7 +4163,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = ((e.clientX - rect.left) <= EDGE) || !!target.closest('.panel-header');
+        startNearEdge = (e.clientX - rect.left) <= EDGE;
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
         onStart(e.clientX, e.clientY);
       });
@@ -4179,12 +4187,12 @@ app.get('/', (req, res) => {
       const EDGE = 44; // px - larger edge grab for easier start
       const SWIPE_THRESHOLD = 48; // slightly easier close distance unit
       const VELOCITY_THRESHOLD = 0.3; // not used for closing; kept for logs
-      const ANGLE_THRESHOLD = 12; // easier horizontal detection
+      const ANGLE_THRESHOLD = 14; // stricter axis lock
       // Direction: on mobile the property panel opens from left (close left), on desktop it's right (close right)
       const closeToLeft = (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(max-width: 768px)').matches : true;
       
       const onStart = (clientX, clientY) => {
-        if (!panel.classList.contains('open')) return;
+        if (!panel.classList.contains('open') || !startNearEdge) return;
         startX = clientX;
         startY = clientY;
         startTime = Date.now();
@@ -4206,7 +4214,10 @@ app.get('/', (req, res) => {
         if (!isSwiping) {
           if (!gesture) {
             const absX = Math.abs(dx), absY = Math.abs(dy);
-            if (absX > 8 || absY > 8) gesture = absX > absY ? 'h' : 'v';
+            if (absX > 10 || absY > 10) {
+              if (absY > absX * 1.2) gesture = 'v';
+              else if (absX > absY * 1.2) gesture = 'h';
+            }
           }
           if (gesture === 'v') {
             isTracking = false;
@@ -4214,10 +4225,13 @@ app.get('/', (req, res) => {
             panel.style.animation = '';
             return;
           }
-          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > ANGLE_THRESHOLD;
+          const absX = Math.abs(dx), absY = Math.abs(dy);
+          const ratioReq = 2.0;
+          const minDx = 24;
+          const horizontal = absX > absY * ratioReq && absX > ANGLE_THRESHOLD;
           const closingDirOk = closeToLeft ? (dx < 0) : (dx > 0);
-          if (!startNearEdge && Math.abs(dx) < 24) return; // allow hard swipe anywhere (>=24px), or easy start at edge/header
-          if (horizontal && closingDirOk && Math.abs(dx) > 16) {
+          if (!horizontal || !closingDirOk || absX < minDx) return;
+          if (horizontal && closingDirOk) {
             isSwiping = true;
             panel.classList.add('swiping');
             panel.style.touchAction = 'none';
@@ -4311,7 +4325,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = (closeToLeft ? ((t.clientX - rect.left) <= EDGE) : ((rect.right - t.clientX) <= EDGE)) || !!target.closest('.property-panel-header');
+        startNearEdge = closeToLeft ? ((t.clientX - rect.left) <= EDGE) : ((rect.right - t.clientX) <= EDGE);
         onStart(t.clientX, t.clientY);
       }, { passive: true });
       
@@ -4330,7 +4344,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = (closeToLeft ? ((e.clientX - rect.left) <= EDGE) : ((rect.right - e.clientX) <= EDGE)) || !!target.closest('.property-panel-header');
+        startNearEdge = closeToLeft ? ((e.clientX - rect.left) <= EDGE) : ((rect.right - e.clientX) <= EDGE);
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
         onStart(e.clientX, e.clientY);
       });

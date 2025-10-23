@@ -3994,6 +3994,8 @@ app.get('/', (req, res) => {
       let currentTranslate = 0;
       let rafPending = false;
       let gesture = null; // 'h' or 'v'
+      let lastX = 0, lastTime = 0, lastVelocity = 0; // instantaneous velocity tracking
+      let inputType = null; // 'touch' | 'pointer'
       const EDGE = 32; // px - narrower edge to avoid accidental grabs
       const SWIPE_THRESHOLD = 44; // px - slightly lower for better feel
       const VELOCITY_THRESHOLD = 0.18; // px/ms - easier close
@@ -4011,6 +4013,9 @@ app.get('/', (req, res) => {
         panel.style.animation = 'none';
         rafPending = false;
         gesture = null;
+        lastX = clientX;
+        lastTime = startTime;
+        try { panel.style.willChange = 'transform'; } catch(_) {}
       };
       
       const onMove = (clientX, clientY, ev) => {
@@ -4031,9 +4036,9 @@ app.get('/', (req, res) => {
             panel.style.animation = '';
             return;
           }
-          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.3 && Math.abs(dx) > ANGLE_THRESHOLD;
-          const edgeDxOk = startNearEdge ? Math.abs(dx) > 14 : Math.abs(dx) > 120;
-          if (horizontal && edgeDxOk) {
+          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.1 && Math.abs(dx) > ANGLE_THRESHOLD;
+          const enoughDx = Math.abs(dx) > 18; // allow swipe start anywhere with small threshold
+          if (horizontal && enoughDx) {
             isSwiping = true;
             panel.classList.add('swiping');
             panel.style.touchAction = 'none';
@@ -4044,10 +4049,16 @@ app.get('/', (req, res) => {
         // Prevent default only while swiping to keep vertical scroll smooth otherwise
         if (isSwiping && ev && ev.cancelable) ev.preventDefault();
         
-        // Only allow left swipe (negative dx)
+        // Only allow left swipe (negative dx) with rubber-band overscroll
         currentTranslate = Math.min(0, dx);
         const width = panel.getBoundingClientRect().width || 1;
-        const next = Math.max(-width, Math.min(0, currentTranslate));
+        let next = currentTranslate;
+        if (next < -width) {
+          const overshoot = next + width; // negative
+          next = -width + overshoot * 0.35; // dampened beyond limit
+        } else if (next > 0) {
+          next = next * 0.35; // slight resist if pushed right
+        }
         if (!rafPending) {
           rafPending = true;
           requestAnimationFrame(() => {
@@ -4055,6 +4066,13 @@ app.get('/', (req, res) => {
             rafPending = false;
           });
         }
+        // instantaneous velocity (px/ms)
+        const now = Date.now();
+        const dtx = clientX - lastX;
+        const dt = now - lastTime;
+        if (dt > 0) lastVelocity = dtx / dt;
+        lastX = clientX;
+        lastTime = now;
       };
       
       const onEnd = () => {
@@ -4062,7 +4080,7 @@ app.get('/', (req, res) => {
         
         const translateX = currentTranslate || 0;
         const duration = Date.now() - startTime;
-        const velocity = Math.abs(translateX) / Math.max(duration, 1); // px per ms
+        const velocity = Math.abs(lastVelocity); // px per ms (instantaneous)
         const width = panel.getBoundingClientRect().width || 1;
         const DIST_THRESHOLD = Math.max(48, width * 0.12);
         
@@ -4074,6 +4092,8 @@ app.get('/', (req, res) => {
         const shouldClose = Math.abs(translateX) > DIST_THRESHOLD || velocity > VELOCITY_THRESHOLD;
         
         if (shouldClose) {
+          // Subtle haptic (where supported)
+          try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10); } catch(_) {}
           // Animate panel out completely before closing
           panel.style.transform = 'translateX(-100%)';
           setTimeout(function() {
@@ -4086,6 +4106,7 @@ app.get('/', (req, res) => {
             console.log('👆 Panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
             panel.style.animation = '';
             panel.style.touchAction = '';
+            try { panel.style.willChange = ''; } catch(_) {}
           }, 320);
         } else {
           // Snap back to original position
@@ -4094,6 +4115,7 @@ app.get('/', (req, res) => {
             panel.style.transition = '';
             panel.style.animation = '';
             panel.style.touchAction = '';
+            try { panel.style.willChange = ''; } catch(_) {}
           }, 320);
         }
         
@@ -4102,10 +4124,13 @@ app.get('/', (req, res) => {
         currentTranslate = 0;
         rafPending = false;
         gesture = null;
+        lastVelocity = 0;
       };
       
       // Touch events (edge-only)
       panel.addEventListener('touchstart', function(e) {
+        if (inputType && inputType !== 'touch') return;
+        inputType = 'touch';
         const t = e.touches[0];
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
@@ -4119,11 +4144,13 @@ app.get('/', (req, res) => {
         onMove(t.clientX, t.clientY, e);
       }, { passive: false });
       
-      panel.addEventListener('touchend', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
-      panel.addEventListener('touchcancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchend', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchcancel', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
       
       // Pointer events fallback
       panel.addEventListener('pointerdown', function(e) {
+        if (inputType && inputType !== 'pointer') return;
+        inputType = 'pointer';
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
@@ -4134,8 +4161,8 @@ app.get('/', (req, res) => {
       panel.addEventListener('pointermove', function(e) {
         onMove(e.clientX, e.clientY, e);
       });
-      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
-      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
     }
     
     // Enable swipe-to-close for property panel (iPhone-style smooth closing)
@@ -4145,6 +4172,9 @@ app.get('/', (req, res) => {
       let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0, startNearEdge = false;
       let currentTranslate = 0;
       let rafPending = false;
+      let gesture = null; // 'h' or 'v'
+      let lastX = 0, lastTime = 0, lastVelocity = 0;
+      let inputType = null;
       const EDGE = 32; // px - narrower edge to avoid accidental grabs
       const SWIPE_THRESHOLD = 44; // easier close
       const VELOCITY_THRESHOLD = 0.18; // easier close
@@ -4162,6 +4192,10 @@ app.get('/', (req, res) => {
         panel.style.transition = 'none';
         panel.style.animation = 'none';
         panel.style.touchAction = 'none';
+        gesture = null;
+        lastX = clientX;
+        lastTime = startTime;
+        try { panel.style.willChange = 'transform'; } catch(_) {}
       };
       
       const onMove = (clientX, clientY, ev) => {
@@ -4180,9 +4214,9 @@ app.get('/', (req, res) => {
             panel.style.animation = '';
             return;
           }
-          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.3 && Math.abs(dx) > ANGLE_THRESHOLD;
-          const edgeDxOk = startNearEdge ? Math.abs(dx) > 14 : Math.abs(dx) > 120;
-          if (horizontal && edgeDxOk) {
+          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.1 && Math.abs(dx) > ANGLE_THRESHOLD;
+          const enoughDx = Math.abs(dx) > 18;
+          if (horizontal && enoughDx) {
             isSwiping = true;
             panel.classList.add('swiping');
             panel.style.touchAction = 'none';
@@ -4206,6 +4240,12 @@ app.get('/', (req, res) => {
             rafPending = false;
           });
         }
+        const now = Date.now();
+        const dtx = clientX - lastX;
+        const dt = now - lastTime;
+        if (dt > 0) lastVelocity = dtx / dt;
+        lastX = clientX;
+        lastTime = now;
       };
       
       const onEnd = () => {
@@ -4213,12 +4253,12 @@ app.get('/', (req, res) => {
         
         const translateX = currentTranslate || 0;
         const duration = Date.now() - startTime;
-        const velocity = Math.abs(translateX) / Math.max(duration, 1);
+        const velocity = Math.abs(lastVelocity);
         const width = panel.getBoundingClientRect().width || 1;
         const DIST_THRESHOLD = Math.max(56, width * 0.20);
         
-        // Smooth transition for snap-back or close
-        panel.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), left 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
+        // Smooth transition for snap-back or close (transform only to avoid left/right jumps)
+        panel.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
         panel.classList.remove('swiping');
         
         // Close if swiped far enough or fast enough
@@ -4242,6 +4282,7 @@ app.get('/', (req, res) => {
             console.log('👆 Property panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
             panel.style.animation = '';
             panel.style.touchAction = '';
+            try { panel.style.willChange = ''; } catch(_) {}
           }, 320);
         } else {
           // Snap back smoothly
@@ -4250,16 +4291,21 @@ app.get('/', (req, res) => {
             panel.style.transition = '';
             panel.style.animation = '';
             panel.style.touchAction = '';
+            try { panel.style.willChange = ''; } catch(_) {}
           }, 320);
         }
         
         isTracking = false;
         isSwiping = false;
         currentTranslate = 0;
+        gesture = null;
+        lastVelocity = 0;
       };
       
       // Touch events (edge-preferred, but allow strong swipe)
       panel.addEventListener('touchstart', (e) => {
+        if (inputType && inputType !== 'touch') return;
+        inputType = 'touch';
         const t = e.touches[0];
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
@@ -4273,11 +4319,13 @@ app.get('/', (req, res) => {
         onMove(t.clientX, t.clientY, e);
       }, { passive: false });
       
-      panel.addEventListener('touchend', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
-      panel.addEventListener('touchcancel', () => { onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchend', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchcancel', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
       
       // Pointer events fallback
       panel.addEventListener('pointerdown', (e) => {
+        if (inputType && inputType !== 'pointer') return;
+        inputType = 'pointer';
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
@@ -4288,8 +4336,8 @@ app.get('/', (req, res) => {
       panel.addEventListener('pointermove', (e) => {
         onMove(e.clientX, e.clientY, e);
       });
-      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
-      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
     }
     
     // Enhanced image gallery tab functionality

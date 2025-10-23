@@ -3996,10 +3996,10 @@ app.get('/', (req, res) => {
       let gesture = null; // 'h' or 'v'
       let lastX = 0, lastTime = 0, lastVelocity = 0; // instantaneous velocity tracking
       let inputType = null; // 'touch' | 'pointer'
-      const EDGE = 28; // px - strict edge-only grab
-      const SWIPE_THRESHOLD = 64; // px - harder swipe feel
-      const VELOCITY_THRESHOLD = 0.35; // px/ms - deliberate close
-      const ANGLE_THRESHOLD = 20; // px - stronger axis lock
+      const EDGE = 64; // px - larger edge grab area for easier start
+      const SWIPE_THRESHOLD = 48; // px - slight loosen
+      const VELOCITY_THRESHOLD = 0.3; // px/ms (unused for close, but kept for logs)
+      const ANGLE_THRESHOLD = 10; // px - easier horizontal detection
       
       const onStart = (clientX, clientY) => {
         if (!panel.classList.contains('open') || !startNearEdge) return;
@@ -4027,7 +4027,7 @@ app.get('/', (req, res) => {
           // Lock gesture axis early to avoid accidental horizontal when scrolling
           if (!gesture) {
             const absX = Math.abs(dx), absY = Math.abs(dy);
-            if (absX > 8 || absY > 8) gesture = absX > absY ? 'h' : 'v';
+            if (absX > 6 || absY > 6) gesture = absX > absY ? 'h' : 'v';
           }
           if (gesture === 'v') {
             // Let vertical scroll proceed, cancel tracking
@@ -4036,10 +4036,10 @@ app.get('/', (req, res) => {
             panel.style.animation = '';
             return;
           }
-          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > ANGLE_THRESHOLD;
+          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.1 && Math.abs(dx) > ANGLE_THRESHOLD;
           const closingDirOk = dx < 0; // must swipe left to close
           if (!startNearEdge) return; // edge-only to avoid accidental grabs
-          if (horizontal && closingDirOk && Math.abs(dx) > 36) {
+          if (horizontal && closingDirOk && Math.abs(dx) > 12) {
             isSwiping = true;
             panel.classList.add('swiping');
             panel.style.touchAction = 'none';
@@ -4077,7 +4077,7 @@ app.get('/', (req, res) => {
         const duration = Date.now() - startTime;
         const velocity = Math.abs(lastVelocity); // px per ms (instantaneous)
         const width = panel.getBoundingClientRect().width || 1;
-        const DIST_THRESHOLD = Math.max(80, width * 0.25);
+        const DIST_THRESHOLD = Math.max(64, width * 0.18);
         
         // Re-enable transition for smooth snap-back
         panel.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
@@ -4170,10 +4170,10 @@ app.get('/', (req, res) => {
       let gesture = null; // 'h' or 'v'
       let lastX = 0, lastTime = 0, lastVelocity = 0;
       let inputType = null;
-      const EDGE = 28; // px - strict edge-only grab
-      const SWIPE_THRESHOLD = 64; // harder close
-      const VELOCITY_THRESHOLD = 0.35; // more deliberate close
-      const ANGLE_THRESHOLD = 20; // stronger axis lock
+      const EDGE = 44; // px - larger edge grab for easier start
+      const SWIPE_THRESHOLD = 48; // slightly easier close distance unit
+      const VELOCITY_THRESHOLD = 0.3; // not used for closing; kept for logs
+      const ANGLE_THRESHOLD = 12; // easier horizontal detection
       // Direction: on mobile the property panel opens from left (close left), on desktop it's right (close right)
       const closeToLeft = (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(max-width: 768px)').matches : true;
       
@@ -4208,10 +4208,10 @@ app.get('/', (req, res) => {
             panel.style.animation = '';
             return;
           }
-          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > ANGLE_THRESHOLD;
+          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > ANGLE_THRESHOLD;
           const closingDirOk = closeToLeft ? (dx < 0) : (dx > 0);
           if (!startNearEdge) return; // edge-only start
-          if (horizontal && closingDirOk && Math.abs(dx) > 36) {
+          if (horizontal && closingDirOk && Math.abs(dx) > 16) {
             isSwiping = true;
             panel.classList.add('swiping');
             panel.style.touchAction = 'none';
@@ -4250,7 +4250,7 @@ app.get('/', (req, res) => {
         const duration = Date.now() - startTime;
         const velocity = Math.abs(lastVelocity);
         const width = panel.getBoundingClientRect().width || 1;
-        const DIST_THRESHOLD = Math.max(80, width * 0.25);
+        const DIST_THRESHOLD = Math.max(72, width * 0.20);
         
         // Smooth transition for snap-back or close (transform only to avoid left/right jumps)
         panel.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';

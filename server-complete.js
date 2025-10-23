@@ -1346,9 +1346,9 @@ app.get('/', (req, res) => {
             overflow: hidden;
             -webkit-overflow-scrolling: touch;
             touch-action: pan-y;
-            will-change: left, transform;
+            will-change: left;
             transform: translateZ(0);
-            transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s ease;
+            transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1);
             border-right: 1px solid rgba(0,0,0,0.06);
             backdrop-filter: blur(20px);
           }
@@ -2653,7 +2653,7 @@ app.get('/', (req, res) => {
         width: 100vw;
         left: -100vw;
         right: auto;
-        transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s ease-out;
+        transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         will-change: left, transform;
       }
       
@@ -3593,7 +3593,7 @@ app.get('/', (req, res) => {
       }
       
       // Update header: allow up to 2 lines, auto-fit slightly if needed
-      hero.innerHTML = '<div class="project-title" style="color: ' + titleColor + '; font-weight: 700; line-height: 1.2; letter-spacing: 0.1px; margin: 2px 0; font-size: 18px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">' + (zone.emoji + ' ' + zone.name) + '</div>';
+      hero.innerHTML = '<div class="project-title" style="color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.25); font-weight: 700; line-height: 1.2; letter-spacing: 0.1px; margin: 2px 0; font-size: 18px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">' + (zone.emoji + ' ' + zone.name) + '</div>';
       // Auto-fit to max 2 lines (mobile-friendly); shrink down to 14px if needed
       try { fitTextToLines(hero.querySelector('.project-title'), 2, 18, 14); } catch(_) {}
       
@@ -3996,13 +3996,13 @@ app.get('/', (req, res) => {
       let gesture = null; // 'h' or 'v'
       let lastX = 0, lastTime = 0, lastVelocity = 0; // instantaneous velocity tracking
       let inputType = null; // 'touch' | 'pointer'
-      const EDGE = 32; // px - narrower edge to avoid accidental grabs
-      const SWIPE_THRESHOLD = 44; // px - slightly lower for better feel
-      const VELOCITY_THRESHOLD = 0.18; // px/ms - easier close
-      const ANGLE_THRESHOLD = 16; // px - avoid accidental starts
+      const EDGE = 28; // px - strict edge-only grab
+      const SWIPE_THRESHOLD = 64; // px - harder swipe feel
+      const VELOCITY_THRESHOLD = 0.35; // px/ms - deliberate close
+      const ANGLE_THRESHOLD = 20; // px - stronger axis lock
       
       const onStart = (clientX, clientY) => {
-        if (!panel.classList.contains('open')) return;
+        if (!panel.classList.contains('open') || !startNearEdge) return;
         startX = clientX;
         startY = clientY;
         startTime = Date.now();
@@ -4036,9 +4036,10 @@ app.get('/', (req, res) => {
             panel.style.animation = '';
             return;
           }
-          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.1 && Math.abs(dx) > ANGLE_THRESHOLD;
-          const enoughDx = Math.abs(dx) > 18; // allow swipe start anywhere with small threshold
-          if (horizontal && enoughDx) {
+          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > ANGLE_THRESHOLD;
+          const closingDirOk = dx < 0; // must swipe left to close
+          if (!startNearEdge) return; // edge-only to avoid accidental grabs
+          if (horizontal && closingDirOk && Math.abs(dx) > 36) {
             isSwiping = true;
             panel.classList.add('swiping');
             panel.style.touchAction = 'none';
@@ -4049,16 +4050,10 @@ app.get('/', (req, res) => {
         // Prevent default only while swiping to keep vertical scroll smooth otherwise
         if (isSwiping && ev && ev.cancelable) ev.preventDefault();
         
-        // Only allow left swipe (negative dx) with rubber-band overscroll
+        // Only allow left swipe (negative dx); clamp to bounds for solid feel
         currentTranslate = Math.min(0, dx);
         const width = panel.getBoundingClientRect().width || 1;
-        let next = currentTranslate;
-        if (next < -width) {
-          const overshoot = next + width; // negative
-          next = -width + overshoot * 0.35; // dampened beyond limit
-        } else if (next > 0) {
-          next = next * 0.35; // slight resist if pushed right
-        }
+        const next = Math.max(-width, Math.min(0, currentTranslate));
         if (!rafPending) {
           rafPending = true;
           requestAnimationFrame(() => {
@@ -4082,14 +4077,14 @@ app.get('/', (req, res) => {
         const duration = Date.now() - startTime;
         const velocity = Math.abs(lastVelocity); // px per ms (instantaneous)
         const width = panel.getBoundingClientRect().width || 1;
-        const DIST_THRESHOLD = Math.max(48, width * 0.12);
+        const DIST_THRESHOLD = Math.max(80, width * 0.25);
         
         // Re-enable transition for smooth snap-back
         panel.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
         panel.classList.remove('swiping');
         
-        // Close if: swiped far enough OR swiped fast enough
-        const shouldClose = Math.abs(translateX) > DIST_THRESHOLD || velocity > VELOCITY_THRESHOLD;
+        // Close only if swiped far enough (hard swipe). Ignore velocity to prevent sensitivity
+        const shouldClose = Math.abs(translateX) > DIST_THRESHOLD;
         
         if (shouldClose) {
           // Subtle haptic (where supported)
@@ -4135,7 +4130,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = (rect.right - t.clientX) <= EDGE;
+        startNearEdge = (t.clientX - rect.left) <= EDGE;
         onStart(t.clientX, t.clientY);
       }, { passive: true });
       
@@ -4154,7 +4149,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = (rect.right - e.clientX) <= EDGE;
+        startNearEdge = (e.clientX - rect.left) <= EDGE;
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
         onStart(e.clientX, e.clientY);
       });
@@ -4175,10 +4170,10 @@ app.get('/', (req, res) => {
       let gesture = null; // 'h' or 'v'
       let lastX = 0, lastTime = 0, lastVelocity = 0;
       let inputType = null;
-      const EDGE = 32; // px - narrower edge to avoid accidental grabs
-      const SWIPE_THRESHOLD = 44; // easier close
-      const VELOCITY_THRESHOLD = 0.18; // easier close
-      const ANGLE_THRESHOLD = 16; // avoid accidental starts
+      const EDGE = 28; // px - strict edge-only grab
+      const SWIPE_THRESHOLD = 64; // harder close
+      const VELOCITY_THRESHOLD = 0.35; // more deliberate close
+      const ANGLE_THRESHOLD = 20; // stronger axis lock
       // Direction: on mobile the property panel opens from left (close left), on desktop it's right (close right)
       const closeToLeft = (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(max-width: 768px)').matches : true;
       
@@ -4191,7 +4186,6 @@ app.get('/', (req, res) => {
         isSwiping = false;
         panel.style.transition = 'none';
         panel.style.animation = 'none';
-        panel.style.touchAction = 'none';
         gesture = null;
         lastX = clientX;
         lastTime = startTime;
@@ -4214,9 +4208,10 @@ app.get('/', (req, res) => {
             panel.style.animation = '';
             return;
           }
-          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.1 && Math.abs(dx) > ANGLE_THRESHOLD;
-          const enoughDx = Math.abs(dx) > 18;
-          if (horizontal && enoughDx) {
+          const horizontal = Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > ANGLE_THRESHOLD;
+          const closingDirOk = closeToLeft ? (dx < 0) : (dx > 0);
+          if (!startNearEdge) return; // edge-only start
+          if (horizontal && closingDirOk && Math.abs(dx) > 36) {
             isSwiping = true;
             panel.classList.add('swiping');
             panel.style.touchAction = 'none';
@@ -4255,14 +4250,14 @@ app.get('/', (req, res) => {
         const duration = Date.now() - startTime;
         const velocity = Math.abs(lastVelocity);
         const width = panel.getBoundingClientRect().width || 1;
-        const DIST_THRESHOLD = Math.max(56, width * 0.20);
+        const DIST_THRESHOLD = Math.max(80, width * 0.25);
         
         // Smooth transition for snap-back or close (transform only to avoid left/right jumps)
         panel.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
         panel.classList.remove('swiping');
         
-        // Close if swiped far enough or fast enough
-        const shouldClose = Math.abs(translateX) > DIST_THRESHOLD || velocity > VELOCITY_THRESHOLD;
+        // Close only if swiped far enough (hard swipe); ignore velocity
+        const shouldClose = Math.abs(translateX) > DIST_THRESHOLD;
         
         if (shouldClose) {
           // Animate panel out with iPhone-style smooth close (direction-aware)
@@ -4305,12 +4300,11 @@ app.get('/', (req, res) => {
       // Touch events (edge-preferred, but allow strong swipe)
       panel.addEventListener('touchstart', (e) => {
         if (inputType && inputType !== 'touch') return;
-        inputType = 'touch';
         const t = e.touches[0];
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = closeToLeft ? ((rect.right - t.clientX) <= EDGE) : ((t.clientX - rect.left) <= EDGE);
+        startNearEdge = closeToLeft ? ((t.clientX - rect.left) <= EDGE) : ((rect.right - t.clientX) <= EDGE);
         onStart(t.clientX, t.clientY);
       }, { passive: true });
       
@@ -4325,11 +4319,10 @@ app.get('/', (req, res) => {
       // Pointer events fallback
       panel.addEventListener('pointerdown', (e) => {
         if (inputType && inputType !== 'pointer') return;
-        inputType = 'pointer';
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = closeToLeft ? ((rect.right - e.clientX) <= EDGE) : ((e.clientX - rect.left) <= EDGE);
+        startNearEdge = closeToLeft ? ((e.clientX - rect.left) <= EDGE) : ((rect.right - e.clientX) <= EDGE);
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
         onStart(e.clientX, e.clientY);
       });

@@ -1371,6 +1371,10 @@ app.get('/', (req, res) => {
             z-index: 10;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             backdrop-filter: blur(15px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 56px;
           }
           
           .close-panel {
@@ -4002,7 +4006,7 @@ app.get('/', (req, res) => {
       const ANGLE_THRESHOLD = 10; // px - easier horizontal detection
       
       const onStart = (clientX, clientY) => {
-        if (!panel.classList.contains('open') || !startNearEdge) return;
+        if (!panel.classList.contains('open')) return;
         startX = clientX;
         startY = clientY;
         startTime = Date.now();
@@ -4038,7 +4042,7 @@ app.get('/', (req, res) => {
           }
           const horizontal = Math.abs(dx) > Math.abs(dy) * 1.1 && Math.abs(dx) > ANGLE_THRESHOLD;
           const closingDirOk = dx < 0; // must swipe left to close
-          if (!startNearEdge) return; // edge-only to avoid accidental grabs
+          if (!startNearEdge && Math.abs(dx) < 24) return; // allow hard swipe anywhere (>=24px), or easy start at edge/header
           if (horizontal && closingDirOk && Math.abs(dx) > 12) {
             isSwiping = true;
             panel.classList.add('swiping');
@@ -4130,7 +4134,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = (t.clientX - rect.left) <= EDGE;
+        startNearEdge = ((t.clientX - rect.left) <= EDGE) || !!target.closest('.panel-header');
         onStart(t.clientX, t.clientY);
       }, { passive: true });
       
@@ -4149,7 +4153,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = (e.clientX - rect.left) <= EDGE;
+        startNearEdge = ((e.clientX - rect.left) <= EDGE) || !!target.closest('.panel-header');
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
         onStart(e.clientX, e.clientY);
       });
@@ -4210,7 +4214,7 @@ app.get('/', (req, res) => {
           }
           const horizontal = Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > ANGLE_THRESHOLD;
           const closingDirOk = closeToLeft ? (dx < 0) : (dx > 0);
-          if (!startNearEdge) return; // edge-only start
+          if (!startNearEdge && Math.abs(dx) < 24) return; // allow hard swipe anywhere (>=24px), or easy start at edge/header
           if (horizontal && closingDirOk && Math.abs(dx) > 16) {
             isSwiping = true;
             panel.classList.add('swiping');
@@ -4300,11 +4304,12 @@ app.get('/', (req, res) => {
       // Touch events (edge-preferred, but allow strong swipe)
       panel.addEventListener('touchstart', (e) => {
         if (inputType && inputType !== 'touch') return;
+        inputType = 'touch';
         const t = e.touches[0];
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = closeToLeft ? ((t.clientX - rect.left) <= EDGE) : ((rect.right - t.clientX) <= EDGE);
+        startNearEdge = (closeToLeft ? ((t.clientX - rect.left) <= EDGE) : ((rect.right - t.clientX) <= EDGE)) || !!target.closest('.property-panel-header');
         onStart(t.clientX, t.clientY);
       }, { passive: true });
       
@@ -4319,10 +4324,11 @@ app.get('/', (req, res) => {
       // Pointer events fallback
       panel.addEventListener('pointerdown', (e) => {
         if (inputType && inputType !== 'pointer') return;
+        inputType = 'pointer';
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = closeToLeft ? ((e.clientX - rect.left) <= EDGE) : ((rect.right - e.clientX) <= EDGE);
+        startNearEdge = (closeToLeft ? ((e.clientX - rect.left) <= EDGE) : ((rect.right - e.clientX) <= EDGE)) || !!target.closest('.property-panel-header');
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
         onStart(e.clientX, e.clientY);
       });

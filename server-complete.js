@@ -1379,22 +1379,21 @@ app.get('/', (req, res) => {
           
           .close-panel {
             position: absolute;
-            top: 8px;
-            right: 20px;
-            font-size: 16px;
+            top: 10px;
+            right: 14px;
+            font-size: 18px;
             cursor: pointer;
             background: rgba(255,255,255,0.15);
             border: 1px solid rgba(255,255,255,0.25);
             color: white;
-            padding: 6px;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
           }
     
           .close-panel:hover {
@@ -1411,7 +1410,7 @@ app.get('/', (req, res) => {
             overscroll-behavior-y: contain;
             -webkit-overflow-scrolling: touch;
             touch-action: pan-y;
-            height: calc(100vh - 40px);
+            height: calc(100vh - 56px);
             overflow-y: auto;
             scroll-behavior: smooth;
           }
@@ -2499,12 +2498,15 @@ app.get('/', (req, res) => {
       position: sticky;
       top: 0;
       background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
-      backdrop-filter: blur(20px);
       color: white;
-      padding: 20px;
-      border-bottom: 2px solid rgba(255,255,255,0.2);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 56px;
       z-index: 10;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      backdrop-filter: blur(15px);
     }
     
     .property-panel-title {

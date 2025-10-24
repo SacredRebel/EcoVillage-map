@@ -1368,7 +1368,7 @@ app.get('/', (req, res) => {
             color: white;
             padding: 8px 20px;
             border-bottom: none;
-            z-index: 10;
+            z-index: 100;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             backdrop-filter: blur(15px);
             display: flex;
@@ -2506,7 +2506,7 @@ app.get('/', (req, res) => {
       justify-content: space-between;
       min-height: 56px;
       touch-action: pan-y;
-      z-index: 10;
+      z-index: 100;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       backdrop-filter: blur(15px);
     }
@@ -4029,7 +4029,9 @@ app.get('/', (req, res) => {
       let gesture = null; // 'h' or 'v'
       let lastX = 0, lastTime = 0, lastVelocity = 0; // instantaneous velocity tracking
       let inputType = null; // 'touch' | 'pointer'
-      const EDGE = 64; // px - larger edge grab area for easier start
+      const EDGE = 96; // px - outer band for easier start (avoid iOS back-swipe)
+      const IS_IOS = typeof navigator !== 'undefined' && /iP(hone|ad|od)/.test(navigator.userAgent);
+      const EDGE_INNER = IS_IOS ? 12 : 0; // allow extreme edge on non-iOS
       const SWIPE_THRESHOLD = 48; // px - slight loosen
       const VELOCITY_THRESHOLD = 0.3; // px/ms (unused for close, but kept for logs)
       const ANGLE_THRESHOLD = 14; // px - stricter axis lock
@@ -4073,8 +4075,8 @@ app.get('/', (req, res) => {
             return;
           }
           const absX = Math.abs(dx), absY = Math.abs(dy);
-          const ratioReq = 2.0;
-          const minDx = 24;
+          const ratioReq = 1.8;
+          const minDx = 20;
           const horizontal = absX > absY * ratioReq && absX > ANGLE_THRESHOLD;
           const closingDirOk = dx < 0; // must swipe left to close
           if (!horizontal || !closingDirOk || absX < minDx) return;
@@ -4169,9 +4171,10 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = (t.clientX - rect.left) <= EDGE;
+        const xOff = (t.clientX - rect.left);
+        startNearEdge = (xOff >= EDGE_INNER && xOff <= EDGE);
         onStart(t.clientX, t.clientY);
-      }, { passive: true });
+      }, { passive: true, capture: true });
       
       panel.addEventListener('touchmove', function(e) {
         const t = e.touches[0];
@@ -4188,10 +4191,11 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = (e.clientX - rect.left) <= EDGE;
+        const xOff = (e.clientX - rect.left);
+        startNearEdge = (xOff >= EDGE_INNER && xOff <= EDGE);
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
         onStart(e.clientX, e.clientY);
-      });
+      }, { capture: true });
       panel.addEventListener('pointermove', function(e) {
         onMove(e.clientX, e.clientY, e);
       });
@@ -4209,7 +4213,8 @@ app.get('/', (req, res) => {
       let gesture = null; // 'h' or 'v'
       let lastX = 0, lastTime = 0, lastVelocity = 0;
       let inputType = null;
-      const EDGE = 44; // px - larger edge grab for easier start
+      const EDGE = 80; // px - outer band for easier start (avoid iOS back-swipe)
+      const EDGE_INNER = 12; // px - inner offset to skip OS back gesture zone
       const SWIPE_THRESHOLD = 48; // slightly easier close distance unit
       const VELOCITY_THRESHOLD = 0.3; // not used for closing; kept for logs
       const ANGLE_THRESHOLD = 14; // stricter axis lock
@@ -4350,9 +4355,10 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = closeToLeft ? ((t.clientX - rect.left) <= EDGE) : ((rect.right - t.clientX) <= EDGE);
+        const xOff = closeToLeft ? (t.clientX - rect.left) : (rect.right - t.clientX);
+        startNearEdge = (xOff >= EDGE_INNER && xOff <= EDGE);
         onStart(t.clientX, t.clientY);
-      }, { passive: true });
+      }, { passive: true, capture: true });
       
       panel.addEventListener('touchmove', (e) => {
         const t = e.touches[0];
@@ -4369,10 +4375,11 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        startNearEdge = closeToLeft ? ((e.clientX - rect.left) <= EDGE) : ((rect.right - e.clientX) <= EDGE);
+        const xOff = closeToLeft ? (e.clientX - rect.left) : (rect.right - e.clientX);
+        startNearEdge = (xOff >= EDGE_INNER && xOff <= EDGE);
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
         onStart(e.clientX, e.clientY);
-      });
+      }, { capture: true });
       panel.addEventListener('pointermove', (e) => {
         onMove(e.clientX, e.clientY, e);
       });

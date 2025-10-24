@@ -3610,11 +3610,14 @@ app.get('/', (req, res) => {
           }
         } catch(_) {}
       }
-      // Ensure property panel is closed so panels are standalone
+      // FORCE close property panel so only ONE panel is open at a time
       const propPanel = document.getElementById('property-panel');
-      if (propPanel && propPanel.classList.contains('open')) {
+      if (propPanel) {
         propPanel.classList.remove('open', 'swiping');
         propPanel.style.transform = '';
+        propPanel.style.transition = '';
+        propPanel.style.animation = '';
+        propPanel.style.touchAction = '';
       }
       
       // Get zone color for theming
@@ -3657,12 +3660,14 @@ app.get('/', (req, res) => {
       console.log('📋 Opened side panel for:', zone.name);
     }
     
-    // Close panel functionality
+    // Close panel functionality with complete cleanup
     document.getElementById('close-panel').addEventListener('click', () => {
       const sp = document.getElementById('side-panel');
-      sp.classList.remove('open');
+      sp.classList.remove('open', 'swiping');
       sp.style.transform = '';
       sp.style.transition = '';
+      sp.style.animation = '';
+      sp.style.touchAction = '';
       if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
       if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
       
@@ -4034,8 +4039,8 @@ app.get('/', (req, res) => {
       let lastX = 0, lastTime = 0, lastVelocity = 0; // instantaneous velocity tracking
       let inputType = null; // 'touch' | 'pointer'
       const IS_MOBILE = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
-      const EDGE = IS_MOBILE ? 9999 : 96; // On mobile: entire left half; desktop: 96px
-      const EDGE_INNER = 0; // Allow swipe from anywhere in the band
+      const EDGE = IS_MOBILE ? 9999 : 80; // On mobile: left half only; desktop: 80px
+      const EDGE_INNER = 0;
       const SWIPE_THRESHOLD = 48; // px - slight loosen
       const VELOCITY_THRESHOLD = 0.3; // px/ms (unused for close, but kept for logs)
       const ANGLE_THRESHOLD = 14; // px - stricter axis lock
@@ -4047,11 +4052,13 @@ app.get('/', (req, res) => {
         startTime = Date.now();
         isTracking = true;
         isSwiping = false;
-        // Remove transition during drag for immediate feedback and kill any open animation
+        currentTranslate = 0;
+        gesture = null;
+        // Remove transition during drag for immediate feedback
         panel.style.transition = 'none';
         panel.style.animation = 'none';
-        rafPending = false;
-        gesture = null;
+        panel.style.transform = '';
+        panel.classList.remove('swiping');
         lastX = clientX;
         lastTime = startTime;
         try { panel.style.willChange = 'transform'; } catch(_) {}
@@ -4061,62 +4068,79 @@ app.get('/', (req, res) => {
         if (!isTracking) return;
         const dx = clientX - startX;
         const dy = clientY - startY;
+        const absX = Math.abs(dx), absY = Math.abs(dy);
         
         if (!isSwiping) {
-          // Lock gesture axis early to avoid accidental horizontal when scrolling
+          // Lock gesture axis early - be very strict
           if (!gesture) {
-            const absX = Math.abs(dx), absY = Math.abs(dy);
-            if (absX > 10 || absY > 10) {
-              if (absY > absX * 1.2) gesture = 'v';
-              else if (absX > absY * 1.2) gesture = 'h';
+            if (absX > 8 || absY > 8) {
+              // If ANY vertical movement, immediately lock as vertical
+              if (absY > absX * 1.3) {
+                gesture = 'v';
+              } else if (absX > absY * 1.8 && dx < 0) {
+                // Only horizontal if strongly left
+                gesture = 'h';
+              }
             }
           }
-          if (gesture === 'v') {
-            // Let vertical scroll proceed, cancel tracking
+          
+          // If vertical OR right swipe, cancel immediately
+          if (gesture === 'v' || dx > 0) {
             isTracking = false;
             panel.style.transition = '';
             panel.style.animation = '';
             return;
           }
-          const absX = Math.abs(dx), absY = Math.abs(dy);
-          const ratioReq = IS_MOBILE ? 1.5 : 1.8;
-          const minDx = IS_MOBILE ? 16 : 20;
-          const horizontal = absX > absY * ratioReq && absX > ANGLE_THRESHOLD;
-          const closingDirOk = dx < 0; // must swipe left to close
-          if (!horizontal || !closingDirOk || absX < minDx) return;
-          if (horizontal && closingDirOk) {
+          
+          // Only activate swipe if strong left horizontal
+          const ratioReq = 2.0;
+          const minDx = 20;
+          const horizontal = (gesture === 'h') && (absX > absY * ratioReq) && (absX > ANGLE_THRESHOLD);
+          const closingDirOk = dx < 0; // MUST swipe left
+          
+          if (horizontal && closingDirOk && absX >= minDx) {
             isSwiping = true;
             panel.classList.add('swiping');
             panel.style.touchAction = 'none';
+            if (ev && ev.cancelable) ev.preventDefault();
+          } else {
+            return; // Don't move panel at all until confirmed
           }
-          if (!isSwiping) return; // Still waiting to detect direction
         }
         
-        // Prevent default only while swiping to keep vertical scroll smooth otherwise
-        if (isSwiping && ev && ev.cancelable) ev.preventDefault();
+        // Only proceed if we're in confirmed swipe mode
+        if (!isSwiping) return;
         
-        // Only allow left swipe (negative dx); clamp to bounds for solid feel
+        // Prevent default to stop scroll
+        if (ev && ev.cancelable) ev.preventDefault();
+        
+        // Instant velocity
+        const now = Date.now();
+        if (lastTime && now > lastTime) {
+          lastVelocity = (clientX - lastX) / (now - lastTime);
+        }
+        lastX = clientX; lastTime = now;
+        
+        // ONLY allow leftward (negative) motion, no right movement at all
         currentTranslate = Math.min(0, dx);
-        const width = panel.getBoundingClientRect().width || 1;
-        const next = Math.max(-width, Math.min(0, currentTranslate));
+        
+        // Request animation frame for transform
         if (!rafPending) {
           rafPending = true;
-          requestAnimationFrame(() => {
-            panel.style.transform = 'translate3d(' + next + 'px,0,0)';
+          requestAnimationFrame(function() {
+            panel.style.transform = 'translateX(' + currentTranslate + 'px)';
             rafPending = false;
           });
         }
-        // instantaneous velocity (px/ms)
-        const now = Date.now();
-        const dtx = clientX - lastX;
-        const dt = now - lastTime;
-        if (dt > 0) lastVelocity = dtx / dt;
-        lastX = clientX;
         lastTime = now;
       };
       
       const onEnd = () => {
         if (!isTracking) return;
+        
+        // Clean up tracking state immediately
+        isTracking = false;
+        gesture = null;
         
         const translateX = currentTranslate || 0;
         const duration = Date.now() - startTime;
@@ -4328,17 +4352,15 @@ app.get('/', (req, res) => {
             // Remove active class from boundary lines
             document.querySelectorAll('.property-line-magical').forEach(path => {
               path.classList.remove('active');
-            });
             
             console.log('👆 Property panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
             panel.style.animation = '';
             panel.style.touchAction = '';
-            try { panel.style.willChange = ''; } catch(_) {}
           }, 320);
         } else {
           // Snap back smoothly
           panel.style.transform = '';
-          setTimeout(() => {
+          setTimeout(function() {
             panel.style.transition = '';
             panel.style.animation = '';
             panel.style.touchAction = '';

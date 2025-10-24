@@ -4352,6 +4352,7 @@ app.get('/', (req, res) => {
             // Remove active class from boundary lines
             document.querySelectorAll('.property-line-magical').forEach(path => {
               path.classList.remove('active');
+            });
             
             console.log('👆 Property panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
             panel.style.animation = '';

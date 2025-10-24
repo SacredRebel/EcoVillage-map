@@ -1463,6 +1463,8 @@ app.get('/', (req, res) => {
             flex-direction: column;
             justify-content: center;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            flex: 1;
+            min-height: 44px;
           }
     
     .project-section {
@@ -3625,14 +3627,16 @@ app.get('/', (req, res) => {
         titleColor = '#F59E0B';
       }
       
-      // Update header: allow up to 2 lines, auto-fit slightly if needed
-      hero.innerHTML = '<div class="project-title" style="color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.25); font-weight: 700; line-height: 1.2; letter-spacing: 0.1px; margin: 2px 0; font-size: 18px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">' + (zone.emoji + ' ' + zone.name) + '</div>';
-      // Auto-fit to max 2 lines (mobile-friendly); shrink down to 14px if needed
-      try { fitTextToLines(hero.querySelector('.project-title'), 2, 18, 14); } catch(_) {}
-      
-      // Apply zone color theming to hero background
-      hero.style.background = 'linear-gradient(135deg, ' + zoneColor + '15 0%, ' + zoneColor + '25 100%)';
-      hero.style.borderLeft = '4px solid ' + zoneColor;
+      // Update header: ALWAYS set title with guaranteed visibility
+      if (hero) {
+        hero.innerHTML = '<div class="project-title" style="color: #ffffff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.25); font-weight: 700; line-height: 1.2; letter-spacing: 0.1px; margin: 2px 0; font-size: 18px; display: block; visibility: visible;">' + (zone.emoji + ' ' + zone.name) + '</div>';
+        // Apply zone color theming to hero background
+        hero.style.background = 'linear-gradient(135deg, ' + zoneColor + '15 0%, ' + zoneColor + '25 100%)';
+        hero.style.borderLeft = '4px solid ' + zoneColor;
+        hero.style.display = 'flex';
+        hero.style.visibility = 'visible';
+      }
+      console.log('📋 Set title for:', zone.name);
       
       // Open the panel first for smooth animation, then inject heavy content
       panel.classList.add('open');
@@ -4029,9 +4033,9 @@ app.get('/', (req, res) => {
       let gesture = null; // 'h' or 'v'
       let lastX = 0, lastTime = 0, lastVelocity = 0; // instantaneous velocity tracking
       let inputType = null; // 'touch' | 'pointer'
-      const EDGE = 96; // px - outer band for easier start (avoid iOS back-swipe)
-      const IS_IOS = typeof navigator !== 'undefined' && /iP(hone|ad|od)/.test(navigator.userAgent);
-      const EDGE_INNER = IS_IOS ? 12 : 0; // allow extreme edge on non-iOS
+      const IS_MOBILE = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+      const EDGE = IS_MOBILE ? 9999 : 96; // On mobile: entire left half; desktop: 96px
+      const EDGE_INNER = 0; // Allow swipe from anywhere in the band
       const SWIPE_THRESHOLD = 48; // px - slight loosen
       const VELOCITY_THRESHOLD = 0.3; // px/ms (unused for close, but kept for logs)
       const ANGLE_THRESHOLD = 14; // px - stricter axis lock
@@ -4075,8 +4079,8 @@ app.get('/', (req, res) => {
             return;
           }
           const absX = Math.abs(dx), absY = Math.abs(dy);
-          const ratioReq = 1.8;
-          const minDx = 20;
+          const ratioReq = IS_MOBILE ? 1.5 : 1.8;
+          const minDx = IS_MOBILE ? 16 : 20;
           const horizontal = absX > absY * ratioReq && absX > ANGLE_THRESHOLD;
           const closingDirOk = dx < 0; // must swipe left to close
           if (!horizontal || !closingDirOk || absX < minDx) return;
@@ -4172,7 +4176,8 @@ app.get('/', (req, res) => {
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
         const xOff = (t.clientX - rect.left);
-        startNearEdge = (xOff >= EDGE_INNER && xOff <= EDGE);
+        const halfWidth = rect.width / 2;
+        startNearEdge = IS_MOBILE ? (xOff <= halfWidth) : (xOff >= EDGE_INNER && xOff <= EDGE);
         onStart(t.clientX, t.clientY);
       }, { passive: true, capture: true });
       
@@ -4192,7 +4197,8 @@ app.get('/', (req, res) => {
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
         const xOff = (e.clientX - rect.left);
-        startNearEdge = (xOff >= EDGE_INNER && xOff <= EDGE);
+        const halfWidth = rect.width / 2;
+        startNearEdge = IS_MOBILE ? (xOff <= halfWidth) : (xOff >= EDGE_INNER && xOff <= EDGE);
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
         onStart(e.clientX, e.clientY);
       }, { capture: true });

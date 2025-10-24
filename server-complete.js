@@ -3296,9 +3296,11 @@ app.get('/', (req, res) => {
       } catch(_) {}
     }
 
-    // Enable mobile swipe-to-close for both panels
-    attachPanelSwipe(map);
-    attachPropertyPanelSwipe();
+    // Enable mobile-only swipe-to-close for both panels
+    if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+      attachPanelSwipe(map);
+      attachPropertyPanelSwipe();
+    }
     
     // Add tile loading indicators and error handling
     satelliteLayer.on('loading', () => {
@@ -3534,6 +3536,14 @@ app.get('/', (req, res) => {
       // Add click handlers for interactive side panel (guard against swipe-ending ghost clicks)
       const clickHandler = (e) => {
         if (window.ignoreMapClicksUntil && Date.now() < window.ignoreMapClicksUntil) { L.DomEvent.stopPropagation(e); return; }
+        // Close any open panels first to ensure only ONE panel at a time
+        const openPanels = document.querySelectorAll('.side-panel.open, .property-panel.open');
+        openPanels.forEach(p => {
+          p.classList.remove('open', 'swiping');
+          p.style.transform = '';
+          p.style.transition = '';
+          p.style.animation = '';
+        });
         openSidePanel(zone);
         L.DomEvent.stopPropagation(e);
       };
@@ -3641,6 +3651,11 @@ app.get('/', (req, res) => {
       }
       console.log('📋 Set title for:', zone.name);
       
+      // Block map interactions while panel is open
+      if (map && map._container) {
+        map._container.style.pointerEvents = 'none';
+      }
+      
       // Open the panel first for smooth animation, then inject heavy content
       panel.classList.add('open');
       if (typeof lockBodyScroll === 'function') lockBodyScroll();
@@ -3670,6 +3685,10 @@ app.get('/', (req, res) => {
       sp.style.touchAction = '';
       if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
       if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
+      
+      // Re-enable map interactions
+      const mapEl = document.getElementById('map');
+      if (mapEl) mapEl.style.pointerEvents = '';
       
       // Clear current zone reference
       window.currentZoneId = null;
@@ -4038,8 +4057,7 @@ app.get('/', (req, res) => {
       let gesture = null; // 'h' or 'v'
       let lastX = 0, lastTime = 0, lastVelocity = 0; // instantaneous velocity tracking
       let inputType = null; // 'touch' | 'pointer'
-      const IS_MOBILE = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
-      const EDGE = IS_MOBILE ? 9999 : 80; // On mobile: left half only; desktop: 80px
+      const EDGE = 9999; // Allow swipe start from anywhere on mobile
       const EDGE_INNER = 0;
       const SWIPE_THRESHOLD = 48; // px - slight loosen
       const VELOCITY_THRESHOLD = 0.3; // px/ms (unused for close, but kept for logs)
@@ -4084,11 +4102,21 @@ app.get('/', (req, res) => {
             }
           }
           
-          // If vertical OR right swipe, cancel immediately
-          if (gesture === 'v' || dx > 0) {
+          // If vertical OR right swipe, cancel immediately - NO panel movement
+          if (gesture === 'v') {
+            // Vertical scroll - allow it
             isTracking = false;
-            panel.style.transition = '';
-            panel.style.animation = '';
+            isSwiping = false;
+            return;
+          }
+          
+          if (dx > 0) {
+            // RIGHT swipe - block completely
+            isTracking = false;
+            isSwiping = false;
+            panel.style.transform = ''; // Ensure no movement
+            if (ev && ev.cancelable) ev.preventDefault();
+            console.log('🚫 Right swipe blocked');
             return;
           }
           
@@ -4103,6 +4131,7 @@ app.get('/', (req, res) => {
             panel.classList.add('swiping');
             panel.style.touchAction = 'none';
             if (ev && ev.cancelable) ev.preventDefault();
+            console.log('✅ Left swipe detected - panel will follow');
           } else {
             return; // Don't move panel at all until confirmed
           }
@@ -4167,6 +4196,9 @@ app.get('/', (req, res) => {
             window.currentZoneId = null;
             if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
             if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
+            // Re-enable map interactions
+            const mapEl = document.getElementById('map');
+            if (mapEl) mapEl.style.pointerEvents = '';
             console.log('👆 Panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
             panel.style.animation = '';
             panel.style.touchAction = '';
@@ -4199,9 +4231,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        const xOff = (t.clientX - rect.left);
-        const halfWidth = rect.width / 2;
-        startNearEdge = IS_MOBILE ? (xOff <= halfWidth) : (xOff >= EDGE_INNER && xOff <= EDGE);
+        startNearEdge = true; // Allow swipe from anywhere
         onStart(t.clientX, t.clientY);
       }, { passive: true, capture: true });
       
@@ -4220,9 +4250,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        const xOff = (e.clientX - rect.left);
-        const halfWidth = rect.width / 2;
-        startNearEdge = IS_MOBILE ? (xOff <= halfWidth) : (xOff >= EDGE_INNER && xOff <= EDGE);
+        startNearEdge = true; // Allow swipe from anywhere
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
         onStart(e.clientX, e.clientY);
       }, { capture: true });

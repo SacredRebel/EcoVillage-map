@@ -3582,7 +3582,32 @@ app.get('/', (req, res) => {
     function openSidePanel(zone) {
       const panel = document.getElementById('side-panel');
       const content = document.getElementById('panel-content');
-      const hero = document.getElementById('project-hero');
+      let hero = document.getElementById('project-hero');
+      // Fallback: If header (title + X) is ever missing, rebuild it to ensure visibility
+      if (!hero || !document.getElementById('close-panel')) {
+        try {
+          const existingHeader = panel.querySelector('.panel-header');
+          if (existingHeader) existingHeader.remove();
+          panel.insertAdjacentHTML('afterbegin', '<div class="panel-header">\
+            <div class="project-hero" id="project-hero"></div>\
+            <button class="close-panel" id="close-panel">&times;</button>\
+          </div>');
+          hero = document.getElementById('project-hero');
+          const closeBtn = document.getElementById('close-panel');
+          if (closeBtn && !closeBtn.dataset.bound) {
+            closeBtn.addEventListener('click', () => {
+              const sp = document.getElementById('side-panel');
+              sp.classList.remove('open');
+              sp.style.transform = '';
+              sp.style.transition = '';
+              if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+              if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
+              window.currentZoneId = null;
+            });
+            closeBtn.dataset.bound = '1';
+          }
+        } catch(_) {}
+      }
       // Ensure property panel is closed so panels are standalone
       const propPanel = document.getElementById('property-panel');
       if (propPanel && propPanel.classList.contains('open')) {

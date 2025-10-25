@@ -1366,16 +1366,18 @@ app.get('/', (req, res) => {
             top: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 8px 20px;
+            padding: 12px 20px;
             border-bottom: none;
-            z-index: 100;
+            z-index: 2001;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             backdrop-filter: blur(15px);
             display: flex;
             align-items: center;
             justify-content: space-between;
             min-height: 56px;
+            max-height: 56px;
             touch-action: pan-y;
+            flex-shrink: 0;
           }
           
           .close-panel {
@@ -2507,10 +2509,12 @@ app.get('/', (req, res) => {
       align-items: center;
       justify-content: space-between;
       min-height: 56px;
+      max-height: 56px;
       touch-action: pan-y;
-      z-index: 100;
+      z-index: 2001;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       backdrop-filter: blur(15px);
+      flex-shrink: 0;
     }
     
     .property-panel-title {
@@ -3651,9 +3655,19 @@ app.get('/', (req, res) => {
       }
       console.log('📋 Set title for:', zone.name);
       
-      // Block map interactions while panel is open
-      if (map && map._container) {
-        map._container.style.pointerEvents = 'none';
+      // COMPLETELY block map interactions while panel is open
+      const mapContainer = document.getElementById('map');
+      if (mapContainer) {
+        mapContainer.style.pointerEvents = 'none';
+        mapContainer.style.touchAction = 'none';
+      }
+      if (map) {
+        map.dragging.disable();
+        map.touchZoom.disable();
+        map.doubleClickZoom.disable();
+        map.scrollWheelZoom.disable();
+        map.boxZoom.disable();
+        map.keyboard.disable();
       }
       
       // Open the panel first for smooth animation, then inject heavy content
@@ -3686,9 +3700,23 @@ app.get('/', (req, res) => {
       if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
       if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
       
-      // Re-enable map interactions
+      // Re-enable map interactions completely
       const mapEl = document.getElementById('map');
-      if (mapEl) mapEl.style.pointerEvents = '';
+      if (mapEl) {
+        mapEl.style.pointerEvents = '';
+        mapEl.style.touchAction = '';
+      }
+      // Re-enable Leaflet map interactions
+      if (typeof map !== 'undefined' && map) {
+        try {
+          map.dragging.enable();
+          map.touchZoom.enable();
+          map.doubleClickZoom.enable();
+          map.scrollWheelZoom.enable();
+          map.boxZoom.enable();
+          map.keyboard.enable();
+        } catch(e) {}
+      }
       
       // Clear current zone reference
       window.currentZoneId = null;
@@ -4053,9 +4081,8 @@ app.get('/', (req, res) => {
       if (!panel) return;
       let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0, startNearEdge = false;
       let currentTranslate = 0;
-      let rafPending = false;
-      let gesture = null; // 'h' or 'v'
-      let lastX = 0, lastTime = 0, lastVelocity = 0; // instantaneous velocity tracking
+      let gesture = null; // 'h', 'v', 'r'
+      let lastX = 0, lastTime = 0, lastVelocity = 0;
       let inputType = null; // 'touch' | 'pointer'
       const EDGE = 9999; // Allow swipe start from anywhere on mobile
       const EDGE_INNER = 0;
@@ -4089,51 +4116,49 @@ app.get('/', (req, res) => {
         const absX = Math.abs(dx), absY = Math.abs(dy);
         
         if (!isSwiping) {
-          // Lock gesture axis early - be very strict
+          // Lock gesture axis early
           if (!gesture) {
-            if (absX > 8 || absY > 8) {
-              // If ANY vertical movement, immediately lock as vertical
-              if (absY > absX * 1.3) {
+            if (absX > 5 || absY > 5) {
+              // If vertical dominant, lock as vertical
+              if (absY > absX * 1.5) {
                 gesture = 'v';
-              } else if (absX > absY * 1.8 && dx < 0) {
-                // Only horizontal if strongly left
+              } else if (absX > absY * 1.5 && dx < 0) {
+                // Horizontal left - activate swipe immediately
                 gesture = 'h';
+              } else if (dx > 0) {
+                // ANY right movement - block immediately
+                gesture = 'r';
               }
             }
           }
           
-          // If vertical OR right swipe, cancel immediately - NO panel movement
+          // If vertical scroll, allow it
           if (gesture === 'v') {
-            // Vertical scroll - allow it
             isTracking = false;
             isSwiping = false;
             return;
           }
           
-          if (dx > 0) {
-            // RIGHT swipe - block completely
+          // If RIGHT swipe, block completely
+          if (gesture === 'r' || dx > 0) {
             isTracking = false;
             isSwiping = false;
-            panel.style.transform = ''; // Ensure no movement
+            panel.style.transform = '';
             if (ev && ev.cancelable) ev.preventDefault();
             console.log('🚫 Right swipe blocked');
             return;
           }
           
-          // Only activate swipe if strong left horizontal
-          const ratioReq = 2.0;
-          const minDx = 20;
-          const horizontal = (gesture === 'h') && (absX > absY * ratioReq) && (absX > ANGLE_THRESHOLD);
-          const closingDirOk = dx < 0; // MUST swipe left
-          
-          if (horizontal && closingDirOk && absX >= minDx) {
+          // Activate LEFT swipe immediately with low threshold for responsiveness
+          const minDx = 10; // Lower threshold for immediate response
+          if (gesture === 'h' && dx < 0 && absX >= minDx) {
             isSwiping = true;
             panel.classList.add('swiping');
             panel.style.touchAction = 'none';
             if (ev && ev.cancelable) ev.preventDefault();
-            console.log('✅ Left swipe detected - panel will follow');
-          } else {
-            return; // Don't move panel at all until confirmed
+            console.log('✅ Left swipe activated');
+          } else if (!isSwiping) {
+            return;
           }
         }
         
@@ -4150,17 +4175,11 @@ app.get('/', (req, res) => {
         }
         lastX = clientX; lastTime = now;
         
-        // ONLY allow leftward (negative) motion, no right movement at all
+        // ONLY allow leftward (negative) motion
         currentTranslate = Math.min(0, dx);
         
-        // Request animation frame for transform
-        if (!rafPending) {
-          rafPending = true;
-          requestAnimationFrame(function() {
-            panel.style.transform = 'translateX(' + currentTranslate + 'px)';
-            rafPending = false;
-          });
-        }
+        // Use translate3d for GPU acceleration and immediate response
+        panel.style.transform = 'translate3d(' + currentTranslate + 'px, 0, 0)';
         lastTime = now;
       };
       
@@ -4187,8 +4206,8 @@ app.get('/', (req, res) => {
         if (shouldClose) {
           // Subtle haptic (where supported)
           try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10); } catch(_) {}
-          // Animate panel out completely before closing
-          panel.style.transform = 'translateX(-100%)';
+          // Animate panel out completely before closing - use translate3d for GPU
+          panel.style.transform = 'translate3d(-100%, 0, 0)';
           setTimeout(function() {
             panel.classList.remove('open');
             panel.style.transform = '';
@@ -4196,9 +4215,23 @@ app.get('/', (req, res) => {
             window.currentZoneId = null;
             if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
             if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
-            // Re-enable map interactions
+            // Re-enable map interactions completely
             const mapEl = document.getElementById('map');
-            if (mapEl) mapEl.style.pointerEvents = '';
+            if (mapEl) {
+              mapEl.style.pointerEvents = '';
+              mapEl.style.touchAction = '';
+            }
+            // Re-enable Leaflet map interactions
+            if (typeof map !== 'undefined' && map) {
+              try {
+                map.dragging.enable();
+                map.touchZoom.enable();
+                map.doubleClickZoom.enable();
+                map.scrollWheelZoom.enable();
+                map.boxZoom.enable();
+                map.keyboard.enable();
+              } catch(e) {}
+            }
             console.log('👆 Panel closed by swipe (distance: ' + Math.abs(translateX) + 'px, velocity: ' + velocity.toFixed(2) + 'px/ms)');
             panel.style.animation = '';
             panel.style.touchAction = '';
@@ -4218,7 +4251,6 @@ app.get('/', (req, res) => {
         isTracking = false;
         isSwiping = false;
         currentTranslate = 0;
-        rafPending = false;
         gesture = null;
         lastVelocity = 0;
       };
@@ -4267,8 +4299,7 @@ app.get('/', (req, res) => {
       if (!panel) return;
       let startX = 0, startY = 0, isTracking = false, isSwiping = false, startTime = 0, startNearEdge = false;
       let currentTranslate = 0;
-      let rafPending = false;
-      let gesture = null; // 'h' or 'v'
+      let gesture = null; // 'h', 'v', 'r'
       let lastX = 0, lastTime = 0, lastVelocity = 0;
       let inputType = null;
       const EDGE = 80; // px - outer band for easier start (avoid iOS back-swipe)
@@ -4336,13 +4367,8 @@ app.get('/', (req, res) => {
         const next = closeToLeft
           ? Math.max(-width, Math.min(0, currentTranslate))
           : Math.min(width, Math.max(0, currentTranslate));
-        if (!rafPending) {
-          rafPending = true;
-          requestAnimationFrame(() => {
-            panel.style.transform = 'translate3d(' + next + 'px,0,0)';
-            rafPending = false;
-          });
-        }
+        // Immediate transform for smooth response
+        panel.style.transform = 'translate3d(' + next + 'px, 0, 0)';
         const now = Date.now();
         const dtx = clientX - lastX;
         const dt = now - lastTime;

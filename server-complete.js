@@ -1366,7 +1366,7 @@ app.get('/', (req, res) => {
             top: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 12px 20px;
+            padding: 16px 24px 14px 24px;
             border-bottom: none;
             z-index: 2001;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -1374,10 +1374,11 @@ app.get('/', (req, res) => {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            min-height: 56px;
-            max-height: 56px;
+            min-height: 60px;
+            max-height: 60px;
             touch-action: pan-y;
             flex-shrink: 0;
+            gap: 16px;
           }
           
           .close-panel {
@@ -1413,7 +1414,7 @@ app.get('/', (req, res) => {
             overscroll-behavior-y: contain;
             -webkit-overflow-scrolling: touch;
             touch-action: pan-y;
-            height: calc(100vh - 56px);
+            height: calc(100vh - 60px);
             overflow-y: auto;
             scroll-behavior: smooth;
           }
@@ -2504,17 +2505,18 @@ app.get('/', (req, res) => {
       top: 0;
       background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
       color: white;
-      padding: 12px 20px;
+      padding: 16px 24px 14px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      min-height: 56px;
-      max-height: 56px;
+      min-height: 60px;
+      max-height: 60px;
       touch-action: pan-y;
       z-index: 2001;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       backdrop-filter: blur(15px);
       flex-shrink: 0;
+      gap: 16px;
     }
     
     .property-panel-title {
@@ -3249,8 +3251,9 @@ app.get('/', (req, res) => {
     satelliteLayer.addTo(map);
     const layerControl = L.control.layers(baseLayers).addTo(map);
     
-    // Prevent accidental map clicks during panel swipes
+    // Prevent accidental map clicks during panel swipes and track panel state
     window.ignoreMapClicksUntil = 0;
+    window.panelIsClosing = false;
     function suppressMapClicksFor(ms) { window.ignoreMapClicksUntil = Date.now() + ms; }
     // Body scroll lock helpers (avoid footer bounce and stuck scroll on iOS)
     function lockBodyScroll() {
@@ -3540,6 +3543,7 @@ app.get('/', (req, res) => {
       // Add click handlers for interactive side panel (guard against swipe-ending ghost clicks)
       const clickHandler = (e) => {
         if (window.ignoreMapClicksUntil && Date.now() < window.ignoreMapClicksUntil) { L.DomEvent.stopPropagation(e); return; }
+        if (window.panelIsClosing) { L.DomEvent.stopPropagation(e); return; }
         // Close any open panels first to ensure only ONE panel at a time
         const openPanels = document.querySelectorAll('.side-panel.open, .property-panel.open');
         openPanels.forEach(p => {
@@ -4206,6 +4210,8 @@ app.get('/', (req, res) => {
         if (shouldClose) {
           // Subtle haptic (where supported)
           try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10); } catch(_) {}
+          // Set closing flag to prevent re-opening during animation
+          window.panelIsClosing = true;
           // Animate panel out completely before closing - use translate3d for GPU
           panel.style.transform = 'translate3d(-100%, 0, 0)';
           setTimeout(function() {
@@ -4213,6 +4219,7 @@ app.get('/', (req, res) => {
             panel.style.transform = '';
             panel.style.transition = '';
             window.currentZoneId = null;
+            window.panelIsClosing = false;
             if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
             if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState();
             // Re-enable map interactions completely
@@ -4272,8 +4279,8 @@ app.get('/', (req, res) => {
         onMove(t.clientX, t.clientY, e);
       }, { passive: false });
       
-      panel.addEventListener('touchend', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
-      panel.addEventListener('touchcancel', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchend', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchcancel', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
       
       // Pointer events fallback
       panel.addEventListener('pointerdown', function(e) {
@@ -4289,8 +4296,8 @@ app.get('/', (req, res) => {
       panel.addEventListener('pointermove', function(e) {
         onMove(e.clientX, e.clientY, e);
       });
-      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
-      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
     }
     
     // Enable swipe-to-close for property panel (iPhone-style smooth closing)
@@ -4302,11 +4309,11 @@ app.get('/', (req, res) => {
       let gesture = null; // 'h', 'v', 'r'
       let lastX = 0, lastTime = 0, lastVelocity = 0;
       let inputType = null;
-      const EDGE = 80; // px - outer band for easier start (avoid iOS back-swipe)
-      const EDGE_INNER = 12; // px - inner offset to skip OS back gesture zone
-      const SWIPE_THRESHOLD = 48; // slightly easier close distance unit
-      const VELOCITY_THRESHOLD = 0.3; // not used for closing; kept for logs
-      const ANGLE_THRESHOLD = 14; // stricter axis lock
+      const EDGE = 9999; // Allow swipe from anywhere on mobile
+      const EDGE_INNER = 0;
+      const SWIPE_THRESHOLD = 48;
+      const VELOCITY_THRESHOLD = 0.3;
+      const ANGLE_THRESHOLD = 14;
       // Direction: on mobile the property panel opens from left (close left), on desktop it's right (close right)
       const closeToLeft = (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(max-width: 768px)').matches : true;
       
@@ -4438,8 +4445,7 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        const xOff = closeToLeft ? (t.clientX - rect.left) : (rect.right - t.clientX);
-        startNearEdge = (xOff >= EDGE_INNER && xOff <= EDGE);
+        startNearEdge = true; // Allow swipe from anywhere
         onStart(t.clientX, t.clientY);
       }, { passive: true, capture: true });
       
@@ -4448,8 +4454,8 @@ app.get('/', (req, res) => {
         onMove(t.clientX, t.clientY, e);
       }, { passive: false });
       
-      panel.addEventListener('touchend', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
-      panel.addEventListener('touchcancel', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchend', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchcancel', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
       
       // Pointer events fallback
       panel.addEventListener('pointerdown', (e) => {
@@ -4458,23 +4464,25 @@ app.get('/', (req, res) => {
         const target = e.target;
         if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
         const rect = panel.getBoundingClientRect();
-        const xOff = closeToLeft ? (e.clientX - rect.left) : (rect.right - e.clientX);
-        startNearEdge = (xOff >= EDGE_INNER && xOff <= EDGE);
+        startNearEdge = true; // Allow swipe from anywhere
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
         onStart(e.clientX, e.clientY);
       }, { capture: true });
       panel.addEventListener('pointermove', (e) => {
         onMove(e.clientX, e.clientY, e);
       });
-      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
-      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(250); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
     }
     
     // Enhanced image gallery tab functionality
     function setupImageGalleryTabs() {
       const tabs = document.querySelectorAll('.gallery-tab');
+      if (!tabs.length) return;
+      
       tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
+        tab.addEventListener('click', function(e) {
+          e.stopPropagation();
           // Remove active class from all tabs
           tabs.forEach(t => t.classList.remove('active'));
           

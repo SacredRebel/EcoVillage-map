@@ -3254,6 +3254,7 @@ app.get('/', (req, res) => {
     // Prevent accidental map clicks during panel swipes and track panel state
     window.ignoreMapClicksUntil = 0;
     window.panelIsClosing = false;
+    window.isInteractingWithGallery = false;
     function suppressMapClicksFor(ms) { window.ignoreMapClicksUntil = Date.now() + ms; }
     // Body scroll lock helpers (avoid footer bounce and stuck scroll on iOS)
     function lockBodyScroll() {
@@ -4010,11 +4011,14 @@ app.get('/', (req, res) => {
       // Add swipe navigation
       let swipeStartX = 0, swipeStartY = 0;
       mainCarousel.addEventListener('touchstart', (e) => {
+        window.isInteractingWithGallery = true;
         swipeStartX = e.touches[0].clientX;
         swipeStartY = e.touches[0].clientY;
+        e.stopPropagation();
       }, { passive: true });
       
       mainCarousel.addEventListener('touchend', (e) => {
+        e.stopPropagation();
         const swipeEndX = e.changedTouches[0].clientX;
         const swipeEndY = e.changedTouches[0].clientY;
         const dx = swipeEndX - swipeStartX;
@@ -4035,6 +4039,11 @@ app.get('/', (req, res) => {
           const counterEl = mainCarousel.querySelector('.current-slide');
           if (counterEl) counterEl.textContent = currentIndex + 1;
         }
+        
+        // Reset gallery interaction flag after carousel swipe
+        setTimeout(() => {
+          window.isInteractingWithGallery = false;
+        }, 400);
       }, { passive: true });
       // Prevent panel swipe while swiping images
       mainCarousel.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
@@ -4096,6 +4105,7 @@ app.get('/', (req, res) => {
       
       const onStart = (clientX, clientY) => {
         if (!panel.classList.contains('open') || !startNearEdge) return;
+        if (window.isInteractingWithGallery) return; // Don't start swipe during gallery interaction
         startX = clientX;
         startY = clientY;
         startTime = Date.now();
@@ -4279,8 +4289,8 @@ app.get('/', (req, res) => {
         onMove(t.clientX, t.clientY, e);
       }, { passive: false });
       
-      panel.addEventListener('touchend', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
-      panel.addEventListener('touchcancel', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchend', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(800); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchcancel', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(800); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
       
       // Pointer events fallback
       panel.addEventListener('pointerdown', function(e) {
@@ -4296,8 +4306,8 @@ app.get('/', (req, res) => {
       panel.addEventListener('pointermove', function(e) {
         onMove(e.clientX, e.clientY, e);
       });
-      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
-      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(800); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(800); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
     }
     
     // Enable swipe-to-close for property panel (iPhone-style smooth closing)
@@ -4319,6 +4329,7 @@ app.get('/', (req, res) => {
       
       const onStart = (clientX, clientY) => {
         if (!panel.classList.contains('open') || !startNearEdge) return;
+        if (window.isInteractingWithGallery) return; // Don't start swipe during gallery interaction
         startX = clientX;
         startY = clientY;
         startTime = Date.now();
@@ -4454,8 +4465,8 @@ app.get('/', (req, res) => {
         onMove(t.clientX, t.clientY, e);
       }, { passive: false });
       
-      panel.addEventListener('touchend', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
-      panel.addEventListener('touchcancel', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchend', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(800); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
+      panel.addEventListener('touchcancel', () => { onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(800); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); }, { passive: true });
       
       // Pointer events fallback
       panel.addEventListener('pointerdown', (e) => {
@@ -4471,8 +4482,8 @@ app.get('/', (req, res) => {
       panel.addEventListener('pointermove', (e) => {
         onMove(e.clientX, e.clientY, e);
       });
-      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
-      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(600); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointerup', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(800); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
+      panel.addEventListener('pointercancel', (e) => { try { panel.releasePointerCapture(e.pointerId); } catch(_) {} onEnd(); inputType = null; if (typeof suppressMapClicksFor === 'function') suppressMapClicksFor(800); if (typeof ensureBodyScrollState === 'function') ensureBodyScrollState(); });
     }
     
     // Enhanced image gallery tab functionality
@@ -4483,6 +4494,9 @@ app.get('/', (req, res) => {
       tabs.forEach(tab => {
         tab.addEventListener('click', function(e) {
           e.stopPropagation();
+          e.preventDefault();
+          window.isInteractingWithGallery = true;
+          suppressMapClicksFor(800);
           // Remove active class from all tabs
           tabs.forEach(t => t.classList.remove('active'));
           
@@ -4494,17 +4508,22 @@ app.get('/', (req, res) => {
             content.style.display = 'none';
           });
           
-          // Show selected content with animation
-          const tabName = tab.getAttribute('data-tab');
-          const targetContent = document.getElementById(tabName + '-images');
+          // Show content for clicked tab
+          const targetId = tab.getAttribute('data-tab') + '-images';
+          const targetContent = document.getElementById(targetId);
           if (targetContent) {
             targetContent.style.display = 'block';
-            targetContent.style.opacity = '0';
-            setTimeout(() => {
-              targetContent.style.opacity = '1';
-              targetContent.style.transition = 'opacity 0.3s ease';
-            }, 50);
           }
+          
+          // Reset gallery interaction flag after animation
+          setTimeout(() => {
+            window.isInteractingWithGallery = false;
+          }, 500);
+          targetContent.style.opacity = '0';
+          setTimeout(() => {
+            targetContent.style.opacity = '1';
+            targetContent.style.transition = 'opacity 0.3s ease';
+          }, 50);
         });
       });
     }

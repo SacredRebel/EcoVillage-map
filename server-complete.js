@@ -48,24 +48,55 @@ const PROJECT_ZONES = [
     position: [34.433478, -119.155982],
     polygon: [[34.4325, -119.1560], [34.4330, -119.1560], [34.4330, -119.1550], [34.4325, -119.1550]],
     type: "agriculture",
-    budget: "$500,000",
-    timeline: "Phase 1 (0-6 months)",
-    monthlyRevenue: "$6,500",
-    roi: "156% annual ROI",
-    description: "Regenerative food production center with 500+ fruit trees, extensive gardens, and educational components.",
+    budget: "$35,000 - $40,000",
+    timeline: "Phase 1-3",
+    monthlyRevenue: "Phase 2: $500+ | Phase 3: $2,000+",
+    roi: "64% annual ROI",
+    description: "Fruit tree propagation, extensive gardens, educational components, and organic nursery products.",
     features: [
-      "500+ fruit trees across multiple varieties",
+      "Planning on planting 500+ fruit trees on the property - next 1-2 years",
       "Regenerative vegetable gardens (3+ acres)",
       "Herb gardens and medicinal plants",
       "Educational workshops and farm tours",
-      "Composting and soil regeneration systems",
+      "Compost, mycelium, mineral, wormfarm operations",
       "On-site nursery for plant propagation",
       "Gravity-fed irrigation systems"
     ],
     revenueStreams: [
-      "CSA program: $2,000/month",
+      "Nursery products sale - online/offline: $500-$1,000/month",
+      "Community Supported Agriculture program and products: $500-$1,500+/month",
       "Educational workshops: $1,500/month", 
       "Farm-to-table events: $3,000/month"
+    ],
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 1-3)",
+        deliverables: "Move and set up garden and agriculture space with fencing, proper garden beds, and all mentioned features and infrastructure. Setting up sales channels - online/offline collaborations.",
+        investment: "$10,000-$15,000",
+        status: "Foundation and setup"
+      },
+      {
+        phase: "Phase 2 (Months 4-6)",
+        deliverables: "Start planting and growing food, compost operations. Starting first sales online/offline - nursery products.",
+        investment: "~$5,000/month for expanding infrastructure",
+        monthlyRevenue: "$500+",
+        status: "Initial growth and sales"
+      },
+      {
+        phase: "Phase 3 (Month 7+)",
+        deliverables: "Harvesting products, systemized operations for products, maintaining whole agriculture infrastructure and products. Reinvesting part of profits for maintenance and improvements.",
+        monthlyRevenue: "$2,000+/month",
+        status: "Full production and maintenance"
+      }
+    ],
+    regenerativeFeatures: [
+      "Permaculture design principles",
+      "Soil regeneration through composting",
+      "Mycelium network enhancement",
+      "Mineral supplementation programs",
+      "Wormfarm composting systems",
+      "Water conservation and rainwater harvesting",
+      "Biodiversity enhancement"
     ]
   },
   {
@@ -75,23 +106,76 @@ const PROJECT_ZONES = [
     position: [34.433118, -119.155333],
     polygon: [[34.4330, -119.1555], [34.4335, -119.1555], [34.4335, -119.1545], [34.4330, -119.1545]],
     type: "residential",
-    budget: "$2,500,000",
-    timeline: "Phase 1 (6-18 months)",
-    monthlyRevenue: "$23,000",
-    roi: "110% annual ROI",
-    description: "Luxury residence compound with main house, guest house, and caretaker quarters featuring panoramic mountain views.",
+    budget: "$420,000 - $700,000",
+    timeline: "Phase 1-3 (16 months)",
+    monthlyRevenue: "$25K-$30K (post-construction)",
+    roi: "43-68% annual + ~$7.7M property increase",
+    description: "5,000 sq ft modern eco-retreat center with bio-architecture, curved designs, and regenerative building materials - the operational hub of the EcoVillage.",
     features: [
-      "Main house: 4,500 sq ft, 4 bed/5 bath",
-      "Guest house: 1,200 sq ft, 2 bed/2 bath", 
-      "Caretaker quarters: 800 sq ft, 1 bed/1 bath",
-      "Outdoor entertainment areas with fire features",
-      "Infinity pool and spa with mountain views",
-      "Landscaped gardens and water features",
-      "Sacred geometry architectural elements"
+      "5,000 sq ft modern retreat center with bio-architecture design",
+      "5-6 bedrooms (3 main suites, 2 guest rooms), 6 bathrooms",
+      "Main kitchen and spacious living areas",
+      "High ceilings with open floor plan and ceremonial fire space",
+      "Retreat amenities: infinity pool, hot tub, sauna",
+      "Outdoor BBQ areas, entertainment decks, and green lawn",
+      "Sacred geometry gardens and water features",
+      "Panoramic mountain views throughout property",
+      "Operational hub for EcoVillage management",
+      "Executive hosting and high-end event capabilities"
     ],
+    
+    regenerativeFeatures: [
+      "Bio-mimic architecture with curved and rounded structures",
+      "Steel frame construction with fireproof materials",
+      "Large glass windows for natural light optimization",
+      "Earth cob styling and natural insulation",
+      "Sustainable regenerative building materials",
+      "Rainwater harvesting and greywater systems",
+      "Solar energy integration with battery storage",
+      "Green roofs and living walls",
+      "Sacred geometrical positioning and design principles",
+      "Elemental design with round shapes",
+      "Energy-efficient passive cooling and heating systems",
+      "Native landscaping practices"
+    ],
+    
+    propertyValue: {
+      current: "$2,300,000",
+      appraisedPrefab: "$6,900,000",
+      projectedCustom: "~$10,000,000",
+      increase: "~$7,700,000",
+      note: "Official appraisal for 5,000 sq ft prefab home with standard design. Projected custom eco-retreat with curved bio-architecture, steel frame, and regenerative systems commands premium market value."
+    },
+    
     revenueStreams: [
-      "Private events hosting: $15,000/month",
-      "Executive retreats: $8,000/month"
+      "Executive High-End Retreats: $8,000-$12,000/month",
+      "Events, Weddings, Gatherings: $6,000-$10,000/month",
+      "Private Meetings & Corporate Retreats: $5,000-$8,000/month",
+      "EcoVillage Operations Hub: Included in management"
+    ],
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0-6)",
+        deliverables: "Hire architect for 5,000 sq ft eco-retreat design, finalize curved bio-architecture plans with steel frame, obtain all building permits and approvals, finalize material selections (fireproof, sustainable, high-end), site surveys and engineering assessments",
+        investment: "$20,000-$50,000",
+        monthlyRevenue: "$0",
+        status: "Planning & permitting phase"
+      },
+      {
+        phase: "Phase 2 (Months 6-12)",
+        deliverables: "Clear and prepare landscape around build site, excavation and foundation preparation, measure and mark exact house positioning, prepare utilities connections (water, power, septic), grade land and prepare drainage systems, prepare access roads and staging areas",
+        investment: "$50,000",
+        monthlyRevenue: "$0",
+        status: "Land preparation & excavation"
+      },
+      {
+        phase: "Phase 3 (Months 12-16)",
+        deliverables: "Bring in builders (Faruk's team), steel frame construction, curved wall and rounded structure implementation, install fireproof and sustainable materials, plumbing/electrical/HVAC systems, interior finishes, windows, doors, outdoor pool/hot tub/sauna installation, landscaping and sacred geometry gardens, final inspections and certificate of occupancy",
+        investment: "$350,000-$500,000 (Materials: $100K-$250K, Labor: $100K-$150K, Contingency: $100K)",
+        monthlyRevenue: "$25,000-$30,000",
+        status: "Full construction & completion"
+      }
     ]
   },
   {
@@ -234,24 +318,98 @@ const PROJECT_ZONES = [
     position: [34.432930, -119.155062],
     polygon: [[34.4330, -119.1565], [34.4335, -119.1565], [34.4335, -119.1555], [34.4330, -119.1555]],
     type: "wellness", 
-    budget: "$600,000",
-    timeline: "Phase 2 (18-24 months)",
-    monthlyRevenue: "$15,000",
-    roi: "300% annual ROI",
-    description: "Comprehensive wellness center with spa services, fitness facilities, and healing modalities.",
+    budget: "$65,000 - $100,000",
+    timeline: "Phase 1-3 (12+ months)",
+    monthlyRevenue: "$10K-$15K (post-launch)",
+    roi: "87-131% annual ROI",
+    description: "800 sq ft integrated wellness center and spa facility connecting three existing structures across multiple levels into one unified ADU. Features dedicated yoga studio, fitness center, healing modalities rooms, and oak tree deck for outdoor wellness practices. Serves retreat guests, community members, and monthly wellness memberships through workshops, healing sessions, and regenerative wellness programming.",
     features: [
-      "Full-service spa with treatment rooms",
-      "Sauna, steam room, and hot/cold plunge pools",
-      "Yoga and movement studios",
-      "Fitness center with natural materials",
-      "Massage therapy and bodywork suites",
-      "Herbal medicine preparation kitchen", 
-      "Outdoor fitness and calisthenics area"
+      "800 sq ft connected ADU spanning 3 levels",
+      "Dedicated yoga and movement studio",
+      "Fitness center with workout equipment area",
+      "Oak tree deck for outdoor yoga and creative movement",
+      "Stone sauna with infrared and traditional heat",
+      "Cold plunge pools for contrast therapy",
+      "Red light therapy and crystal healing rooms",
+      "Private massage and bodywork suites",
+      "Sound healing and meditation rooms",
+      "Wellness consultation spaces",
+      "Integration with retreat and event programming"
     ],
-    revenueStreams: [
-      "Spa services: $8,000/month", 
-      "Wellness programs: $4,500/month",
-      "Membership fees: $2,500/month"
+    
+    wellnessAmenities: [
+      "Yoga studio with natural light and mountain views",
+      "Workout area with functional fitness equipment",
+      "Stone sauna (traditional and infrared options)",
+      "Cold plunge pools for contrast therapy and recovery",
+      "Red light therapy rooms for cellular rejuvenation",
+      "Crystal healing rooms with sacred geometry",
+      "Private massage and bodywork treatment suites",
+      "Sound healing rooms with acoustic optimization",
+      "Meditation spaces and quiet zones",
+      "Herbal tea lounge and wellness consultation area",
+      "Outdoor calisthenics and movement area",
+      "Workshop and group healing spaces",
+      "Collaborator treatment rooms for visiting healers",
+      "Integration with on-site gardens for herbal wellness"
+    ],
+    
+    membershipTiers: [
+      {
+        name: "Basic Wellness",
+        price: "$20-$30/month",
+        benefits: "Access to yoga studio and gym space, community yoga classes (weekly), open hours use of fitness equipment"
+      },
+      {
+        name: "Enhanced Wellness",
+        price: "$50/month",
+        benefits: "Everything in Basic + 1 sauna session per week, 1 cold plunge session per week, discounted workshop rates"
+      },
+      {
+        name: "Premium Wellness",
+        price: "$100/month",
+        benefits: "Everything in Enhanced + unlimited sauna & cold plunge access, 1 red light therapy session per month, priority workshop booking, 10% discount on healing treatments"
+      },
+      {
+        name: "EcoVillage All-Access",
+        price: "$150/month",
+        benefits: "Everything in Premium Wellness + access to all property events, event discounts, retreat package discounts"
+      }
+    ],
+    
+    revenueModel: {
+      membershipRevenue: "$3,000/month (Year 1+)",
+      workshopRevenue: "$2,700/month (4-6 workshops/month)",
+      collaboratorRevenue: "$1,680/month (healer partnerships at 30-40% revenue share)",
+      spaServices: "$900/month (private sessions)",
+      retreatAddOns: "$1,500-$2,500/month (guest amenities)",
+      totalYear1: "$9,780-$11,780/month",
+      projectedYear2_3: "$12,000-$18,000/month (50-100 members, increased programming)",
+      note: "Membership growth expected 1+ years after structure remodeling and launch"
+    },
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0-6)",
+        deliverables: "Clean up existing 3 structures for temporary storage use, survey and assess structural integrity, hire architect for 800 sq ft ADU design connecting structures, obtain permits for ADU conversion and multi-level connection, finalize plans for deck on top of A-frame structure, engineering assessments for connecting structures, design oak tree deck integration",
+        investment: "$5,000-$10,000",
+        monthlyRevenue: "$0",
+        status: "Planning, permitting & storage phase"
+      },
+      {
+        phase: "Phase 2 (Months 6-12)",
+        deliverables: "Foundation work and structural reinforcement, connect all 3 structures into unified 800 sq ft space, renovate into envisioned wellness center layout, install walls/insulation/main structural elements, build oak tree deck on top of lower A-frame structure, rough plumbing and electrical for sauna/cold plunge, install windows/doors/weatherproofing, create multi-level access between structures",
+        investment: "$50,000-$70,000",
+        monthlyRevenue: "$0",
+        status: "Active construction & renovation (side project)"
+      },
+      {
+        phase: "Phase 3 (Months 12+)",
+        deliverables: "Interior finishes and wellness amenity installation, sauna/cold plunge/red light therapy setup, yoga studio flooring/mirrors/equipment, fitness equipment installation, soundproofing for healing rooms, launch membership programs and workshop schedule, partner with healers and wellness practitioners, market to retreat guests and community, full operational wellness center and ADU",
+        investment: "$10,000-$20,000",
+        monthlyRevenue: "$10,000-$15,000",
+        status: "Operational wellness center with memberships & workshops"
+      }
     ]
   },
   {
@@ -288,10 +446,10 @@ const PROJECT_ZONES = [
     position: [34.433477, -119.155820],
     polygon: [[34.4320, -119.1565], [34.4325, -119.1565], [34.4325, -119.1555], [34.4320, -119.1555]],
     type: "beekeeping",
-    budget: "$10,000",
+    budget: "$5,000 - $10,000",
     timeline: "Phase 1 (0-3 months)",
-    monthlyRevenue: "$1,000",
-    roi: "1200% annual ROI",
+    monthlyRevenue: "$500+",
+    roi: "Starting phase",
     description: "Collaborative beekeeping initiative with local beekeepers for honey production, bee products, and pollination services through partnership model.",
     features: [
       "Partnership with local beekeepers",
@@ -316,10 +474,10 @@ const PROJECT_ZONES = [
     position: [34.433394, -119.155065],
     polygon: [[34.4335, -119.1548], [34.4340, -119.1548], [34.4340, -119.1543], [34.4335, -119.1543]],
     type: "events",
-    budget: "$850,000",
-    timeline: "Phase 1-3 (0-20 months)",
-    monthlyRevenue: "$35,000",
-    roi: "495% annual ROI",
+    budget: "$20,000 - $30,000",
+    timeline: "Phase 1-3 (12+ months)",
+    monthlyRevenue: "$4.5K-$9K (P1) → $11K-$22K (P2) → $27K-$41K (P3)",
+    roi: "680% annual ROI",
     description: "Strategic events and gatherings infrastructure designed as a major revenue hub for retreats, ceremonies, festivals, workshops, and collaborative gatherings—central to community ethos and diversified income streams.",
     
     venues: [
@@ -402,49 +560,58 @@ const PROJECT_ZONES = [
     
     features: [
       "Multiple dedicated event venues across property",
-      "McQueen's Garage: 3,200 sq. ft. hybrid indoor-outdoor space",
-      "Main Residence: 5,000-7,200 sq. ft. executive hosting compound",
       "Sacred ceremonial zones with kivas and fire circles",
       "Community kitchen and creekside dining areas",
-      "Capacity for 10-150 attendees depending on event type",
-      "Monthly retreats, bi-weekly ceremonies, quarterly festivals",
+      "Capacity for 50-500+ attendees depending on event type",
+      "Weekly ceremonies, bi-weekly workshops, quarterly festivals",
       "Weekly workshops in yoga, breathwork, permaculture, art",
       "Farm-to-table dinner series with on-site produce",
       "Private event rental opportunities (weddings, gatherings)",
       "Educational partnerships and workshop monetization",
-      "Virtual events via 3D digital twin platform",
+      "Virtual events via 3D digital twin platform (Coming Soon)",
       "Experiential onboarding for community members",
       "Event collaboration with wellness operators"
     ],
     
+    regenerativeFeatures: [
+      "Organic Composting Programs - All event waste composted on-site, participants learn composting practices",
+      "Regenerative Building Workshops - Natural building techniques integrated into event programming (cob, earthbag, timber framing)",
+      "Land Stewardship Events - Work-exchange events where participants help with property regeneration",
+      "Farm-to-Table Integration - Events showcase produce from on-site agriculture, teaching food sovereignty",
+      "Community Gift Economy - Pay-what-you-can events and skill-share workshops",
+      "Sacred Earth Connection - Ceremonies honoring the land, seasonal celebrations, nature immersion practices"
+    ],
+    
     revenueStreams: [
-      "Pilot Events/Workshops: $2,500/month (from Month 6, Phase 1)",
-      "Creative Workshop Center Events: $1,500/month (from Month 6, Phase 1)",
-      "McQueen's Garage Events & Studio: $8,000/month (from Month 14, Phase 2)",
-      "Farm-to-Table Dinners & Retreats: $7,000/month (from Month 16, Phase 2)",
-      "Full Retreat Hosting Packages: $35,000/month (from Month 18, Phase 3)",
-      "Ceremonial Programs: $4,000/month (from Month 20, Phase 3)",
-      "Educational Partnerships: $70,000-$335,000/year annual potential"
+      "Phase 1 Events (2-4/month): $4,500-$9,000/month (50-70 people @ $25-$50/ticket)",
+      "Phase 2 Events (4-7/month): $11,000-$22,000/month",
+      "Phase 3 Events (8-10/month): $27,000-$41,000/month (MAX capacity)",
+      "Premium Festival Packages: $250-$1,000/ticket (glamping, food, premium services)",
+      "Membership Programs (Phase 3): $5,000-$7,000/month",
+      "Educational Partnerships: $500-$1,000/month"
     ],
     
     developmentTimeline: [
       {
-        phase: "Phase 1 (Months 0-6)",
-        deliverables: "Pilot events, workshops, ceremony spaces",
-        monthlyRevenue: "$2,500-$4,000",
-        status: "Foundation building"
+        phase: "Phase 1 (Months 0-3)",
+        deliverables: "Clear and prepare primary event area, build main shaded gathering space with stage, set up seating and basic amenities, create ceremony circles and fire pit areas, install basic sound system, prepare parking and access roads, set up portable restroom facilities",
+        investment: "$10,000-$15,000",
+        monthlyRevenue: "$4,500-$9,000",
+        status: "Foundation building & initial events (2-4 events/month @ 50-70 people)"
       },
       {
-        phase: "Phase 2 (Months 12-18)",
-        deliverables: "McQueen's Garage completion, farm dinners, retreat infrastructure",
-        monthlyRevenue: "$15,000-$20,000",
-        status: "Retreat & community infrastructure"
+        phase: "Phase 2 (Months 3-12)",
+        deliverables: "Reinvest event revenue into infrastructure, expand event spaces around property, build additional ceremony zones, improve guest accommodation areas (camping, basic lodging), enhance community kitchen facilities, create multiple smaller event venues, improve landscaping and pathways, add permanent covered structures",
+        investment: "$10,000-$15,000 (additional + reinvested revenue)",
+        monthlyRevenue: "$11,000-$22,000",
+        status: "Consistent events & infrastructure expansion (4-7 events/month + quarterly festivals)"
       },
       {
-        phase: "Phase 3 (Months 18-24)",
-        deliverables: "Full retreat packages, ceremonial programs, 50+ lodging units",
-        monthlyRevenue: "$35,000+",
-        status: "Full eco-village operation"
+        phase: "Phase 3 (Months 12+)",
+        deliverables: "Full retreat packages and ceremonial programs, lodging units for overnight guests, large-scale quarterly and monthly festivals (250-500 people), advanced event infrastructure, professional event production capabilities, multiple simultaneous event spaces",
+        investment: "Reinvested profits for maintenance and improvements",
+        monthlyRevenue: "$27,000-$41,000",
+        status: "Full-scale event operations at MAX capacity (8-10 events/month + festivals + memberships)"
       }
     ],
     
@@ -521,26 +688,66 @@ const PROJECT_ZONES = [
     emoji: "🏕️",
     position: [34.432479, -119.156540],
     type: "hospitality",
-    budget: "$450,000",
-    timeline: "Phase 2 (12-18 months)",
-    monthlyRevenue: "$18,000",
-    roi: "480% annual ROI",
-    description: "Unique creek-side lodging village with 20-30 glamping units including teepees, yurts, and safari tents along the seasonal creek corridor for nature immersion experiences.",
+    budget: "$20,000 - $30,000",
+    timeline: "Phase 1-2 (4+ months)",
+    monthlyRevenue: "$8.75K-$10K (operational)",
+    roi: "259-605% annual ROI",
+    description: "Unique creek-side lodging village with 10-25+ glamping units including teepees, yurts, and safari tents along the seasonal creek corridor for nature immersion experiences. Starting with 5 tipis in Phase 1, with phased expansion driven by revenue reinvestment and market demand.",
     features: [
-      "20-30 unique glamping units along seasonal creek",
-      "Teepees & yurts for ceremonial and overnight experiences",
-      "Safari tents with comfortable finishes and creek views",
-      "Wooden decks and shaded sitting areas with fire pits",
+      "10-25+ unique glamping units along seasonal creek",
+      "Teepees, yurts, and safari tents for overnight experiences",
+      "Each tipi with dedicated solar power source",
+      "Individual water and toilet facilities per unit (where feasible)",
+      "Private wooden decks and hangout spaces with fire pits",
+      "Close infrastructure access (roads, electricity, water within 50ft)",
       "Shared outdoor showers and compost toilet clusters",
-      "Pathways connecting to ceremony and garden zones",
+      "Creek-side pathways connecting to ceremony and garden zones",
       "Propane lines for seasonal heating and cooking",
-      "Greywater filtration and modular septic systems"
+      "Greywater filtration and modular septic systems",
+      "Stargazing areas and nature observation points",
+      "Event space for group gatherings and workshops"
     ],
+    
+    regenerativePractices: [
+      "Each tipi equipped with dedicated solar power source",
+      "Individual water systems for each unit (where feasible)",
+      "Private compost toilet facilities per tent",
+      "Greywater filtration and natural drainage systems",
+      "Native plant landscaping and creek restoration",
+      "Each unit has private deck and outdoor hangout space",
+      "Propane heating from sustainable sources",
+      "Biodegradable and eco-friendly amenities",
+      "Seasonal creek protection and watershed management",
+      "Leave-no-trace guest education programs",
+      "Integration with permaculture gardens",
+      "Wildlife habitat preservation along creek corridor"
+    ],
+    
+    marketAnalysis: "Creek-side glamping village positioned in Ojai Valley's nature-based wellness tourism market. Starting with 5 tipis and expanding to 25+ units aligns with U.S. glamping industry growth (12.8% CAGR). Tipis and tents are the fastest-growing, most cost-efficient glamping accommodation, ideal for phased expansion and high ROI in eco-tourism destinations.",
+    
     revenueStreams: [
-      "Peak season glamping: $100-180/night",
-      "Monthly lodging revenue: $18,000/month",
-      "Ceremonial retreat packages: $2,500/month",
-      "Nature immersion experiences: $1,500/month"
+      "Nightly stays: $100/night per tipi (45% avg occupancy)",
+      "5 tipis operational: $6,750/month from stays",
+      "Events, workshops, retreats: $2,000-$3,000/month",
+      "Total Year 1: $8,750-$10,000/month",
+      "Year 2-3 expansion: $15,000-$22,000/month (10-15 units)"
+    ],
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0-4)",
+        deliverables: "Clean out creek-side spaces and prepare terrain, install infrastructure (roads, electricity lines, water access), set up 5 tipis with decks and hangout spaces, install solar power for each tipi, connect each tipi to nearby water and toilet facilities, create pathways and fire pit areas, ensure all tipis have close access to infrastructure, test systems and prepare for guests",
+        investment: "$10,000-$20,000",
+        monthlyRevenue: "$0",
+        status: "Infrastructure setup and tipi installation"
+      },
+      {
+        phase: "Phase 2 (Months 3+)",
+        deliverables: "Launch nightly stays with 5 tipis operational, start hosting events/workshops/retreats, market to retreat guests and eco-tourists, reinvest revenue into adding more units in phased development, add yurts and safari tents in Year 2-3, scale to 10-25+ units over 2-3 years",
+        investment: "$10,000+ (ongoing expansion from revenue reinvestment)",
+        monthlyRevenue: "$8,750-$10,000",
+        status: "Operational with phased expansion"
+      }
     ]
   },
   {
@@ -5233,53 +5440,210 @@ app.get('/', (req, res) => {
           </ul>
         </div>
         
-        \${zone.revenueStreams ? \`
+        \${zone.membershipTiers ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🎫 Membership Tiers</h3>
+            \${zone.membershipTiers.map(tier => \`
+              <div style="padding: 16px; background: linear-gradient(135deg, \${lightColor} 0%, \${mediumColor} 100%); border-radius: 10px; border-left: 4px solid \${zoneColor}; margin-bottom: 12px;">
+                <div style="font-weight: 700; color: \${zoneColor}; font-size: 15px; margin-bottom: 6px;">\${tier.name}: \${tier.price}</div>
+                <div style="color: #555; font-size: 13px; line-height: 1.5;">\${tier.benefits}</div>
+              </div>
+            \`).join('')}
+          </div>
+        \` : ''}
+        
+        \${zone.revenueModel ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">💰 Revenue Model</h3>
+            <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #28a745;">
+              <div style="margin-bottom: 12px;">
+                <div style="font-weight: 600; color: #28a745; font-size: 14px; margin-bottom: 4px;">Membership Revenue:</div>
+                <div style="color: #333; font-size: 14px;">\${zone.revenueModel.membershipRevenue}</div>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <div style="font-weight: 600; color: #28a745; font-size: 14px; margin-bottom: 4px;">Workshop Revenue:</div>
+                <div style="color: #333; font-size: 14px;">\${zone.revenueModel.workshopRevenue}</div>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <div style="font-weight: 600; color: #28a745; font-size: 14px; margin-bottom: 4px;">Collaborator Revenue:</div>
+                <div style="color: #333; font-size: 14px;">\${zone.revenueModel.collaboratorRevenue}</div>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <div style="font-weight: 600; color: #28a745; font-size: 14px; margin-bottom: 4px;">Spa Services:</div>
+                <div style="color: #333; font-size: 14px;">\${zone.revenueModel.spaServices}</div>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <div style="font-weight: 600; color: #28a745; font-size: 14px; margin-bottom: 4px;">Retreat Add-Ons:</div>
+                <div style="color: #333; font-size: 14px;">\${zone.revenueModel.retreatAddOns}</div>
+              </div>
+              <div style="padding-top: 12px; border-top: 2px solid #28a745; margin-top: 12px;">
+                <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Total Year 1: \${zone.revenueModel.totalYear1}</div>
+                <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Projected Year 2-3: \${zone.revenueModel.projectedYear2_3}</div>
+                <div style="color: #155724; font-size: 13px; font-style: italic; margin-top: 8px;">\${zone.revenueModel.note}</div>
+              </div>
+            </div>
+          </div>
+        \` : (zone.revenueStreams ? \`
           <div class="project-section">
             <h3 style="color: \${zoneColor};">💵 Revenue Streams</h3>
             \${zone.revenueStreams.map(stream => \`<div class="revenue-stream">\${stream}</div>\`).join('')}
           </div>
-        \` : ''}
+        \` : '')}
         
-        <div class="project-section">
-          <h3 style="color: \${zoneColor};">📅 Development Timeline</h3>
-          <div style="padding: 20px; background: linear-gradient(135deg, \${lightColor} 0%, \${mediumColor} 100%); border-radius: 12px; border-left: 4px solid \${zoneColor};">
-            <span class="timeline-phase">\${zone.timeline}</span>
-            <p style="margin-top: 12px; color: #555; font-size: 14px; line-height: 1.5;">This zone is part of the comprehensive EcoVillageBuilder development plan, strategically phased for optimal cash flow and sustainable growth across the 10-acre Sulphur Mountain property.</p>
+        \${zone.developmentTimeline ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">📅 Development Timeline</h3>
+            \${zone.developmentTimeline.map(phase => \`
+              <div style="padding: 20px; background: linear-gradient(135deg, \${lightColor} 0%, \${mediumColor} 100%); border-radius: 12px; border-left: 4px solid \${zoneColor}; margin-bottom: 16px;">
+                <div style="font-weight: 700; color: \${zoneColor}; font-size: 16px; margin-bottom: 10px;">\${phase.phase}</div>
+                <div style="color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 8px;"><strong>Deliverables:</strong> \${phase.deliverables}</div>
+                \${phase.investment ? \`<div style="color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 8px;"><strong>Investment:</strong> \${phase.investment}</div>\` : ''}
+                \${phase.monthlyRevenue ? \`<div style="color: #28a745; font-size: 14px; line-height: 1.6; margin-bottom: 8px;"><strong>Monthly Revenue:</strong> \${phase.monthlyRevenue}</div>\` : ''}
+                <div style="background: rgba(255,255,255,0.6); padding: 8px 12px; border-radius: 6px; display: inline-block; margin-top: 6px; font-size: 13px; color: #666;"><strong>Status:</strong> \${phase.status}</div>
+              </div>
+            \`).join('')}
           </div>
-        </div>
+        \` : \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">📅 Development Timeline</h3>
+            <div style="padding: 20px; background: linear-gradient(135deg, \${lightColor} 0%, \${mediumColor} 100%); border-radius: 12px; border-left: 4px solid \${zoneColor};">
+              <span class="timeline-phase">\${zone.timeline}</span>
+              <p style="margin-top: 12px; color: #555; font-size: 14px; line-height: 1.5;">This zone is part of the comprehensive EcoVillageBuilder development plan, strategically phased for optimal cash flow and sustainable growth across the 10-acre Sulphur Mountain property.</p>
+            </div>
+          </div>
+        \`}
         
-        <div class="project-section">
-          <h3 style="color: \${zoneColor};">🌟 Sustainability Features</h3>
-          <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #28a745;">
-            <ul class="feature-list" style="margin: 0;">
-              <li>Solar energy integration and battery storage systems</li>
-              <li>Rainwater harvesting and greywater recycling</li>
-              <li>Native plant landscaping and permaculture design</li>
-              <li>Sustainable building materials and energy efficiency</li>
-              <li>Organic waste composting and soil regeneration</li>
+        \${zone.wellnessAmenities ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🌟 Wellness Amenities</h3>
+            <ul class="feature-list">
+              \${zone.wellnessAmenities.map(amenity => \`<li>\${amenity}</li>\`).join('')}
             </ul>
           </div>
-        </div>
-        
-        <div class="project-section">
-          <h3 style="color: \${zoneColor};">📊 Market Analysis & Projections</h3>
-          <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #ffc107;">
-            <p style="color: #856404; margin: 0; font-size: 14px; line-height: 1.5;">
-              <strong>Market Position:</strong> Positioned in the rapidly growing eco-tourism and sustainable living sectors, with projected 15-20% annual growth in demand for authentic wellness retreats and farm-to-table experiences in the Ojai Valley region.
-            </p>
+        \` : (zone.regenerativePractices ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🌿 Regenerative Practices</h3>
+            <ul class="feature-list">
+              \${zone.regenerativePractices.map(practice => \`<li>\${practice}</li>\`).join('')}
+            </ul>
           </div>
-        </div>
+        \` : (zone.regenerativeFeatures ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🌿 Regenerative Features</h3>
+            <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #28a745;">
+              <ul class="feature-list" style="margin: 0;">
+                \${zone.regenerativeFeatures.map(feature => \`<li>\${feature}</li>\`).join('')}
+              </ul>
+            </div>
+          </div>
+        \` : (zone.id !== 'beekeeping-program' ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🌟 Sustainability Features</h3>
+            <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #28a745;">
+              <ul class="feature-list" style="margin: 0;">
+                <li>Solar energy integration and battery storage systems</li>
+                <li>Rainwater harvesting and greywater recycling</li>
+                <li>Native plant landscaping and permaculture design</li>
+                <li>Sustainable building materials and energy efficiency</li>
+                <li>Organic waste composting and soil regeneration</li>
+              </ul>
+            </div>
+          </div>
+        \` : '')))}
+        
+        \${zone.propertyValue ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🏡 Property Value Projections</h3>
+            <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #28a745;">
+              <div style="margin-bottom: 16px;">
+                <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Current Property Value:</div>
+                <div style="font-size: 18px; font-weight: 700; color: #333; margin-bottom: 16px;">\${zone.propertyValue.current}</div>
+                
+                <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Appraised Value (5,000 sq ft Prefab):</div>
+                <div style="font-size: 18px; font-weight: 700; color: #333; margin-bottom: 16px;">\${zone.propertyValue.appraisedPrefab}</div>
+                
+                <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Projected Custom Eco-Retreat Value:</div>
+                <div style="font-size: 22px; font-weight: 700; color: #28a745; margin-bottom: 16px;">\${zone.propertyValue.projectedCustom}</div>
+                
+                <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Property Value Increase:</div>
+                <div style="font-size: 20px; font-weight: 700; color: #28a745; margin-bottom: 16px;">\${zone.propertyValue.increase} (335% appreciation)</div>
+              </div>
+              <p style="color: #155724; margin: 0; font-size: 13px; line-height: 1.5; font-style: italic;">
+                \${zone.propertyValue.note}
+              </p>
+            </div>
+          </div>
+        \` : (zone.marketAnalysis ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">📊 Market Analysis & Growth Potential</h3>
+            <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #ffc107;">
+              <p style="color: #856404; margin: 0; font-size: 14px; line-height: 1.5;">
+                \${zone.marketAnalysis}
+              </p>
+            </div>
+          </div>
+        \` : (zone.id !== 'beekeeping-program' && zone.id !== 'events-gatherings-hub' && zone.id !== 'wellness-facilities' ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">📊 Market Analysis & Projections</h3>
+            <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #ffc107;">
+              <p style="color: #856404; margin: 0; font-size: 14px; line-height: 1.5;">
+                <strong>Market Position:</strong> Positioned in the rapidly growing eco-tourism and sustainable living sectors, with projected 15-20% annual growth in demand for authentic wellness retreats and farm-to-table experiences in the Ojai Valley region.
+              </p>
+            </div>
+          </div>
+        \` : ''))}
         
         <div class="project-section">
           <h3 style="color: \${zoneColor};">💰 Investment Summary</h3>
           <div class="investment-grid">
             <div class="investment-card" style="border-color: \${zoneColor};">
-              <div class="investment-label">Total Budget</div>
+              <div class="investment-label">\${zone.id === 'beekeeping-program' ? 'Starting Budget' : (zone.id === 'agricultural-hub' ? 'Estimated Total Budget' : 'Total Budget')}</div>
               <div class="investment-value" style="color: \${zoneColor};">\${zone.budget}</div>
             </div>
             <div class="investment-card" style="border-color: \${zoneColor};">
-              <div class="investment-label">Monthly Revenue</div>
-              <div class="investment-value roi-positive" style="color: \${zoneColor};">\${zone.monthlyRevenue}</div>
+              <div class="investment-label">\${zone.id === 'beekeeping-program' ? 'Revenue Starting' : 'Monthly Revenue'}</div>
+              <div class="investment-value roi-positive" style="color: \${zoneColor};">\${zone.id === 'events-gatherings-hub' ? \`
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1.3;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P1</span>
+                    <span style="font-size: 13px; color: #555;">$4.5K-$9K</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P2</span>
+                    <span style="font-size: 13px; color: #555;">$11K-$22K</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P3</span>
+                    <span style="font-size: 13px; color: #555;">$27K-$41K</span>
+                  </div>
+                </div>
+              \` : zone.id === 'wellness-facilities' ? \`
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1.3;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P1</span>
+                    <span style="font-size: 13px; color: #555;">$0</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P2</span>
+                    <span style="font-size: 13px; color: #555;">$0</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P3</span>
+                    <span style="font-size: 13px; color: #555;">$10K-$15K</span>
+                  </div>
+                </div>
+              \` : zone.id === 'glamping-creek-village' ? \`
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1.3;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P1</span>
+                    <span style="font-size: 13px; color: #555;">$0</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P2</span>
+                    <span style="font-size: 13px; color: #555;">$8.75K-$10K</span>
+                  </div>
+                </div>
+              \` : zone.monthlyRevenue}</div>
             </div>
             <div class="investment-card" style="border-color: \${zoneColor};">
               <div class="investment-label">Timeline</div>

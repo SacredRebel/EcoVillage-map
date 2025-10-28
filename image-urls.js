@@ -253,6 +253,31 @@ export const IMAGE_URLS = {
     ]
   },
   
+  // Alias for livestock zone with new ID
+  'livestock-dairy': {
+    current: [
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/IMG_9236.JPG',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/IMG_9203.JPG',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/IMG_9204.JPG',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/IMG_9207.JPG',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/IMG_9212.JPG',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/IMG_9234.JPG',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/IMG_9237.JPG',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/IMG_9293.JPG',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/IMG_9295.JPG',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(20).webp',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(21).webp',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(22).webp',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(23).webp'
+    ],
+    vision: [
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/vision/Animal%20sanctuary%20%20(2).png',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/vision/animal%20barn.jpg',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/vision/Animal%20sanctuary%20%20(1).png',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Livestock%20&%20Dairy%20Program/vision/animal%20sanctuary.jpg'
+    ]
+  },
+  
   'main-residence': {
     current: [
       'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/current/IMG_5874%20(1).JPG',
@@ -283,14 +308,14 @@ export const IMAGE_URLS = {
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Floor%20Plans/smart%20floor%20plan%20idea.jpg'
       ],
       'Indoor': [
+        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/indoor%20main%20house.jpg',
+        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/indoor%20fireplace%202.jpg',
+        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/indoor%20fireplace.jpg',
+        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/indoor%20house%20design.jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/circle%20eco%20house.jpg',
         'https://i.pinimg.com/1200x/32/b4/d3/32b4d3b279e20465d4fb4f134db98af0.jpg',
         'https://i.pinimg.com/1200x/b3/16/0a/b3160a3d347f2bda6d8ffb47137e9103.jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/house%20indoor.jpg',
-        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/indoor%20fireplace%202.jpg',
-        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/indoor%20fireplace.jpg',
-        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/indoor%20house%20design.jpg',
-        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/indoor%20main%20house.jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/indoor%20main%20kitchen.jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/livingroom.jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/main%20hosue%20eco%20retreat%20center%20livingroom.jpg',
@@ -301,14 +326,14 @@ export const IMAGE_URLS = {
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Indoor/main%20livingroom%20view.jpg'
       ],
       'Outdoor': [
+        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/design%20concept%202.jpg',
+        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(2).jpg',
+        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/bio%20architecture%20main%20house%20deisgn.jpg',
+        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/concept%20design.jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(4).jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(1).jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20village%20prototype.jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(3).jpg',
-        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(2).jpg',
-        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/bio%20architecture%20main%20house%20deisgn.jpg',
-        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/concept%20design.jpg',
-        'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/design%20concept%202.jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/design%20concept.jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/retreat%20concept.jpg',
         'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Main%20Residence%20Compound/vision/Outdoor/retret%20center%20concept%20design.jpg',
@@ -357,9 +382,9 @@ export const IMAGE_URLS = {
   
   'retreat-village': {
     current: [
-      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Retreat%20Village/current/IMG_9370.JPG',
-      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Retreat%20Village/current/IMG_9372.JPG',
       'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Retreat%20Village/current/IMG_9382.JPG',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Retreat%20Village/current/IMG_9372.JPG',
+      'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Retreat%20Village/current/IMG_9370.JPG',
       'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Retreat%20Village/current/IMG_9384.JPG',
       'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Retreat%20Village/current/IMG_9385.JPG',
       'https://klokwelpowqixscecakh.supabase.co/storage/v1/object/public/eco-village-images/images/Retreat%20Village/current/IMG_9387.JPG',

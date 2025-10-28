@@ -185,24 +185,58 @@ const PROJECT_ZONES = [
     position: [34.432771, -119.155387],
     polygon: [[34.4320, -119.1555], [34.4325, -119.1555], [34.4325, -119.1545], [34.4320, -119.1545]],
     type: "community", 
-    budget: "$750,000",
-    timeline: "Phase 2 (12-24 months)",
-    monthlyRevenue: "$12,000",
-    roi: "192% annual ROI",
-    description: "Central meeting space with co-working facilities, event spaces, and community amenities.",
+    budget: "$20,000 - $30,000",
+    timeline: "Phase 1-2 (3+ months)",
+    monthlyRevenue: "$7K-$10K+",
+    roi: "214-336% annual ROI",
+    description: "Outdoor community hub centered around a restored 100+ year old fireplace kitchen, natural gathering spaces, and creek-side seating. Serves as the heart of community life with farm-to-table events, shared meal preparation, and amenities for residents, retreat guests, and visitors. Features outdoor kitchen facilities, community fridges, showers, and bathrooms integrated into the natural landscape.",
     features: [
-      "Multi-purpose meeting hall (2,000 sq ft)",
-      "Co-working spaces with high-speed internet",
-      "Commercial kitchen for events",
-      "Outdoor amphitheater seating 200+",
-      "Library and resource center",
-      "Children's play area and nursery",
-      "Administrative offices"
+      "Outdoor community kitchen with restored 100+ year old fireplace",
+      "Historic BBQ station (repurposed firepit monument)",
+      "Outdoor pizza oven and wood-fired cooking areas",
+      "Open-air prep tables and cooking surfaces",
+      "Natural seating areas around creek and oak trees",
+      "Community showers and bathroom facilities",
+      "Outdoor nature hangout spot with community library",
+      "Children's play area and nursery space",
+      "Community refrigerators and food storage",
+      "Farm-to-table event preparation spaces",
+      "Creek-side gathering and dining areas",
+      "Fire pit and communal eating zones",
+      "Shared cooking equipment and utensils",
+      "Integration with on-site gardens and livestock"
     ],
+    
+    farmToTableProgramming: [
+      "Farm-to-table cooking events with on-site produce and livestock",
+      "Community meal preparation and shared dining experiences",
+      "Membership-based meal programs and cooking workshops",
+      "Guest kitchen access for Airbnb and retreat visitors",
+      "Event and ceremony meal preparation headquarters",
+      "Community fridges with designated storage for members"
+    ],
+    
     revenueStreams: [
       "Event hosting: $7,000/month",
-      "Co-working memberships: $3,000/month",
+      "Community meal memberships: $3,000/month",
       "Workshop facilitation: $2,000/month"
+    ],
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0-3)",
+        deliverables: "Restore and integrate 100+ year old fireplace into outdoor kitchen structure, build basic outdoor kitchen framework with cooking surfaces, install basic community seating around kitchen area, set up temporary/basic toilet and shower facilities, create initial pathways and gathering spaces, test kitchen functionality with small community events",
+        investment: "$10,000-$15,000",
+        monthlyRevenue: "$0",
+        status: "Foundation and basic amenities"
+      },
+      {
+        phase: "Phase 2 (Months 3+)",
+        deliverables: "Beautify kitchen area with permanent structures and finishes, build long-term shower and bathroom facilities, expand creek-side seating and nature hangout areas, install community fridges and food storage, complete children's play area and outdoor library setup, ongoing improvements and aesthetic enhancements, launch full event and membership programs",
+        investment: "$10,000-$15,000",
+        monthlyRevenue: "$7,000-$10,000+",
+        status: "Operational with continuous improvement"
+      }
     ]
   },
   {
@@ -212,24 +246,71 @@ const PROJECT_ZONES = [
     position: [34.432173, -119.155628],
     polygon: [[34.4335, -119.1560], [34.4340, -119.1560], [34.4340, -119.1550], [34.4335, -119.1550]],
     type: "hospitality",
-    budget: "$1,200,000", 
-    timeline: "Phase 2 (18-30 months)",
-    monthlyRevenue: "$18,500",
-    roi: "185% annual ROI", 
-    description: "Boutique accommodation village with luxury cabins and wellness amenities for retreat guests.",
+    budget: "P1: $70K-$80K | P2: $20K+ (flexible)",
+    timeline: "Phase 1-3 (12-18 months)", 
+    monthlyRevenue: "$24K-$35K (fully operational)",
+    roi: "187-273% annual ROI",
+    description: "Luxury eco-cabin retreat village nestled on the hillside with 8-10 individually designed cabins (150-300 sq ft each). A mix of 5 high-end retreat cabins and 5 residential cabins for land stewards and community members.\n\nEach cabin features cob construction with steel frame fireproof materials, individual bathhouses with spa amenities, meditation decks, and sacred hillside views. Self-sustainable systems power each cabin—rainwater collection, individual water tanks, solar power, and personal garden beds.\n\nHealing gardens, sacred paths, and quiet zones create a regenerative living community. Built as a proof-of-concept for eco-luxury cob housing and self-regenerative living, demonstrating a new model of sustainable retreat and residential integration.\n\nDesigned for both high-end retreat bookings and long-term residential stewardship, with flexible contractor partnership models allowing builders to showcase cabin designs and share revenue through guest bookings.",
     features: [
-      "8 luxury eco-cabins (400-600 sq ft each)",
-      "Central bathhouse with spa amenities", 
-      "Meditation pavilion and quiet zones",
-      "Healing gardens and labyrinth",
-      "Outdoor yoga platforms",
-      "Fire circles and gathering spaces",
-      "Sustainable building materials and design"
+      "8-10 luxury eco-cabins (150-300 sq ft each)",
+      "Individual bathhouses with spa amenities (hot tubs, ice baths)",
+      "Meditation decks and quiet zones per cabin",
+      "Sacred paths and hillside views",
+      "Healing gardens with individual garden beds",
+      "Self-sustainable utilities (solar, water tanks, rainwater collection)",
+      "Cob construction with steel frame fireproof materials",
+      "High ceilings and large windows with organic design",
+      "Stonework masonry and creative handwork",
+      "Integration with ceremonial spaces and sacred forest circles"
     ],
+    
+    regenerativeDesign: [
+      "Regenerative design philosophy: proof-of-concept for self-regenerative living",
+      "Eco-cob natural wall construction with stone masonry",
+      "Steel frame fireproof materials ensuring safety and durability",
+      "Self-sustainable utility systems: solar power, rainwater collection, water tanks",
+      "Individual garden beds and permaculture systems per cabin",
+      "Organic materials and organic design flow throughout",
+      "High ceilings and large windows creating light and connection to nature",
+      "Handmade, artisanal construction showcasing creative craftsmanship"
+    ],
+    
+    marketContext: "The global retreat and wellness industry is experiencing rapid growth, with increasing demand for authentic eco-retreats and regenerative living communities. Communal living models and co-ownership opportunities are trending among conscious travelers and land stewards seeking meaningful community connection. Eco-luxury cob housing and self-sustainable cabin villages represent the future of retreat accommodations.",
+    
     revenueStreams: [
-      "Retreat bookings: $12,000/month",
-      "Day-use wellness programs: $4,500/month", 
-      "Private cabin rentals: $2,000/month"
+      "High-End Retreat Cabins (5 units):",
+      "  • Retreat bookings: $12,000-$15,000/month",
+      "  • Wellness retreat packages: $4,000-$6,000/month",
+      "  • Wedding and ceremony events: $2,000-$3,000/month",
+      "Residential Cabins (5 units):",
+      "  • Private cabin rentals: $3,000-$5,000/month",
+      "  • Land steward memberships: $1,000-$2,000/month",
+      "Contractor Partnership Model:",
+      "  • Contractor revenue-share (Airbnb/bookings): $2,000-$4,000/month",
+      "  • Contractors supply materials and labor; we revenue-share guest bookings",
+      "  • Flexible partnership deals with builders and designers",
+      "Total Monthly Revenue: $24,000-$35,000"
+    ],
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0-6)",
+        deliverables: "Land Work: Create main hillside road and 10-12 cabin flat spots ($50K). Utilities: Extend water system and electrical distribution to hillside ($15K-$20K). Sacred Spaces: Establish distributed meditation areas and forest circles ($5K-$10K). Complete permitting and site planning.",
+        investment: "$70,000-$80,000",
+        status: "Hillside infrastructure ready for cabin development"
+      },
+      {
+        phase: "Phase 2 (Months 6-12+)",
+        deliverables: "Invite contractor partners with revenue-share agreements. Contractors build showcase cabins (materials + labor supplied by contractors). Property members/stewards build residential cabins. Establish revenue-share model through Airbnb/booking platforms. Complete first 3-5 cabins. Begin wellness amenities (spa, meditation decks).",
+        investment: "$20,000+ (flexible, contractor-supplied)",
+        status: "Cabins under construction, partnerships active"
+      },
+      {
+        phase: "Phase 3 (Months 12+)",
+        deliverables: "Complete remaining cabins as contractors finish. Launch full retreat booking operations. Begin weekend rental and event hosting. Establish wellness programs and ceremonies. Activate healing gardens and sacred paths. Full integration with McQueen's Garage events and Ceremonial Infrastructure.",
+        investment: "Ongoing as cabins complete (contractor-funded)",
+        status: "Full retreat village operational and revenue-generating"
+      }
     ]
   },
   {
@@ -239,23 +320,96 @@ const PROJECT_ZONES = [
     position: [34.432386, -119.155966],
     polygon: [[34.4315, -119.1560], [34.4320, -119.1560], [34.4320, -119.1550], [34.4315, -119.1550]],
     type: "infrastructure",
-    budget: "$800,000",
-    timeline: "Phase 1 (0-12 months)", 
-    monthlyRevenue: "$0",
-    roi: "Cost center - enables other revenue",
-    description: "Essential infrastructure including renewable energy, water systems, roads, and communications.",
+    budget: "P1: $62K-$77K | P2: $40K-$60K | P3: $40K-$50K",
+    timeline: "Phase 1-3 (18 months)", 
+    monthlyRevenue: "Enables $75K-$92.5K monthly revenue",
+    roi: "5.3:1 to 6.5:1 revenue-to-cost ratio",
+    description: "Strategic infrastructure and utilities foundation enabling all village development. Phased water system upgrades (maintenance, creek extension, hillside expansion), electric reactivation with solar integration, hillside road development, and distributed composting toilet network.\n\nEach utility system is strategically phased to support specific projects—water extends to glamping and community hub, electric powers event venues and community spaces, roads enable hillside village construction, and sewage systems serve each phase.\n\nThis infrastructure-first approach ensures reliable utilities while minimizing costs through strategic phasing and natural material solutions.",
     features: [
-      "Solar array and battery storage system",
-      "Well water and filtration systems",
-      "Septic and greywater treatment",
-      "High-speed fiber internet throughout",
-      "Internal road network and parking", 
-      "Electric vehicle charging stations",
-      "Emergency backup systems"
+      "Solar array and battery storage systems (phased expansion)",
+      "Well water system with filtration and upgrades",
+      "Water distribution to creek-side glamping sites",
+      "Water extension to hillside for retreat village",
+      "Composting toilet network (5 distributed units, Phase 1)",
+      "Greywater treatment and recycling systems",
+      "Hillside road network with 10+ cabin flat spots",
+      "Main residence landscaping and access roads",
+      "Electric reactivation and distribution system",
+      "Solar panel integration with battery backup",
+      "Septic and sewage systems for hillside village",
+      "Pathways and utility corridors throughout property"
     ],
+    
+    utilitySystemsBreakdown: [
+      {
+        system: "Water System",
+        phase1: "Current maintenance and upgrade: $5,000",
+        phase1b: "Creek-side extension for glamping: $10,000-$15,000",
+        phase2: "Hillside extension for retreat village: $15,000-$20,000",
+        total: "$30,000-$40,000"
+      },
+      {
+        system: "Electric System",
+        phase1: "Reactivation and maintenance: $2,000 + $500/month",
+        phase2: "Solar integration with battery storage: $5,000-$10,000",
+        phase3: "Full hillside power system: $40,000-$50,000",
+        total: "$47,000-$62,000"
+      },
+      {
+        system: "Road Infrastructure",
+        phase1: "Hillside road and land work (10+ cabin spots): $50,000",
+        total: "$50,000"
+      },
+      {
+        system: "Sewage System",
+        phase1: "Composting toilet network (5 units): $5,000-$10,000",
+        phase2: "Hillside septic and plumbing: $20,000-$30,000",
+        total: "$25,000-$40,000"
+      }
+    ],
+    
+    marketContext: "Independent and solar-powered infrastructure systems are increasingly essential for rural properties and eco-tourism destinations. Solar integration with battery storage reduces long-term operational costs while supporting the growing demand for sustainable, off-grid capable retreats and events. Composting toilet systems and water recycling align with modern sustainability expectations, reducing environmental impact while lowering infrastructure maintenance costs.",
+    
     revenueStreams: [
-      "Infrastructure supports all other revenue streams",
-      "Potential energy grid-tie revenue"
+      "Infrastructure enables all property revenue streams",
+      "Solar excess energy potential grid-tie revenue ($500-$1,000/month future)",
+      "Water system supports glamping ($240K-$360K annual)",
+      "Water system supports community hub ($84K-$120K annual)",
+      "Electric system enables event venue ($180K-$300K annual)",
+      "Roads enable retreat village ($222K-$330K annual)",
+      "Sewage systems enable all guest accommodations",
+      "Note: Infrastructure is cost center enabling $900K-$1.1M annual revenue"
+    ],
+    
+    infrastructureEssentials: [
+      "Phased utility expansion tied to project development timelines",
+      "Natural material construction (cob composting toilets) for cost savings",
+      "Solar and battery systems reducing grid dependency and long-term costs",
+      "Water recycling and greywater treatment for sustainability",
+      "Distributed sanitation network avoiding centralized sewage costs",
+      "Strategic road development enabling cabin and village expansion",
+      "Maintenance-first approach with $500-$1,000/month operational budget"
+    ],
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0-6)",
+        deliverables: "Water: Current system maintenance and upgrade ($5K), creek-side extension for glamping ($10K-$15K). Electric: Reactivation ($2K), ongoing maintenance ($500/month). Roads: Hillside development with 10+ cabin flat spots ($50K). Sewage: Build 5 distributed composting toilets ($5K-$10K).",
+        investment: "$62,000-$77,000",
+        status: "Foundation utilities and hillside access"
+      },
+      {
+        phase: "Phase 2 (Months 6-12)",
+        deliverables: "Water: Extend to hillside for retreat village ($15K-$20K). Electric: Install solar panels with battery storage ($5K-$10K). Sewage: Develop hillside septic and plumbing infrastructure ($20K-$30K).",
+        investment: "$40,000-$60,000",
+        status: "Expansion utilities for village development"
+      },
+      {
+        phase: "Phase 3 (Months 12-18)",
+        deliverables: "Electric: Create comprehensive power system for hillside village, event venue, music studio, and ceremonial infrastructure ($40K-$50K). All systems fully operational and integrated.",
+        investment: "$40,000-$50,000",
+        status: "Full property electrification and operational"
+      }
     ]
   },
   {
@@ -265,24 +419,76 @@ const PROJECT_ZONES = [
     position: [34.432549, -119.155279],
     polygon: [[34.4340, -119.1555], [34.4345, -119.1555], [34.4345, -119.1545], [34.4340, -119.1545]],
     type: "creative",
-    budget: "$400,000",
-    timeline: "Phase 2 (12-18 months)",
-    monthlyRevenue: "$8,500",
-    roi: "255% annual ROI",
-    description: "Creative arts and maker space with workshops, studios, and event hosting capabilities.",
+    budget: "$150,000 - $300,000",
+    timeline: "Phase 1-3 (18 months)",
+    monthlyRevenue: "$15K-$25K+",
+    roi: "87-97% annual ROI",
+    description: "Premium music recording studio and live event venue featuring a professional stage, outdoor ceremony space, and state-of-the-art recording facilities. The warehouse transformation includes performance areas for live music festivals, kirtans, and high-end retreats, with VIP back-end rooms, recording booths, and overnight accommodations for visiting artists and retreat guests. Positioned as Ojai's destination for intimate concerts, ceremony gatherings, and live music recordings.",
     features: [
-      "Artist studios and maker workshops",
-      "Pottery kilns and ceramics studio", 
-      "Woodworking and metalworking shops",
-      "Music recording and performance space",
-      "Gallery for rotating art exhibitions",
-      "Outdoor sculpture garden",
-      "Tool library and equipment sharing"
+      "Professional music recording studio with isolation booths",
+      "Live performance stage with professional sound and lighting",
+      "Outdoor ceremony space for festivals and gatherings",
+      "VIP back-end rooms for artists and retreat facilitators",
+      "Multiple recording booths and production spaces",
+      "Event venue for 50-150 person capacity gatherings",
+      "Gallery-style performance area for intimate concerts",
+      "Green rooms and artist preparation spaces",
+      "Overnight accommodations for visiting musicians and guests",
+      "Full warehouse transformation with acoustic treatment",
+      "Equipment storage and production management areas",
+      "Integration with glamping village for high-ticket retreats"
     ],
+    
+    venueTransformation: [
+      "Solar energy integration for sustainable venue operations",
+      "Rainwater harvesting for landscape and facility use",
+      "Full warehouse insulation and climate control systems",
+      "Sustainable building materials with high energy efficiency",
+      "Professional stage with modular design for multiple event types",
+      "VIP rooms and green rooms for artists and facilitators",
+      "Recording booths with acoustic isolation and treatment",
+      "Overnight guest accommodations for visiting musicians and retreat leaders"
+    ],
+    
+    marketContext: "Ojai has established itself as a cultural and spiritual hub with a thriving festival scene including the renowned Ojai Music Festival, cacao ceremonies, kirtan gatherings, and wellness retreats. The demand for intimate concert venues, ceremony spaces, and retreat facilities continues to grow as Ojai attracts artists, spiritual practitioners, and conscious event organizers seeking authentic gathering spaces. McQueen's Garage fills a unique niche as a professional recording venue with live event capabilities, serving both the local community and visiting musicians drawn to Ojai's creative energy.",
+    
     revenueStreams: [
-      "Workshop classes: $4,000/month",
-      "Studio rentals: $2,500/month",
-      "Art sales and commissions: $2,000/month"
+      "Live Events & Performances:",
+      "  • Music festivals and concerts: $5,000-$8,000/month",
+      "  • Kirtans and spiritual ceremonies: $2,000-$3,000/month",
+      "  • High-end retreat venue rental: $3,000-$5,000/month",
+      "  • Weddings and private ceremonies: $2,000-$4,000/month",
+      "Studio & Recording Services:",
+      "  • Music recording studio sessions: $2,500-$4,000/month",
+      "  • Live recording packages: $1,500-$2,500/month",
+      "  • Production space rentals: $1,000-$2,000/month",
+      "Overnight & VIP Services:",
+      "  • Artist overnight accommodations: $800-$1,200/month",
+      "  • VIP retreat packages: $1,500-$2,500/month"
+    ],
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0-6)",
+        deliverables: "Use warehouse for equipment and material storage, workshop space for ongoing construction projects, minimal investment in basic organization and shelving, assess structural integrity and remodel requirements, begin conceptual design for venue transformation",
+        investment: "$5,000-$10,000",
+        monthlyRevenue: "$0",
+        status: "Storage and workshop facility"
+      },
+      {
+        phase: "Phase 2 (Months 6-12)",
+        deliverables: "Hire architect for warehouse-to-venue conversion, design recording studio layout and acoustic treatment, create stage and ceremony space plans, submit permits for commercial event venue use, engineering for electrical/HVAC/soundproofing, finalize VIP rooms and recording booth layouts, secure necessary event venue licenses",
+        investment: "$25,000-$50,000",
+        monthlyRevenue: "$0",
+        status: "Permitting and design development"
+      },
+      {
+        phase: "Phase 3 (Months 12-18)",
+        deliverables: "Complete insulation and climate control, build professional recording studio and isolation booths, install performance stage with sound/lighting, create outdoor ceremony space with landscaping, construct VIP rooms and green rooms, acoustic treatment and soundproofing, install recording and performance equipment, furnish artist accommodations, final inspections and licensing, launch with inaugural festival event",
+        investment: "$120,000-$240,000",
+        monthlyRevenue: "$15,000-$25,000+",
+        status: "Operational high-end event and recording venue"
+      }
     ]
   },
   {
@@ -292,23 +498,70 @@ const PROJECT_ZONES = [
     position: [34.432501, -119.155582],
     polygon: [[34.4325, -119.1565], [34.4330, -119.1565], [34.4330, -119.1555], [34.4325, -119.1555]],
     type: "ceremonial",
-    budget: "$300,000",
-    timeline: "Phase 3 (24-36 months)",
-    monthlyRevenue: "$6,000",
-    roi: "240% annual ROI",
-    description: "Sacred spaces for ceremonies, meditation, and spiritual practices with natural amphitheater.",
+    budget: "$55,000 - $120,000",
+    timeline: "Phase 1-3 (24 months)",
+    monthlyRevenue: "Integrated with McQueen's Garage ($15K-$25K+)",
+    roi: "Integrated with warehouse (87-97% annual)",
+    description: "Main ceremonial infrastructure featuring a natural stone and earthen kiva with sacred fire circle, positioned directly in front of McQueen's Garage to integrate with live events, ceremonies, and retreat programming. The heart of all ceremonial activities including fire circles, drum circles, spiritual retreats, and community gatherings. Additionally, multiple sacred spaces and meditation areas are distributed throughout the property—forest circles, quiet reflection spots, crystal grids, and nature connection zones—creating a network of ceremonial infrastructure that supports ongoing spiritual practices without disrupting future construction phases.",
     features: [
-      "Natural stone amphitheater (capacity 150)",
-      "Sacred fire circle with permanent seating",
-      "Medicine wheel and prayer gardens",
-      "Sweat lodge and purification facilities",
-      "Meditation caves and quiet reflection areas", 
-      "Astronomical observation platform",
-      "Labyrinth and walking meditation paths"
+      "Natural stone and earthen kiva with sacred fire circle and seating",
+      "Main ceremonial space positioned in front of McQueen's Garage",
+      "Prayer gardens and meditation spaces throughout property",
+      "Sweat lodge facilities for purification ceremonies",
+      "Ice bath stations for cold immersion and purification",
+      "Multiple sacred fire circles distributed across land",
+      "Meditation spaces and quiet reflection areas in nature",
+      "Labyrinth and walking meditation paths",
+      "Crystal gardens and energy grids",
+      "Forest ceremony circles for intimate gatherings",
+      "Drum circle and community gathering areas",
+      "Integration with event venue for large ceremonies and retreats"
     ],
+    
+    sacredSpaceElements: [
+      "Sacred fire circles with elemental design and ancestral honoring",
+      "Crystal grids and energy pathways woven through forest trails",
+      "Kiva construction using traditional earthen and stone techniques",
+      "Sacred forest circles integrated with native oak groves",
+      "Yoga decks and movement spaces positioned at natural vortex points",
+      "Nature meditation alcoves with natural stone seating",
+      "Ceremonial pathways connecting all sacred spaces across property"
+    ],
+    
+    marketContext: "The ceremonial infrastructure works in tandem with McQueen's Garage event venue to create Ojai's premier destination for spiritual gatherings, retreat programming, and conscious celebrations. The combination of indoor performance space and outdoor sacred kiva allows for seamless ceremony-to-concert experiences, multi-day retreat programming, and festival-style gatherings. This integrated model meets the growing demand for authentic ceremonial venues that blend traditional sacred practices with modern event production capabilities.",
+    
     revenueStreams: [
-      "Ceremony hosting: $3,500/month",
-      "Spiritual retreats: $2,500/month"
+      "Integrated with McQueen's Garage event venue revenue",
+      "Ceremonies and retreats use both warehouse and ceremonial spaces",
+      "Fire circles and drum circles included in event packages",
+      "Kiva ceremonies complement indoor performances",
+      "Ice baths and sweat lodges enhance retreat offerings",
+      "Combined venue capacity increases event value and pricing",
+      "Note: Revenue reflected in McQueen's Garage projections ($15K-$25K+/month)"
+    ],
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0+)",
+        deliverables: "Create forest ceremony circles in undeveloped areas, establish meditation spaces and quiet reflection areas, install small fire circles and gathering spots, set up sweat lodge and ice bath facilities, plant crystal grids and sacred paths, build prayer gardens and nature altars, develop walking meditation paths away from construction zones, all spaces positioned strategically to avoid disruption",
+        investment: "$5,000-$20,000+",
+        monthlyRevenue: "Integrated with retreat operations",
+        status: "Ongoing creation of distributed sacred network"
+      },
+      {
+        phase: "Phase 2 (Months 6-18)",
+        deliverables: "Design natural stone and earthen kiva layout, plan integration with McQueen's Garage outdoor space, assess sacred fire circle and seating requirements, coordinate with warehouse completion timeline, prepare materials and traditional building methods, continue maintaining and expanding Phase 1 spaces",
+        investment: "Included in planning/coordination",
+        monthlyRevenue: "Phase 1 spaces operational",
+        status: "Design and coordination phase"
+      },
+      {
+        phase: "Phase 3 (Months 18-24)",
+        deliverables: "Construct natural stone and earthen kiva, install sacred fire circle with permanent seating, create main drum circle and gathering area, integrate with McQueen's Garage outdoor ceremony space, professional landscaping connecting warehouse to kiva, complete labyrinth and crystal gardens, final touches on all distributed sacred spaces, grand opening ceremony with first major retreat",
+        investment: "$50,000-$100,000",
+        monthlyRevenue: "Fully operational, enhancing warehouse event revenue",
+        status: "Primary ceremonial infrastructure complete"
+      }
     ]
   },
   {
@@ -419,11 +672,11 @@ const PROJECT_ZONES = [
     position: [34.433474, -119.156218],
     polygon: [[34.4335, -119.1565], [34.4340, -119.1565], [34.4340, -119.1555], [34.4335, -119.1555]],
     type: "agriculture",
-    budget: "$150,000", 
-    timeline: "Phase 1 (3-9 months)",
-    monthlyRevenue: "$11,250",
-    roi: "900% annual ROI (250% net)",
-    description: "Commercial mushroom production facility with multiple growing environments and value-added processing.",
+    budget: "$14,000-$22,000 (Phase 1-2 launch)", 
+    timeline: "Phases 1-3 (Months 0-6+ ramp)",
+    monthlyRevenue: "TBD (post Phase 3 operations)",
+    roi: "Scenario: 288% annual ROI (dependent on yields & partnerships)",
+    description: "Commercial mushroom production facility that can operate as an on-site vehicle, mobile commercial unit, or local regenerative supply hub. Multiple growing environments support fresh culinary mushrooms, medicinal extracts, and value-added products for farm-to-table partners, wellness clients, and in-house use across the EcoVillage.",
     features: [
       "Climate-controlled growing rooms",
       "Substrate preparation and composting area", 
@@ -437,7 +690,35 @@ const PROJECT_ZONES = [
       "Fresh mushroom sales: $7,500/month",
       "Processed products: $2,250/month", 
       "Educational workshops: $1,500/month"
-    ]
+    ],
+    smartCultivationSystems: [
+      "Solar-backed microgrid with battery storage powering sealed grow environments",
+      "Automated HVAC, humidity, and CO₂ monitoring for precision harvest cycles",
+      "Rain and greywater harvesting loops for substrate hydration and sanitation",
+      "Modular trellis racks and mobile grow pods enabling rapid expansion",
+      "Chef and reseller collaboration program minimizing waste and driving product development"
+    ],
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0-3)",
+        deliverables: "Clear and grade site, improve access, prep utility tie-ins, and ready pads for trailer delivery.",
+        investment: "$1,000-$2,000",
+        status: "Site prepared for cultivation trailers and modular infrastructure"
+      },
+      {
+        phase: "Phase 2 (Months 2-4)",
+        deliverables: "Finalize collaborator agreements, schedule trailer drop-off, connect power/water, stage substrate systems, and train core team.",
+        investment: "$8,000-$12,000",
+        status: "Infrastructure installed and business operations activated"
+      },
+      {
+        phase: "Phase 3 (Months 4-6+)",
+        deliverables: "Launch production, begin fresh mushroom deliveries, produce tinctures and dried blends, expand wholesale and farm-to-table partnerships.",
+        investment: "Reinvested operating capital",
+        status: "Active cultivation with results by Month 6-7+"
+      }
+    ],
+    marketAnalysis: "Functional and culinary mushrooms continue to surge in demand for immunity, cognition, gut health, and culinary innovation. Supplying local restaurants, wellness practitioners, and farm-to-table markets with fresh lion's mane, shiitake, and oyster mushrooms creates premium, regenerative revenue while value-added tinctures and powders unlock e-commerce channels. Educational workshops deepen community wellness and establish loyal customers, while onsite production recycles agricultural byproducts and reinforces EcoVillage food security."
   },
   {
     id: "beekeeping-program",
@@ -628,30 +909,67 @@ const PROJECT_ZONES = [
     ]
   },
   {
-    id: "livestock-program", 
+    id: "livestock-dairy",
     name: "Livestock & Dairy Program",
     emoji: "🐄",
     position: [34.432797, -119.156143],
     polygon: [[34.4340, -119.1565], [34.4345, -119.1565], [34.4345, -119.1555], [34.4340, -119.1555]],
     type: "agriculture",
-    budget: "$200,000",
-    timeline: "Phase 2 (12-18 months)",
-    monthlyRevenue: "$5,500", 
-    roi: "330% annual ROI",
-    description: "Regenerative livestock program with rotational grazing, dairy production, and fiber animals.",
+    budget: "P1: $20K-$25K | P2: $5K/month",
+    timeline: "Phase 1-3 (8+ months)",
+    monthlyRevenue: "$10,500-$15,000 (Phase 3+)",
+    roi: "300%+ annual ROI",
+    description: "Regenerative livestock and dairy farm producing organic dairy, grass-fed meat, fiber products, and eggs. The farm operates on rotational grazing principles for land regeneration, featuring goats, sheep, alpacas, horses, and chickens.\n\nBeyond production, the farm offers diverse revenue streams: on-site dairy and meat processing, fiber and textile products, educational farm tours and workshops, animal therapies including horse therapy, and creative services like goat rentals for land clearing.\n\nProducts are sold through multiple channels: farmers markets, online shop, farmstead membership programs, and direct visitor exchanges. The farm serves as both a production operation and an educational destination, demonstrating regenerative agriculture practices while building community connections and supporting local food systems.",
     features: [
       "Rotational grazing system for land regeneration",
       "Small dairy herd (goats and sheep)",
       "Fiber animals (alpacas, sheep) for textiles",
+      "Egg production and poultry management",
       "Mobile shelters and water systems",
       "On-site processing and value-added products",
       "Grass-fed meat production",
-      "Educational farm tours and workshops"
+      "Horse therapies and animal-assisted wellness programs",
+      "Educational farm tours and workshops",
+      "Composting system for manure regeneration"
     ],
+    
+    regenerativePractices: [
+      "Rotational grazing system regenerating soil health and biodiversity",
+      "Composting of animal manures creating nutrient-rich soil amendments",
+      "Rainwater harvesting system supporting livestock water needs",
+      "On-site processing reducing transportation and packaging waste",
+      "Closed-loop farm system: animals support land, land supports animals",
+      "Educational model demonstrating regenerative agriculture to community"
+    ],
+    
+    marketContext: "The market for organic, locally-produced dairy, meat, and fiber products continues to grow as consumers prioritize food quality, transparency, and environmental impact. Direct-to-consumer sales through farmers markets, online platforms, and membership programs provide premium pricing opportunities. Regenerative agriculture practices and animal-assisted wellness therapies align with consumer values around health, sustainability, and community connection. Farmstead experiences and educational workshops create additional revenue while building customer loyalty and brand community.",
+    
     revenueStreams: [
-      "Dairy products: $2,500/month",
-      "Meat sales: $2,000/month",
-      "Fiber and textiles: $1,000/month"
+      "Farm Products: $6,500-$7,000/month (dairy, meat, eggs, fiber)",
+      "Services & Experiences: $2,000-$4,000/month (therapies, tours, grazing)",
+      "Multi-Channel Sales: $2,500-$4,000/month (farmers markets, online, memberships)",
+      "Total Monthly Revenue (Phase 3+): $10,500-$15,000"
+    ],
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0-3+)",
+        deliverables: "Farm Preparation: Redo and prepare property for horses and animals. Create shelters for chickens, horses, and livestock. Install mobile shelters and water systems. Set up initial composting system. Begin rotational grazing setup. Start with initial livestock (goats, sheep, chickens, horses). Establish basic on-site processing capability.",
+        investment: "$20,000-$25,000",
+        status: "Initial livestock setup and farm preparation"
+      },
+      {
+        phase: "Phase 2 (Months 4-8+)",
+        deliverables: "Scaling & Growth: Scale livestock numbers based on Phase 1 success. Develop on-site dairy and meat processing. Launch farmers market sales. Set up online shop and direct shipping. Begin animal therapy programs. Expand educational farm tours and workshops. Reinvest revenue into growth and improvements.",
+        investment: "$5,000/month (ongoing improvements)",
+        status: "Growing operations and expanding revenue streams"
+      },
+      {
+        phase: "Phase 3 (Months 8+)",
+        deliverables: "Full Operations: All product lines fully operational. Multiple sales channels active (farmers market, online, membership). Animal therapy programs established. Educational workshops and farm tours regular offering. Farmstead membership and visitor exchange program active. Optimized operations and profitability.",
+        investment: "Ongoing operational costs",
+        status: "Fully operational regenerative farm"
+      }
     ]
   },
   {
@@ -660,10 +978,10 @@ const PROJECT_ZONES = [
     emoji: "🎨",
     position: [34.433470, -119.156486],
     type: "creative",
-    budget: "$350,000",
-    timeline: "Phase 1 (6-12 months)",
-    monthlyRevenue: "$4,800",
-    roi: "164% annual ROI",
+    budget: "$30,000-$45,000 (initial build-out)",
+    timeline: "Phase 1 (Months 6-12 build-out)",
+    monthlyRevenue: "To be determined (post-launch programming)",
+    roi: "Dependent on program adoption and partnerships",
     description: "Multi-use creative workshop serving as a multipurpose learning and creation space with woodwork, pottery, natural building workshops, and sacred art creation.",
     features: [
       "Woodworking & eco-building workshops ($100-$500 per weekend)",
@@ -672,6 +990,8 @@ const PROJECT_ZONES = [
       "Sacred art & altar creation spaces",
       "Sound healing & instrument crafting areas",
       "Tool & materials storage depot",
+      "Stacked shipping container studios and storage pods",
+      "Dedicated data/computing lab (future node?)",
       "Creative residencies & retreat spaces",
       "Permaculture workshop integration"
     ],
@@ -679,8 +999,47 @@ const PROJECT_ZONES = [
       "Creative workshops: $1,500/month",
       "Woodworking courses: $1,800/month",
       "Pottery sessions: $900/month", 
-      "Art residencies: $600/month"
-    ]
+      "Art residencies: $600/month",
+      "Artist collaborations & revenue-share commissions (TBD)",
+      "Online classes and digital content releases (TBD)"
+    ],
+    regenerativeSystems: [
+      "Solar array with battery storage powering workshops and future data room",
+      "Rainwater harvesting with greywater reuse for clay work, cleaning stations, and landscape hydration",
+      "Reclaimed lumber and recycled materials embedded in fabrication projects",
+      "Shared resource loops with mushroom operations and farm stand product lines",
+      "Onsite fabrication reducing transport and logistics footprints",
+      "Artist and school collaborations reinforcing a circular creative economy"
+    ],
+    investmentBreakdown: [
+      { label: "Site clearing & grading", cost: "$300-$500" },
+      { label: "Container pads & foundations", cost: "$1,000-$2,000" },
+      { label: "3-4 shipping containers (delivered)", cost: "$10,000-$15,000" },
+      { label: "Container renovations & interior framing", cost: "$10,000-$15,000" },
+      { label: "Tools & equipment outfitting", cost: "$10,000-$15,000" }
+    ],
+    investmentNotes: "Initial build-out totals $30K-$45K with optional future upgrades for advanced tooling or expanded studios.",
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 6-12)",
+        deliverables: "Clear and prep site. Install container pads/foundations ($1K-$2K). Source and place 3-4 shipping containers ($10K-$15K). Begin container renovation ($10K-$15K). Relocate tools and storage from warehouse into new hub.",
+        investment: "$21,300-$32,500",
+        status: "Container campus established and core infrastructure placed"
+      },
+      {
+        phase: "Phase 2 (Month 12+)",
+        deliverables: "Complete interior build-outs for wood shop, pottery studio, art labs, storage depot, and tentative data/computing room ($10K-$15K). Install discipline-specific tool sets. Launch collaborative programs, residencies, instrument fabrication, online classes, and school partnerships.",
+        investment: "$10,000-$15,000",
+        status: "Operational programming and partnerships activated"
+      },
+      {
+        phase: "Ongoing (Post-launch)",
+        deliverables: "Host creative events, craft fairs, maker scholarships, youth programs, and eco-village fabrication support while expanding artist collaborations and digital offerings.",
+        investment: "Revenue-supported enhancements",
+        status: "Evolving creative campus and community hub"
+      }
+    ],
+    marketAnalysis: "Regenerative maker spaces that blend onsite production, educational tourism, and digital creation are surging in demand. This container campus positions the EcoVillage as a regional hub for Ojai artists, schools, and eco-tourism partners, diversifying income through workshops, residencies, artisan collaborations, online classes, and instrument/tool fabrication while supporting the mushroom unit, farm stand, and ceremonial zones with in-house fabrication."
   },
   {
     id: "glamping-creek-village",
@@ -756,26 +1115,64 @@ const PROJECT_ZONES = [
     emoji: "🏘️",
     position: [34.433082, -119.156728],
     type: "infrastructure",
-    budget: "$45,000",
+    budget: "$25,000-$40,000 (estimated)",
     timeline: "Phase 1 (0-12 months)",
-    monthlyRevenue: "$3,200",
-    roi: "853% annual ROI",
-    description: "Critical Phase 1 operations hub and ADU expansion from 360 sq ft to 800 sq ft 2-story loft barn, serving as dedicated business operations unit and team housing.",
+    monthlyRevenue: "Operational support (not revenue-generating)",
+    roi: "Enables all property businesses to operate",
+    description: "Central operational hub and team housing ADU expanding from 360 sq ft to 800 sq ft two-story loft barn. Serves as the nerve center for property management, business operations, and coordination of all revenue-generating projects.\n\nThe facility features a full-service living and working space: downstairs living room and kitchen, upstairs loft bedroom and office system, integrated bathroom facilities, and dedicated workshop area with operational tools. A deck provides indoor/outdoor access for team coordination and oversight.\n\nAdjacent to the main structure is a closed-in garden system featuring vertical growing towers and a propagation facility. This integrated garden produces vegetables, fruits, herbs, and propagates seeds and fruit trees for both property use and the agriculture hub's product lines.\n\nThis operational hub is strategically positioned as the coordination center for all property businesses, enabling efficient logistics, team management, and agricultural operations oversight.",
     features: [
       "Expansion from 360 to 800 sq ft (2-story loft barn)",
-      "Dedicated business and operations unit for property management",
+      "Full integrated kitchen and bathroom systems",
+      "Loft bedroom upstairs with office system",
+      "Living room downstairs",
+      "Workshop area with operational tools",
+      "Deck for indoor/outdoor access",
+      "Dedicated business operations unit",
       "Core operational team housing with on-site presence",
-      "Strategic location near nursery and creative workshop",
       "Connected to active well (17 GPM water access)",
-      "Two existing live power lines with solar grid integration",
-      "Permits ready for submission (10-day clearance expected)",
-      "City drain connection expansion with municipal approval"
+      "One existing live power line with planned solar grid integration"
     ],
+    
+    integratedGardenSystem: [
+      "Closed-in garden system with vertical growing towers",
+      "Propagation facility for seeds, seedlings, and fruit trees",
+      "Year-round vegetable, fruit, and herb production",
+      "Products for property use and agriculture hub sales",
+      "Strategic location enabling agriculture operations oversight",
+      "Connected to creative workshop and mushroom center for coordination"
+    ],
+    
+    operationalFunction: "This is an operational support unit that enables all property businesses to operate efficiently. It provides on-site team management and coordination, oversees agriculture operations and the propagation facility, coordinates logistics between the creative workshop, mushroom center, and agriculture hub, and manages property operations and maintenance. The integrated garden system supports the agriculture hub's revenue streams while reducing property operational costs.",
+    
+    regenerativeSystems: [
+      "Full solar roofing with battery storage for energy independence",
+      "Rainwater harvesting system supporting garden and property needs",
+      "Greywater recycling for garden irrigation and landscape watering",
+      "Integrated garden system reducing property food costs",
+      "On-site operational tools and workshop reducing logistics needs",
+      "Central location minimizing travel time for property coordination"
+    ],
+    
     revenueStreams: [
-      "Operations management fees: $1,200/month",
-      "Team housing rental: $800/month",
-      "Administrative services: $600/month",
-      "Property logistics coordination: $600/month"
+      "OPERATIONAL SUPPORT (Enables all property businesses):",
+      "  • On-site team management and coordination",
+      "  • Agriculture operations oversight",
+      "  • Logistics coordination between centers",
+      "  • Property operations and maintenance",
+      "INTEGRATED GARDEN PRODUCTS (Connected to Agriculture Hub):",
+      "  • Vegetables, fruits, herbs for property use",
+      "  • Propagated seeds and fruit trees for agriculture hub sales",
+      "  • Plant starts for creative workshop and projects",
+      "NOTE: This is an operational support unit, not a revenue-generating rental property."
+    ],
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Months 0-12)",
+        deliverables: "Permitting: Apply for remodeled permits (3+ months approval). Construction: Build two-story loft with upstairs bedroom and office, install full kitchen and bathroom systems, create downstairs living room, build workshop area with operational tools, install deck for indoor/outdoor access. Garden System: Construct integrated garden with vertical growing towers, set up propagation facility. Systems: Install solar roofing and battery storage, implement rainwater harvesting and greywater recycling. Complete all interior finishes and systems integration.",
+        investment: "$25,000-$40,000 (estimated)",
+        status: "Fully operational team housing and business operations hub"
+      }
     ]
   },
   {
@@ -784,52 +1181,48 @@ const PROJECT_ZONES = [
     emoji: "🌴",
     position: [34.432888, -119.156763],
     type: "agriculture",
-    budget: "$120,000",
-    timeline: "Phase 1 (6-12 months)",
-    monthlyRevenue: "$4,200",
-    roi: "420% annual ROI",
+    budget: "$30,000 (estimated with Phase 1 investment)",
+    timeline: "Phase 1 (6+ months to start)",
+    monthlyRevenue: "$4,200 (post-launch)",
+    roi: "168% annual ROI (Year 1)",
     description: "Geodesic dome greenhouse for year-round tropical plant cultivation, propagation station, and seedling nursery - enabling exotic fruit production and plant starts in a controlled microclimate.",
     
-    tropicalFruitTrees: [
+    regenerativeSystems: [
+      "Solar integration for energy independence",
+      "Rainwater harvesting system supporting tropical irrigation",
+      "Integrated pond inside tropical garden for water storage and ecosystem",
+      "Pond water repurposing for irrigation and other property uses",
+      "Year-round tropical fruit trees and tropical plant production",
+      "Vertical growing systems maximizing tropical vegetable and herb yields"
+    ],
+    
+    marketContext: "The specialty plant nursery market is experiencing strong growth, particularly for tropical fruit trees and exotic propagated plants. California's growing interest in tropical and subtropical fruits (avocado, mango, citrus varieties) creates premium pricing opportunities. Medicinal herb starts and propagation supplies serve the expanding wellness and herbal medicine markets. Educational workshops on tropical plant propagation attract both home gardeners and commercial growers seeking sustainable propagation techniques.",
+    
+    developmentTimeline: [
       {
-        name: "Avocado",
-        propagation: "Air-layering and seed propagation",
-        products: "Grafted saplings, fruit production"
+        phase: "Phase 1 (Months 0-6+)",
+        deliverables: "Permitting and site preparation (0-6 months). Geodesic dome construction and systems installation (6-12 months). Solar integration and rainwater harvesting setup. Integrated pond construction inside tropical garden. Initial plant propagation and production setup. Begin propagation operations and revenue generation.",
+        investment: "$30,000 (estimated)",
+        status: "Dome construction, systems integration, initial propagation"
       },
+      {
+        phase: "Phase 2 (Months 12+)",
+        deliverables: "Full propagation operations. Multiple revenue streams active (saplings, herbs, fresh produce, kits, workshops). Pond fully integrated for water management. Educational workshop program established. Scaling production based on demand.",
+        investment: "Reinvested revenue for expansion",
+        status: "Fully operational propagation facility and tropical production"
+      }
+    ],
+    
+    tropicalFruitTrees: [
       {
         name: "Banana & Plantain",
         propagation: "Cloning via pup division",
         products: "Pups for sale, fresh fruit"
       },
       {
-        name: "Citrus (Lemon, Lime, Orange, Grapefruit)",
-        propagation: "Budding onto rootstock",
-        products: "Grafted citrus saplings, fresh fruit"
-      },
-      {
-        name: "Fig",
-        propagation: "Easy rooting from cuttings",
-        products: "Rooted cuttings, fresh and dried figs"
-      },
-      {
         name: "Mango",
         propagation: "Grafting and air-layering",
         products: "Grafted mango saplings, fresh fruit"
-      },
-      {
-        name: "Guava",
-        propagation: "Air-layering technique",
-        products: "Air-layered starts, fresh fruit"
-      },
-      {
-        name: "Pomegranate",
-        propagation: "Cuttings and root suckers",
-        products: "Rooted cuttings, fresh fruit"
-      },
-      {
-        name: "Mulberry",
-        propagation: "Easy rooting from cuttings",
-        products: "Rooted cuttings, fresh fruit"
       },
       {
         name: "Papaya",
@@ -838,15 +1231,23 @@ const PROJECT_ZONES = [
       }
     ],
     
-    perennialHerbsMedicinals: [
-      "Rosemary - Fresh culinary herb, medicinal bundles",
-      "Lavender - Fresh/dried flowers, essential oils",
-      "Mint varieties - Fresh culinary use, herbal teas",
-      "Echinacea - Medicinal plant starts, dried roots",
-      "Holy Basil (Tulsi) - Sacred plant starts, herbal tea",
-      "Thyme - Fresh culinary herb, medicinal use",
-      "Sage - Fresh/dried bundles, smudge sticks",
-      "Oregano - Fresh culinary herb, medicinal tinctures"
+    productsOfferings: [
+      {
+        category: "Live Plants & Propagation",
+        items: [
+          "Tropical fruit saplings (mango, banana, papaya)",
+          "Culinary & medicinal herb starts (rosemary, lavender, mint, basil, sage)",
+          "Propagation kits with rooting supplies and instructions"
+        ]
+      },
+      {
+        category: "Fresh & Value-Added",
+        items: [
+          "Seasonal tropical fruits and fresh herbs",
+          "Dried herb bundles and herbal tea blends",
+          "Specialty plant collections and garden starter kits"
+        ]
+      }
     ],
     
     features: [
@@ -860,46 +1261,6 @@ const PROJECT_ZONES = [
       "Educational workshops on tropical plant care",
       "Grafting and air-layering demonstration space",
       "Temperature and humidity monitoring systems"
-    ],
-    
-    physicalProducts: [
-      {
-        category: "Propagated Plants & Saplings",
-        items: [
-          "Grafted tropical fruit tree saplings (avocado, mango, citrus)",
-          "Rooted cuttings (fig, pomegranate, mulberry)",
-          "Banana and plantain pups",
-          "Air-layered tropical starts (guava, mango)",
-          "Medicinal and culinary herb starts"
-        ]
-      },
-      {
-        category: "Fresh Tropical Produce",
-        items: [
-          "Fresh tropical fruits (seasonal availability)",
-          "Fresh culinary and medicinal herbs",
-          "Exotic flowers for arrangements",
-          "Specialty greens and microgreens"
-        ]
-      },
-      {
-        category: "Propagation Supplies & Kits",
-        items: [
-          "Grafting kits (tape, knife, sealant, instructions)",
-          "Propagation starter kits with rooting hormone",
-          "Seedling grow kits with soil and containers",
-          "Plant cloning stations and supplies"
-        ]
-      },
-      {
-        category: "Value-Added Products",
-        items: [
-          "Dried herbs (culinary and medicinal bundles)",
-          "Herbal teas and tea blends",
-          "Fresh herb bouquets",
-          "Specialty plant collections (citrus variety pack, herb garden starter)"
-        ]
-      }
     ],
     
     revenueStreams: [
@@ -917,10 +1278,10 @@ const PROJECT_ZONES = [
     position: [34.433038, -119.155827],
     polygon: [[34.4320, -119.1570], [34.4330, -119.1570], [34.4330, -119.1560], [34.4320, -119.1560]],
     type: "landscape",
-    budget: "$850,000",
-    timeline: "Phase 1-2 (0-18 months)",
-    monthlyRevenue: "$8,200",
-    roi: "115% annual ROI",
+    budget: "",
+    timeline: "Ongoing (post-main residence construction)",
+    monthlyRevenue: "Year 3-5+ orchard harvest potential (TBD)",
+    roi: "Long-term property value appreciation",
     description: "An immersive living environment where beauty and abundance intertwine, featuring regenerative food forests, sacred geometry gardens, and curated nature pathways that create seamless flow between gathering spaces and nature.",
     features: [
       "500+ fruit trees in extensive orchard system on gentle slope",
@@ -930,18 +1291,26 @@ const PROJECT_ZONES = [
       "Curated nature trails weaving through sacred installations",
       "Experiential pathways connecting all zones",
       "Direct links from Main Residence to ceremonial zones",
-      "CSA program integration for produce sales",
-      "Land Stewardship and Skill-Based Contribution programs",
+      "Sacred gathering groves and meditation clearings",
+      "Stone terraces, limestone retaining walls, and pathways",
+      "Crystal grids and energy-aligned installations",
+      "Gravity-fed water channels linking tree guilds",
       "Contemplative rest zones throughout landscape",
       "Elemental installations for nature immersion"
     ],
+    regenerativePractices: [
+      "Propagating and planting fruit trees grown on-site to expand the orchard",
+      "Layered perennial guilds restoring soil health and biodiversity",
+      "Stonework, crystal grids, and sacred geometry layouts aligned with land energies",
+      "Gravity-fed water features and pools that cascade nourishment between plantings",
+      "Pollinator gardens and native understory plantings enhancing habitat",
+      "Living mulches and composting practices building long-term fertility"
+    ],
     revenueStreams: [
-      "CSA box sales and farm stand: $3,500/month",
-      "Sacred garden tours and workshops: $1,800/month",
-      "Value-added goods (preserves, herbs): $1,200/month", 
-      "Land Stewardship program fees: $900/month",
-      "Nature immersion experiences: $800/month"
-    ]
+      "Future fruit harvests and nursery tree sales once orchards mature (Year 3-5+)",
+      "Seasonal blossoms, botanicals, and ceremonial materials supporting onsite experiences"
+    ],
+    marketAnalysis: "Mature fruit trees, sacred gardens, and perennial landscapes measurably increase property value while regenerating soils, supporting pollinators, and creating memorable visitor experiences that strengthen the estate's long-term desirability."
   },
   {
     id: "farmstead-produce-stand",
@@ -950,11 +1319,23 @@ const PROJECT_ZONES = [
     position: [34.432483, -119.156935],
     polygon: [[34.4334, -119.1560], [34.4336, -119.1560], [34.4336, -119.1558], [34.4334, -119.1558]],
     type: "agriculture",
-    budget: "$85,000",
-    timeline: "Phase 1 (Month 5 launch)",
-    monthlyRevenue: "$9,000",
-    roi: "271% annual ROI",
-    description: "Roadside farm stand and e-commerce marketplace at the property entrance, serving as the direct-to-consumer sales channel for all regenerative farm products, livestock goods, and artisan creations.",
+    budget: "$7,000-$10,000 (estimated)",
+    timeline: "Phase 1 (Month 3+ launch)",
+    monthlyRevenue: "$6,400-$8,300 (Phase 1+)",
+    roi: "500%+ annual ROI (dependent on connected operations)",
+    description: "Central direct-to-consumer sales hub at the property entrance, serving as the primary sales channel for all regenerative farm products, livestock goods, and artisan creations. Combines physical roadside farm stand with robust e-commerce platform and online neighborhood delivery, creating dual-channel revenue streams that significantly expand market reach beyond walk-up retail.",
+    
+    regenerativeSystems: [
+      "Solar energy integration for operational independence",
+      "Rainwater harvesting system supporting water needs",
+      "Central hub connecting all property regenerative production",
+      "Direct-to-consumer sales eliminating middlemen margins",
+      "Online shop platform extending market reach to neighborhoods",
+      "Organic product focus supporting regenerative agriculture across property"
+    ],
+    
+    marketContext: "The direct-to-consumer farm market is experiencing explosive growth as consumers increasingly seek organic, locally-grown products with transparent sourcing. This farmstead hub serves as the central sales channel for all property regenerative production: organic vegetables and fruits from the agriculture hub, grass-fed meat and dairy from the livestock program, specialty mushrooms, tropical fruits, and artisan goods from the creative workshop. The dual-channel approach—physical roadside stand plus online e-commerce—captures both walk-up retail customers and neighborhood online shoppers. Online sales significantly expand market reach beyond foot traffic, enabling delivery to surrounding neighborhoods. With consistent supply from maintained agricultural operations, the online shop can command premium pricing for organic, regeneratively-grown products. Market projections show 25-40% annual growth in organic food e-commerce and direct-to-consumer sales.",
+    
     features: [
       "Physical roadside stand at main entrance/gate",
       "Refrigerated display cases for fresh produce",
@@ -962,16 +1343,39 @@ const PROJECT_ZONES = [
       "CSA box subscription fulfillment center",
       "Product shelving and display systems",
       "POS system for walk-up transactions",
-      "Cold storage for dairy and meat products",
-      "Packaging and distribution center",
-      "Signage visible from Sulphur Mountain Road",
-      "Customer parking area"
+      "Cold storage for dairy and meat products"
     ],
+    
     revenueStreams: [
-      "Fresh produce & nursery sales: $3,000/month",
-      "Livestock products (eggs, honey, meat): $3,500/month",
-      "Value-added goods (tinctures, soaps, candles): $1,500/month",
-      "CSA box subscriptions: $1,000/month"
+      "PHYSICAL FARM STAND SALES:",
+      "  • Fresh produce, herbs, and nursery starts: $2,000-$2,500/month",
+      "  • Eggs, honey, and pasture-raised meats: $2,000-$2,500/month",
+      "  • Value-added goods (tinctures, soaps, candles): $800-$1,000/month",
+      "ONLINE ORDERS & LOCAL DELIVERY:",
+      "  • Online produce boxes & CSA renewals: $1,000-$1,500/month",
+      "  • Neighborhood deliveries & subscriptions: $600-$800/month",
+      "CONNECTED PROPERTY PRODUCTION:",
+      "  • Agriculture hub products (vegetables, fruits, herbs)",
+      "  • Livestock hub products (dairy, meat, eggs, therapies)",
+      "  • Mushroom center products (specialty mushrooms)",
+      "  • Tropical dome products (tropical fruits, plant starts)",
+      "  • Creative workshop artisan goods (value-added products)",
+      "TOTAL MONTHLY REVENUE (Phase 1+): $6,400-$8,300/month"
+    ],
+    
+    developmentTimeline: [
+      {
+        phase: "Phase 1 (Month 3+)",
+        deliverables: "Farm Stand Setup: Design and build nice, fancy roadside stand ($2K-$5K). Install refrigerated display cases, shelving, POS system, and signage. Online Shop Development: Set up e-commerce platform ($5K). Develop website and branding. Integrate payment processing. Plan delivery logistics. Launch social media and marketing. Integration & Launch: Connect to agriculture hub production. Connect to livestock hub products. Set up CSA box fulfillment. Begin online orders and local delivery. Launch marketing campaign.",
+        investment: "$7,000-$10,000 (estimated)",
+        status: "Central sales hub operational with dual channels"
+      },
+      {
+        phase: "Phase 2 (Month 4+)",
+        deliverables: "Full Operations: Physical stand and online shop both active. Multiple revenue streams generating. Neighborhood delivery established. CSA subscriptions active. Marketing driving customer acquisition. Scaling: Expand product offerings as supply increases. Optimize online operations. Build customer loyalty programs. Integrate new products from connected operations.",
+        investment: "Reinvested revenue for expansion",
+        status: "Fully operational dual-channel sales hub"
+      }
     ],
     products: {
       freshProduce: {
@@ -1987,10 +2391,11 @@ app.get('/', (req, res) => {
             object-position: center;
             background: #000;
             opacity: 0;
-            transition: opacity 250ms ease, filter 300ms ease;
+            transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1), filter 350ms cubic-bezier(0.16, 1, 0.3, 1);
             filter: blur(8px);
             will-change: opacity, filter;
             image-rendering: auto;
+            transform: translate3d(0,0,0);
           }
 
           /* GPU hints for Leaflet map to reduce jank */
@@ -2023,14 +2428,18 @@ app.get('/', (req, res) => {
           }
           .carousel-loading.active { opacity: 1; pointer-events: auto; }
           .loading-spinner {
-            width: 36px;
-            height: 36px;
-            border: 3px solid rgba(255,255,255,0.35);
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.25);
             border-top-color: #fff;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+            transform: translate3d(0,0,0);
           }
-          @keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes spin { 
+            0% { transform: translate3d(0,0,0) rotate(0deg); }
+            100% { transform: translate3d(0,0,0) rotate(360deg); } 
+          }
           
           @keyframes fadeIn {
             from { opacity: 0; }
@@ -2265,14 +2674,17 @@ app.get('/', (req, res) => {
             align-items: center;
             justify-content: center;
             opacity: 0;
+            visibility: hidden;
             pointer-events: none;
-            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            will-change: opacity;
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
+            will-change: opacity, visibility;
             overscroll-behavior: contain;
+            transform: translate3d(0,0,0);
           }
           
           #image-lightbox.active {
             opacity: 1;
+            visibility: visible;
             pointer-events: auto;
           }
           
@@ -2285,6 +2697,8 @@ app.get('/', (req, res) => {
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(10px);
             cursor: zoom-out;
+            transform: translate3d(0,0,0);
+            will-change: backdrop-filter;
           }
           
           .lightbox-content {
@@ -2307,6 +2721,7 @@ app.get('/', (req, res) => {
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            transform: translate3d(0,0,0);
           }
           
           .lightbox-image {
@@ -2317,21 +2732,30 @@ app.get('/', (req, res) => {
             display: block;
             border-radius: 4px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
             cursor: zoom-in;
             user-select: none;
             -webkit-user-drag: none;
-            will-change: transform;
+            will-change: transform, opacity;
+            transform: translate3d(0,0,0) scale(0.95);
+            opacity: 0;
+          }
+          
+          .lightbox-image.loaded {
+            transform: translate3d(0,0,0) scale(1);
+            opacity: 1;
           }
           
           .lightbox-image.zoomed {
             cursor: grab;
             max-width: none;
             max-height: none;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
           }
           
           .lightbox-image.zoomed.dragging {
             cursor: grabbing;
+            transition: none;
           }
           
           .lightbox-loading {
@@ -2342,11 +2766,20 @@ app.get('/', (req, res) => {
             z-index: 2;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
           }
           
           .lightbox-loading.active {
             opacity: 1;
+          }
+          
+          .lightbox-loading svg {
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+          }
+          
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
           }
           
           .lightbox-close {
@@ -2367,18 +2800,20 @@ app.get('/', (req, res) => {
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform;
+            transform: translate3d(0,0,0);
           }
           
           .lightbox-close:hover {
             background: rgba(255, 255, 255, 0.25);
-            transform: rotate(90deg) scale(1.1);
+            transform: translate3d(0,0,0) rotate(90deg) scale(1.1);
           }
           
           .lightbox-nav {
             position: fixed;
             top: 50%;
-            transform: translateY(-50%);
+            transform: translateY(-50%) translate3d(0,0,0);
             z-index: 3;
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
@@ -2392,12 +2827,17 @@ app.get('/', (req, res) => {
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform;
           }
           
           .lightbox-nav:hover {
             background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-50%) scale(1.1);
+            transform: translateY(-50%) translate3d(0,0,0) scale(1.15);
+          }
+          
+          .lightbox-nav:active {
+            transform: translateY(-50%) translate3d(0,0,0) scale(0.95);
           }
           
           .lightbox-prev {
@@ -2429,12 +2869,13 @@ app.get('/', (req, res) => {
             position: fixed;
             bottom: 90px;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translateX(-50%) translate3d(0,0,0);
             z-index: 3;
             display: flex;
             gap: 10px;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: opacity;
           }
           
           #image-lightbox.active .lightbox-zoom-controls {
@@ -2454,17 +2895,19 @@ app.get('/', (req, res) => {
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             user-select: none;
+            will-change: transform;
+            transform: translate3d(0,0,0);
           }
           
           .zoom-btn:hover {
             background: rgba(255, 255, 255, 0.25);
-            transform: scale(1.1);
+            transform: translate3d(0,0,0) scale(1.15);
           }
           
           .zoom-btn:active {
-            transform: scale(0.95);
+            transform: translate3d(0,0,0) scale(0.9);
           }
           
           .zoom-btn.disabled {
@@ -3375,7 +3818,7 @@ app.get('/', (req, res) => {
   
   <!-- Footer -->
   <div class="map-footer">
-    © 2025 Sulphur Mountain Eco-Village | Interactive Map Presentation | $7.75M Development Investment
+    © 2025 Sulphur Mountain Eco-Village | 18 Project Zones | $1.33M Development Investment
   </div>
   
   <script>
@@ -3752,6 +4195,8 @@ app.get('/', (req, res) => {
       const clickHandler = (e) => {
         if (window.ignoreMapClicksUntil && Date.now() < window.ignoreMapClicksUntil) { L.DomEvent.stopPropagation(e); return; }
         if (window.panelIsClosing) { L.DomEvent.stopPropagation(e); return; }
+        // DEBUG: Log which zone is being clicked
+        console.log('🔍 CLICKED ZONE:', zone.id, '-', zone.name);
         // Close any open panels first to ensure only ONE panel at a time
         const openPanels = document.querySelectorAll('.side-panel.open, .property-panel.open');
         openPanels.forEach(p => {
@@ -3867,24 +4312,46 @@ app.get('/', (req, res) => {
       }
       console.log('📋 Set title for:', zone.name);
       
-      // COMPLETELY block map interactions while panel is open
+      // Detect if device is mobile (screen width < 1024px)
+      const isMobile = window.innerWidth < 1024;
+      
+      // Desktop: Keep map FULLY interactive when panel is open
+      // Mobile: Disable map interactions when panel is open
       const mapContainer = document.getElementById('map');
-      if (mapContainer) {
-        mapContainer.style.pointerEvents = 'none';
-        mapContainer.style.touchAction = 'none';
-      }
-      if (map) {
-        map.dragging.disable();
-        map.touchZoom.disable();
-        map.doubleClickZoom.disable();
-        map.scrollWheelZoom.disable();
-        map.boxZoom.disable();
-        map.keyboard.disable();
+      if (!isMobile) {
+        // DESKTOP: Map stays fully interactive
+        if (mapContainer) {
+          mapContainer.style.pointerEvents = 'auto';
+          mapContainer.style.touchAction = 'auto';
+        }
+        if (map) {
+          map.dragging.enable();
+          map.touchZoom.enable();
+          map.doubleClickZoom.enable();
+          map.scrollWheelZoom.enable();
+          map.boxZoom.enable();
+          map.keyboard.enable();
+        }
+      } else {
+        // MOBILE: Disable all map interactions when panel is open
+        if (mapContainer) {
+          mapContainer.style.pointerEvents = 'none';
+          mapContainer.style.touchAction = 'none';
+        }
+        if (map) {
+          map.dragging.disable();
+          map.touchZoom.disable();
+          map.doubleClickZoom.disable();
+          map.scrollWheelZoom.disable();
+          map.boxZoom.disable();
+          map.keyboard.disable();
+        }
       }
       
       // Open the panel first for smooth animation, then inject heavy content
       panel.classList.add('open');
-      if (typeof lockBodyScroll === 'function') lockBodyScroll();
+      // Only lock body scroll on MOBILE
+      if (isMobile && typeof lockBodyScroll === 'function') lockBodyScroll();
       window.currentZoneId = zone.id;
       
       // Defer heavy DOM work to next frame for smoother opening
@@ -3892,6 +4359,18 @@ app.get('/', (req, res) => {
         content.innerHTML = generateProjectDetails(zone);
         setupImageGalleryTabs();
         loadZoneImages(zone.id);
+        
+        // CRITICAL: Always scroll panel content to TOP when opening (both mobile & desktop)
+        requestAnimationFrame(function() {
+          const panelContent = document.getElementById('panel-content');
+          if (panelContent) {
+            panelContent.scrollTop = 0;
+          }
+          // Also scroll the main panel container to top
+          if (panel) {
+            panel.scrollTop = 0;
+          }
+        });
       });
       
       // Initialize gallery state tracking
@@ -4018,7 +4497,7 @@ app.get('/', (req, res) => {
           '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #FF9800;">' +
             '<div style="font-weight: 600; color: #FF9800; margin-bottom: 10px; font-size: 14px;">💰 Investment Overview</div>' +
             '<div style="color: #555; line-height: 1.8; font-size: 14px;">' +
-              '<p style="margin: 0 0 10px 0;">The total phased development budget exceeds <strong style="color: #FF9800;">$3 Million</strong>.</p>' +
+              '<p style="margin: 0 0 10px 0;">The total phased development budget is approximately <strong style="color: #FF9800;">$1.33 Million</strong>.</p>' +
               '<p style="margin: 0;">This investment supports comprehensive regenerative development plans across all property sections.</p>' +
             '</div>' +
           '</div>' +
@@ -4026,9 +4505,9 @@ app.get('/', (req, res) => {
           '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #10B981;">' +
             '<div style="font-weight: 600; color: #10B981; margin-bottom: 10px; font-size: 14px;">🌱 Regenerative Agriculture & Lodging</div>' +
             '<div style="color: #555; line-height: 1.8; font-size: 14px;">' +
-              '<p style="margin: 0 0 10px 0;"><strong>Guest Lodging:</strong> Plans include capacity for <strong>50+ diverse units</strong> featuring glamping, chalets, domes, and yurts.</p>' +
-              '<p style="margin: 0 0 10px 0;"><strong>Agriculture:</strong> <strong>3 acres</strong> dedicated to regenerative farming with over 500 fruit trees.</p>' +
-              '<p style="margin: 0;"><strong>Livestock & Nursery:</strong> Integrated permaculture system with livestock programs and plant nursery.</p>' +
+              '<p style="margin: 0 0 10px 0;"><strong>Guest Lodging:</strong> Plans include <strong>18-35+ unique units</strong> featuring 8-10 hillside cabins, 10-25+ creek-side glamping (tipis, yurts, safari tents), with phased expansion.</p>' +
+              '<p style="margin: 0 0 10px 0;"><strong>Agriculture:</strong> <strong>10-acre property</strong> dedicated to regenerative farming with fruit orchards, vegetable gardens, and integrated permaculture systems.</p>' +
+              '<p style="margin: 0;"><strong>Livestock & Nursery:</strong> Integrated permaculture system with beekeeping, mushroom cultivation, and plant nursery programs.</p>' +
             '</div>' +
           '</div>' +
           
@@ -4054,11 +4533,6 @@ app.get('/', (req, res) => {
                 '<span>Sulphur Onboarding Platform</span>' +
                 '<span style="margin-left: auto; font-style: italic; font-size: 12px;">Coming Soon...</span>' +
               '</div>' +
-              '<a href="https://eco-village-map.vercel.app/" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s ease; font-size: 14px; font-weight: 500;">' +
-                '<span style="font-size: 18px;">🗺️</span>' +
-                '<span>Interactive Map</span>' +
-                '<span style="margin-left: auto; font-size: 16px;">→</span>' +
-              '</a>' +
             '</div>' +
           '</div>' +
           
@@ -4072,11 +4546,11 @@ app.get('/', (req, res) => {
                 '<span>Santa Maria</span>' +
                 '<span style="margin-left: auto; font-size: 16px;">→</span>' +
               '</a>' +
-              '<div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%); color: #6c757d; border-radius: 8px; font-size: 14px; font-weight: 500;">' +
+              '<a href="https://preview--lemuria-life.lovable.app/" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s ease; font-size: 14px; font-weight: 500;">' +
                 '<span style="font-size: 18px;">🌺</span>' +
-                '<span>Lemuria.life</span>' +
-                '<span style="margin-left: auto; font-style: italic; font-size: 12px;">Coming Soon...</span>' +
-              '</div>' +
+                '<span>Lemuria Life</span>' +
+                '<span style="margin-left: auto; font-size: 16px;">→</span>' +
+              '</a>' +
             '</div>' +
           '</div>' +
           
@@ -4089,6 +4563,16 @@ app.get('/', (req, res) => {
       requestAnimationFrame(function() {
         contentEl.innerHTML = content;
         loadPropertyImages();
+        
+        // CRITICAL: Always scroll property panel to TOP when opening
+        requestAnimationFrame(function() {
+          if (panel) {
+            panel.scrollTop = 0;
+          }
+          if (contentEl) {
+            contentEl.scrollTop = 0;
+          }
+        });
       });
       
       console.log('🌈 Opened unified property panel with gallery');
@@ -4737,6 +5221,7 @@ app.get('/', (req, res) => {
     
     // Load images for a specific zone (preserves gallery state)
     async function loadZoneImages(zoneId) {
+      console.log('🖼️ loadZoneImages called for zoneId:', zoneId);
       const categories = ['current', 'vision'];
       
       for (const category of categories) {
@@ -4745,8 +5230,11 @@ app.get('/', (req, res) => {
           if (!container) continue;
           
           // Fetch image URLs from API
-          const response = await fetch('/api/images/' + zoneId + '/' + category);
+          const apiUrl = '/api/images/' + zoneId + '/' + category;
+          console.log('📡 Fetching images from:', apiUrl);
+          const response = await fetch(apiUrl);
           const data = await response.json();
+          console.log('📦 API response for', zoneId, category, ':', data);
           
           // Check if this category has subcategories
           if (data.hasSubcategories && data.subcategoryData) {
@@ -5184,22 +5672,26 @@ app.get('/', (req, res) => {
         if (contentEl) { contentEl.style.transform = ''; contentEl.style.opacity = '1'; }
         imageContainer.scrollTop = 0; imageContainer.scrollLeft = 0;
         
-        // Set source immediately; fade in after decode
+        // Remove loaded class to trigger fade-out with scale
+        img.classList.remove('loaded');
+        
+        // Set source immediately; fade in with scale after decode
         const newSrc = currentImages[index];
-        img.style.transition = 'none';
-        img.style.opacity = '0';
-        img.style.transform = 'scale(1)';
         if (img.src !== newSrc) img.src = newSrc;
+        
         const finish = () => {
           loading.classList.remove('active');
-          img.style.transition = 'opacity 200ms ease';
-          img.style.opacity = '1';
+          // Add loaded class to trigger smooth fade-in with scale animation
+          requestAnimationFrame(() => {
+            img.classList.add('loaded');
+          });
           // Update counter
           lightbox.querySelector('.lightbox-current').textContent = index + 1;
-          // Preload adjacent images
+          // Preload adjacent images for instant navigation
           if (index > 0) { const prev = new Image(); prev.src = currentImages[index - 1]; }
           if (index < currentImages.length - 1) { const next = new Image(); next.src = currentImages[index + 1]; }
         };
+        
         try {
           if (img.decode) { img.decode().then(finish).catch(finish); }
           else if (img.complete) { finish(); }
@@ -5248,6 +5740,7 @@ app.get('/', (req, res) => {
       
       function updateZoom(newLevel) {
         zoomLevel = Math.max(1, Math.min(3, newLevel)); // Clamp between 1x and 3x
+        img.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
         img.style.transform = 'scale(' + zoomLevel + ')';
         zoomIndicator.textContent = Math.round(zoomLevel * 100) + '%';
         
@@ -5255,9 +5748,11 @@ app.get('/', (req, res) => {
         if (zoomLevel > 1) {
           imageContainer.style.overflow = 'auto';
           imageContainer.style.cursor = 'move';
+          img.classList.add('zoomed');
         } else {
           imageContainer.style.overflow = 'hidden';
           imageContainer.style.cursor = 'pointer';
+          img.classList.remove('zoomed');
         }
       }
       
@@ -5329,13 +5824,13 @@ app.get('/', (req, res) => {
         const dx = (e.changedTouches[0]?.clientX || 0) - (touchStartX || 0);
         const dy = (e.changedTouches[0]?.clientY || 0) - (touchStartY || 0);
         if (isHorizontal && zoomLevel === 1) {
-          img.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+          img.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
           img.style.transform = 'scale(' + zoomLevel + ')';
           if (Math.abs(dx) > 56) {
             navigateToImage(currentIndex + (dx < 0 ? 1 : -1));
           }
         } else if (isVertical && zoomLevel === 1) {
-          content.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+          content.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
           if (Math.abs(dy) > 56) {
             closeLightbox();
           } else {
@@ -5430,7 +5925,8 @@ app.get('/', (req, res) => {
         
         <div class="project-section">
           <h3 style="color: \${zoneColor};">📋 Project Overview</h3>
-          <p style="color: #555; line-height: 1.6; font-size: 15px;">\${zone.description}</p>
+          <div style="color: #555; line-height: 1.8; font-size: 15px; white-space: pre-wrap; word-wrap: break-word; margin: 0; padding: 0;">
+\${zone.description}</div>
         </div>
         
         <div class="project-section">
@@ -5478,18 +5974,14 @@ app.get('/', (req, res) => {
               </div>
               <div style="padding-top: 12px; border-top: 2px solid #28a745; margin-top: 12px;">
                 <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Total Year 1: \${zone.revenueModel.totalYear1}</div>
-                <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Projected Year 2-3: \${zone.revenueModel.projectedYear2_3}</div>
-                <div style="color: #155724; font-size: 13px; font-style: italic; margin-top: 8px;">\${zone.revenueModel.note}</div>
-              </div>
             </div>
           </div>
-        \` : (zone.revenueStreams ? \`
+\` : (zone.revenueStreams ? \`
           <div class="project-section">
             <h3 style="color: \${zoneColor};">💵 Revenue Streams</h3>
-            \${zone.revenueStreams.map(stream => \`<div class="revenue-stream">\${stream}</div>\`).join('')}
+\${zone.revenueStreams.map(stream => \`<div class="revenue-stream">\${stream}</div>\`).join('')}
           </div>
-        \` : '')}
-        
+\` : '')}
         \${zone.developmentTimeline ? \`
           <div class="project-section">
             <h3 style="color: \${zoneColor};">📅 Development Timeline</h3>
@@ -5512,7 +6004,7 @@ app.get('/', (req, res) => {
             </div>
           </div>
         \`}
-        
+
         \${zone.wellnessAmenities ? \`
           <div class="project-section">
             <h3 style="color: \${zoneColor};">🌟 Wellness Amenities</h3>
@@ -5520,37 +6012,86 @@ app.get('/', (req, res) => {
               \${zone.wellnessAmenities.map(amenity => \`<li>\${amenity}</li>\`).join('')}
             </ul>
           </div>
-        \` : (zone.regenerativePractices ? \`
+        \` : zone.integratedGardenSystem ? \`
           <div class="project-section">
-            <h3 style="color: \${zoneColor};">🌿 Regenerative Practices</h3>
+            <h3 style="color: \${zoneColor};">🌱 Integrated Garden System & Propagation</h3>
+            <ul class="feature-list">
+              \${zone.integratedGardenSystem.map(garden => \`<li>\${garden}</li>\`).join('')}
+            </ul>
+          </div>
+        \` : zone.smartCultivationSystems ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🧠 Smart Cultivation Systems</h3>
+            <ul class="feature-list">
+              \${zone.smartCultivationSystems.map(system => \`<li>\${system}</li>\`).join('')}
+            </ul>
+          </div>
+        \` : ''}
+        
+        \${zone.tropicalFruitTrees ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🌴 Tropical Fruit Trees & Propagation</h3>
+            \${zone.tropicalFruitTrees.map(tree => \`
+              <div style="padding: 16px; background: linear-gradient(135deg, \${lightColor} 0%, \${mediumColor} 100%); border-radius: 10px; border-left: 4px solid \${zoneColor}; margin-bottom: 12px;">
+                <div style="font-weight: 700; color: \${zoneColor}; font-size: 15px; margin-bottom: 6px;">\${tree.name}</div>
+                <div style="color: #555; font-size: 13px; line-height: 1.5; margin-bottom: 4px;"><strong>Propagation:</strong> \${tree.propagation}</div>
+                <div style="color: #555; font-size: 13px; line-height: 1.5;"><strong>Products:</strong> \${tree.products}</div>
+              </div>
+            \`).join('')}
+          </div>
+        \` : ''}
+        
+        \${zone.productsOfferings ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🌿 Products & Offerings</h3>
+            \${zone.productsOfferings.map(category => \`
+              <div style="padding: 16px; background: linear-gradient(135deg, \${lightColor} 0%, \${mediumColor} 100%); border-radius: 10px; border-left: 4px solid \${zoneColor}; margin-bottom: 12px;">
+                <div style="font-weight: 700; color: \${zoneColor}; font-size: 15px; margin-bottom: 8px;">\${category.category}</div>
+                <ul style="margin: 0; padding-left: 20px; list-style: disc;">
+                  \${category.items.map(item => \`<li style="color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 4px;">\${item}</li>\`).join('')}
+                </ul>
+              </div>
+            \`).join('')}
+          </div>
+        \` : ''}
+        
+        \${zone.regenerativePractices ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🌱 Regenerative Practices & Land Stewardship</h3>
             <ul class="feature-list">
               \${zone.regenerativePractices.map(practice => \`<li>\${practice}</li>\`).join('')}
             </ul>
           </div>
-        \` : (zone.regenerativeFeatures ? \`
+        \` : zone.regenerativeDesign ? \`
           <div class="project-section">
-            <h3 style="color: \${zoneColor};">🌿 Regenerative Features</h3>
-            <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #28a745;">
-              <ul class="feature-list" style="margin: 0;">
-                \${zone.regenerativeFeatures.map(feature => \`<li>\${feature}</li>\`).join('')}
-              </ul>
-            </div>
+            <h3 style="color: \${zoneColor};">🌿 Regenerative Design & Eco-Luxury Living</h3>
+            <ul class="feature-list">
+              \${zone.regenerativeDesign.map(design => \`<li>\${design}</li>\`).join('')}
+            </ul>
           </div>
-        \` : (zone.id !== 'beekeeping-program' ? \`
+        \` : zone.id === 'tropical-dome-greenhouse' && zone.regenerativeSystems ? \`
           <div class="project-section">
-            <h3 style="color: \${zoneColor};">🌟 Sustainability Features</h3>
-            <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #28a745;">
-              <ul class="feature-list" style="margin: 0;">
-                <li>Solar energy integration and battery storage systems</li>
-                <li>Rainwater harvesting and greywater recycling</li>
-                <li>Native plant landscaping and permaculture design</li>
-                <li>Sustainable building materials and energy efficiency</li>
-                <li>Organic waste composting and soil regeneration</li>
-              </ul>
-            </div>
+            <h3 style="color: \${zoneColor};">🌴 Regenerative Systems & Tropical Production</h3>
+            <ul class="feature-list">
+              \${zone.regenerativeSystems.map(system => \`<li>\${system}</li>\`).join('')}
+            </ul>
           </div>
-        \` : '')))}
-        
+        \` : zone.regenerativeSystems ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">⚡ Regenerative Systems & Operational Efficiency</h3>
+            <ul class="feature-list">
+              \${zone.regenerativeSystems.map(system => \`<li>\${system}</li>\`).join('')}
+            </ul>
+          </div>
+        \` : zone.infrastructureEssentials ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">⚙️ Utility Systems & Phased Development</h3>
+            <ul class="feature-list">
+              \${zone.infrastructureEssentials.map(essential => \`<li>\${essential}</li>\`).join('')}
+            </ul>
+          </div>
+        \` : ''}
+
         \${zone.propertyValue ? \`
           <div class="project-section">
             <h3 style="color: \${zoneColor};">🏡 Property Value Projections</h3>
@@ -5573,7 +6114,25 @@ app.get('/', (req, res) => {
               </p>
             </div>
           </div>
-        \` : (zone.marketAnalysis ? \`
+        \` : zone.marketContext ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🎶 Ojai's Growing Event & Ceremony Scene</h3>
+            <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #ffc107;">
+              <p style="color: #856404; margin: 0; font-size: 14px; line-height: 1.5;">
+                \${zone.marketContext}
+              </p>
+            </div>
+          </div>
+        \` : zone.operationalFunction ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🎯 Operational Function</h3>
+            <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #4caf50;">
+              <p style="color: #2e7d32; margin: 0; font-size: 14px; line-height: 1.6;">
+                \${zone.operationalFunction}
+              </p>
+            </div>
+          </div>
+        \` : zone.marketAnalysis ? \`
           <div class="project-section">
             <h3 style="color: \${zoneColor};">📊 Market Analysis & Growth Potential</h3>
             <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #ffc107;">
@@ -5582,7 +6141,7 @@ app.get('/', (req, res) => {
               </p>
             </div>
           </div>
-        \` : (zone.id !== 'beekeeping-program' && zone.id !== 'events-gatherings-hub' && zone.id !== 'wellness-facilities' ? \`
+        \` : zone.id !== 'beekeeping-program' && zone.id !== 'events-gatherings-hub' && zone.id !== 'wellness-facilities' && zone.id !== 'community-hub' && zone.id !== 'ceremonial-infrastructure' && zone.id !== 'infrastructure' && zone.id !== 'retreat-village' && zone.id !== 'livestock-dairy' && zone.id !== 'gatelodge-operations-hub' && zone.id !== 'tropical-dome-greenhouse' && zone.id !== 'farmstead-produce-stand' ? \`
           <div class="project-section">
             <h3 style="color: \${zoneColor};">📊 Market Analysis & Projections</h3>
             <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #ffc107;">
@@ -5591,14 +6150,73 @@ app.get('/', (req, res) => {
               </p>
             </div>
           </div>
-        \` : ''))}
+        \` : ''}
         
         <div class="project-section">
           <h3 style="color: \${zoneColor};">💰 Investment Summary</h3>
           <div class="investment-grid">
             <div class="investment-card" style="border-color: \${zoneColor};">
-              <div class="investment-label">\${zone.id === 'beekeeping-program' ? 'Starting Budget' : (zone.id === 'agricultural-hub' ? 'Estimated Total Budget' : 'Total Budget')}</div>
-              <div class="investment-value" style="color: \${zoneColor};">\${zone.budget}</div>
+              <div class="investment-label">\${zone.id === 'beekeeping-program' ? 'Starting Budget' : (zone.id === 'agricultural-hub' ? 'Estimated Total Budget' : (zone.id === 'infrastructure' || zone.id === 'retreat-village' || zone.id === 'livestock-dairy' || zone.id === 'tropical-dome-greenhouse' ? 'Estimated Budget' : 'Total Budget'))}</div>
+              <div class="investment-value" style="color: \${zoneColor};">\${zone.id === 'tropical-dome-greenhouse' ? \`
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1.3;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">Phase 1</span>
+                    <span style="font-size: 13px; color: #555;">$30K (with investment)</span>
+                  </div>
+                </div>
+              \` : zone.id === 'infrastructure' ? \`
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1.3;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P1</span>
+                    <span style="font-size: 13px; color: #555;">$62K-$77K</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P2</span>
+                    <span style="font-size: 13px; color: #555;">$40K-$60K</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P3</span>
+                    <span style="font-size: 13px; color: #555;">$40K-$50K</span>
+                  </div>
+                </div>
+              \` : zone.id === 'retreat-village' ? \`
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1.3;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P1</span>
+                    <span style="font-size: 13px; color: #555;">$70K-$80K</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P2</span>
+                    <span style="font-size: 13px; color: #555;">$20K+ (flexible)</span>
+                  </div>
+                </div>
+              \` : zone.id === 'livestock-dairy' ? \`
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1.3;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P1</span>
+                    <span style="font-size: 13px; color: #555;">$20K-$25K</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P2</span>
+                    <span style="font-size: 13px; color: #555;">$5K/month</span>
+                  </div>
+                </div>
+              \` : zone.id === 'farmstead-produce-stand' ? \`
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1.3;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">Farm Stand</span>
+                    <span style="font-size: 13px; color: #555;">$2K-$5K</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">Online Shop</span>
+                    <span style="font-size: 13px; color: #555;">~$5K</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">Total</span>
+                    <span style="font-size: 13px; color: #555;">$7K-$10K</span>
+                  </div>
+                </div>
+              \` : \`\${zone.budget}\`}</div>
             </div>
             <div class="investment-card" style="border-color: \${zoneColor};">
               <div class="investment-label">\${zone.id === 'beekeeping-program' ? 'Revenue Starting' : 'Monthly Revenue'}</div>
@@ -5643,6 +6261,32 @@ app.get('/', (req, res) => {
                     <span style="font-size: 13px; color: #555;">$8.75K-$10K</span>
                   </div>
                 </div>
+              \` : zone.id === 'community-hub' ? \`
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1.3;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P1</span>
+                    <span style="font-size: 13px; color: #555;">$0</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P2</span>
+                    <span style="font-size: 13px; color: #555;">$7K-$10K+</span>
+                  </div>
+                </div>
+              \` : zone.id === 'mcqueens-garage' ? \`
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1.3;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P1</span>
+                    <span style="font-size: 13px; color: #555;">$0</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P2</span>
+                    <span style="font-size: 13px; color: #555;">$0</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 16px; color: \${zoneColor};">P3</span>
+                    <span style="font-size: 13px; color: #555;">$15K-$25K+</span>
+                  </div>
+                </div>
               \` : zone.monthlyRevenue}</div>
             </div>
             <div class="investment-card" style="border-color: \${zoneColor};">
@@ -5681,12 +6325,12 @@ app.get('/', (req, res) => {
           <div class="footer-content">
             <div class="footer-title">🌿 Sulphur Mountain Eco-Village</div>
             <div class="footer-info">
-              <span>15 Project Zones</span> • 
-              <span>$7.75M Investment</span> • 
+              <span>18 Project Zones</span> • 
+              <span>$1.33M Investment</span> • 
               <span>10-Acre Property</span> • 
               <span>Ojai Valley, CA</span>
             </div>
-            <div class="footer-tagline">Regenerative Living • Sustainable Design • Community Wellness</div>
+            <div class="footer-tagline">Regenerative Living • Collaborative Design • Community Wellness</div>
           </div>
         </div>
       \`;
@@ -6163,7 +6807,7 @@ app.get('/', (req, res) => {
     console.log('📁 Image upload system ready - all directories created');
   </script>
 </body>
-</html>`;
+</html>`
 
     // Replace placeholders with actual data
     const finalHtml = htmlContent
@@ -6182,12 +6826,35 @@ app.get('/', (req, res) => {
   }
 });
 
+// Helper function to parse budget strings (handles K suffix, ranges, and phases)
+function parseBudget(budgetStr) {
+  // Extract all numbers with K suffix or regular numbers
+  const numbers = [];
+  
+  // Match patterns like $70K, $35,000, etc.
+  const matches = budgetStr.matchAll(/\$(\d+(?:,\d{3})*|\d+)K?/gi);
+  
+  for (const match of matches) {
+    let num = parseFloat(match[1].replace(/,/g, ''));
+    // If it had 'K' suffix, multiply by 1000
+    if (match[0].toUpperCase().includes('K')) {
+      num *= 1000;
+    }
+    numbers.push(num);
+  }
+  
+  // If no numbers found, return 0
+  if (numbers.length === 0) return 0;
+  
+  // Return average of all numbers found
+  return numbers.reduce((sum, n) => sum + n, 0) / numbers.length;
+}
+
 // API endpoint for project zones data
 app.get('/api/project-zones', (req, res) => {
   try {
     const totalInvestment = PROJECT_ZONES.reduce((sum, zone) => {
-      const budget = parseInt(zone.budget.replace(/[$,]/g, ''));
-      return sum + budget;
+      return sum + parseBudget(zone.budget);
     }, 0);
 
     res.json({
@@ -6227,10 +6894,11 @@ const PROJECT_FOLDER_MAP = {
   'beekeeping-program': 'Beekeeping & Honey Production',
   'events-gatherings-hub': 'Events & Gatherings Hub',
   'livestock-program': 'Livestock & Dairy Program',
+  'livestock-dairy': 'Livestock & Dairy Program',
   'creative-workshop-center': 'Creative Workshop & Art Creation Center',
   'glamping-creek-village': 'Creek-Side Glamping & Lodging Village',
   'gatelodge-operations-hub': 'Sulphur Mountain Gatelodge (Operations ADU)',
-  'tropical-dome-greenhouse': 'Tropical Dome Greenhouse',
+  'tropical-dome-greenhouse': 'Tropical Dome House',
   'sulphur-mountain-sanctuary': 'Sulphur Mountain Sanctuary The Living Landscape',
   'farmstead-produce-stand': 'Farmstead Produce Stand & Online Hub'
 };
@@ -6304,8 +6972,7 @@ app.use((err, req, res, next) => {
 if (process.env.VERCEL !== '1') {
   const server = app.listen(PORT, '0.0.0.0', () => {
     const totalInvestment = PROJECT_ZONES.reduce((sum, zone) => {
-      const budget = parseInt(zone.budget.replace(/[$,]/g, ''));
-      return sum + budget;
+      return sum + parseBudget(zone.budget);
     }, 0);
     console.log('🚀 EcoVillageBuilder Interactive Map Server');
     console.log(`🌐 Server running on port ${PORT}`);

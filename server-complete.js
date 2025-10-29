@@ -3004,25 +3004,55 @@ app.get('/', (req, res) => {
             }
             
             .panel-header, .property-panel-header {
-              padding: 12px 16px;
+              padding: 0;
               min-height: 52px;
               max-height: 52px;
+              display: flex !important;
+              align-items: center !important;
+            }
+            
+            .project-hero {
+              padding: 10px 50px 10px 16px !important;
+              flex: 1 !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: center !important;
+              min-height: 52px !important;
+            }
+            
+            .project-title {
+              font-size: 16px !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              display: block !important;
+              visibility: visible !important;
+              opacity: 1 !important;
+              color: #ffffff !important;
+              font-weight: 700 !important;
+              line-height: 1.3 !important;
             }
             
             .panel-header h2 {
               font-size: 16px;
             }
             
+            .property-panel-title {
+              padding: 10px 50px 10px 16px !important;
+              flex: 1 !important;
+            }
+            
             .property-panel-title h3 {
               font-size: 16px !important;
+              margin: 0 !important;
             }
             
             .close-panel {
-              width: 32px !important;
-              height: 32px !important;
-              font-size: 20px !important;
-              top: 10px;
-              right: 10px;
+              width: 48px !important;
+              height: 48px !important;
+              font-size: 24px !important;
+              top: 2px !important;
+              right: 2px !important;
+              flex-shrink: 0;
             }
             
             /* Optimize content scrolling on mobile */

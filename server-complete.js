@@ -1959,7 +1959,7 @@ app.get('/', (req, res) => {
             touch-action: pan-y;
             will-change: left;
             transform: translateZ(0);
-            transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             border-right: 1px solid rgba(0,0,0,0.06);
             backdrop-filter: blur(20px);
           }
@@ -1987,9 +1987,10 @@ app.get('/', (req, res) => {
             justify-content: space-between;
             min-height: 60px;
             max-height: 60px;
-            touch-action: pan-y;
+            touch-action: manipulation;
             flex-shrink: 0;
             gap: 16px;
+            -webkit-tap-highlight-color: transparent;
           }
           
           .close-panel {
@@ -2028,6 +2029,9 @@ app.get('/', (req, res) => {
             height: calc(100vh - 60px);
             overflow-y: auto;
             scroll-behavior: smooth;
+            /* Smooth momentum scrolling on mobile */
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
           }
           
           .panel-content::-webkit-scrollbar {
@@ -2985,14 +2989,48 @@ app.get('/', (req, res) => {
             .side-panel {
               width: 100vw;
               left: -100vw;
+              transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             }
             
-            .panel-header {
+            .property-panel {
+              width: 100vw;
+              right: -100vw;
+              left: 0;
+              transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            
+            .property-panel.open {
+              left: 0;
+            }
+            
+            .panel-header, .property-panel-header {
               padding: 12px 16px;
+              min-height: 52px;
+              max-height: 52px;
             }
             
             .panel-header h2 {
               font-size: 16px;
+            }
+            
+            .property-panel-title h3 {
+              font-size: 16px !important;
+            }
+            
+            .close-panel {
+              width: 32px !important;
+              height: 32px !important;
+              font-size: 20px !important;
+              top: 10px;
+              right: 10px;
+            }
+            
+            /* Optimize content scrolling on mobile */
+            .panel-content, .property-panel-content {
+              height: calc(100vh - 52px);
+              overscroll-behavior: contain;
+              -webkit-overflow-scrolling: touch;
+              scroll-behavior: smooth;
             }
             
             .carousel-main {
@@ -3028,6 +3066,18 @@ app.get('/', (req, res) => {
             .side-panel {
               width: 100vw;
               left: -100vw;
+              transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            
+            .property-panel {
+              width: 100vw;
+              right: -100vw;
+              left: 0;
+              transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            
+            .property-panel.open {
+              left: 0;
             }
             
             .zone-controls {
@@ -3142,7 +3192,7 @@ app.get('/', (req, res) => {
       touch-action: pan-y;
       will-change: right, transform;
       transform: translateZ(0);
-      transition: right 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       border-left: 2px solid rgba(255,255,255,0.2);
     }
     
@@ -3161,12 +3211,13 @@ app.get('/', (req, res) => {
       justify-content: space-between;
       min-height: 60px;
       max-height: 60px;
-      touch-action: pan-y;
+      touch-action: manipulation;
       z-index: 2001;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       backdrop-filter: blur(15px);
       flex-shrink: 0;
       gap: 16px;
+      -webkit-tap-highlight-color: transparent;
     }
     
     .property-panel-title {
@@ -3198,6 +3249,13 @@ app.get('/', (req, res) => {
       height: calc(100vh - 80px);
       overflow-y: auto;
       scroll-behavior: smooth;
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      /* Smooth momentum scrolling on mobile */
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
       overscroll-behavior-y: contain;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;

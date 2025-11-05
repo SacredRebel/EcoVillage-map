@@ -3125,10 +3125,12 @@ app.get('/', (req, res) => {
             /* Optimize content scrolling on mobile */
             .panel-content, .property-panel-content {
               height: calc(100vh - 52px);
-              overscroll-behavior: contain;
+              overscroll-behavior: none;  /* Changed from contain to none - prevent scroll boundary events */
               -webkit-overflow-scrolling: touch;
               overflow-x: hidden;
-              scroll-behavior: smooth;
+              overflow-y: auto;
+              scroll-behavior: auto;  /* Changed from smooth to auto - prevent momentum conflicts */
+              touch-action: pan-y;  /* CRITICAL: Allow only vertical scrolling, block horizontal */
             }
             
             /* Force all content to fit within panel width */
@@ -5529,22 +5531,33 @@ app.get('/', (req, res) => {
           if (!gesture) {
             const absX = Math.abs(dx), absY = Math.abs(dy);
             if (absX > 10 || absY > 10) {
-              if (absY > absX * 1.2) gesture = 'v';
-              else if (absX > absY * 1.2) gesture = 'h';
+              // CRITICAL: Prioritize vertical scrolling over horizontal swiping
+              if (absY > absX * 0.5) gesture = 'v';  // Changed from 1.2 to 0.5 - if ANY vertical movement, treat as scroll
+              else if (absX > absY * 2.0) gesture = 'h';  // Keep horizontal strict (changed from 1.2)
             }
           }
           if (gesture === 'v') {
             isTracking = false;
+            isSwiping = false;
             panel.style.transition = '';
             panel.style.animation = '';
+            panel.style.touchAction = '';
             return;
           }
           const absX = Math.abs(dx), absY = Math.abs(dy);
-          const ratioReq = 2.0;
-          const minDx = 24;
+          const ratioReq = 3.0;  // Changed from 2.0 - require MUCH more horizontal than vertical
+          const minDx = 40;  // Changed from 24 - require more horizontal distance
           const horizontal = absX > absY * ratioReq && absX > ANGLE_THRESHOLD;
           const closingDirOk = closeToLeft ? (dx < 0) : (dx > 0);
-          if (!horizontal || !closingDirOk || absX < minDx) return;
+          // If ANY vertical movement detected during gesture, stop tracking
+          if (!horizontal || !closingDirOk || absX < minDx || absY > 5) {
+            if (absY > 5) {
+              isTracking = false;
+              isSwiping = false;
+              panel.style.touchAction = '';
+            }
+            return;
+          }
           if (horizontal && closingDirOk) {
             isSwiping = true;
             panel.classList.add('swiping');

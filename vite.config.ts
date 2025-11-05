@@ -1,42 +1,19 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
-export default defineConfig(async () => {
-  const plugins = [react(), runtimeErrorOverlay()];
-  if (process.env.NODE_ENV !== "production" && process.env.REPL_ID) {
-    try {
-      const { cartographer } = await import("@replit/vite-plugin-cartographer");
-      const { devBanner } = await import("@replit/vite-plugin-dev-banner");
-      plugins.push(cartographer(), devBanner());
-    } catch {
-      // ignore optional Replit plugins if missing
+// EcoVillage uses a single-file Express server (server-complete.js)
+// No Vite build is needed - this config is for Lovable compatibility only
+export default defineConfig({
+  build: {
+    outDir: "dist",
+    emptyOutDir: false,
+    rollupOptions: {
+      input: "index.html"
+    }
+  },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:5001',
+      '/images': 'http://localhost:5001'
     }
   }
-  return {
-    plugins,
-  resolve: {
-    alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
-    },
-  },
-    root: path.resolve(import.meta.dirname, "client"),
-    build: {
-      outDir: path.resolve(import.meta.dirname, "dist/public"),
-      emptyOutDir: true,
-    },
-    server: {
-      fs: {
-        strict: true,
-        deny: ["**/.*"],
-      },
-    },
-    optimizeDeps: {
-      noDiscovery: true,
-      include: [],
-    },
-  };
 });

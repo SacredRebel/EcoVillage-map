@@ -4831,6 +4831,11 @@ app.get('/', (req, res) => {
         setupImageGalleryTabs();
         loadZoneImages(zone.id);
         
+        // Fix timeline on mobile after content loads
+        if (window.innerWidth <= 768 && typeof fixTimelineOnMobile === 'function') {
+          setTimeout(fixTimelineOnMobile, 100);
+        }
+        
         // CRITICAL: Always scroll panel content to TOP when opening (both mobile & desktop)
         requestAnimationFrame(function() {
           const panelContent = document.getElementById('panel-content');
@@ -7599,6 +7604,44 @@ app.get('/', (req, res) => {
     
     // Make handleImageUpload globally available
     window.handleImageUpload = handleImageUpload;
+    
+    // Mobile timeline fix - force vertical layout on mobile viewports
+    function fixTimelineOnMobile() {
+      if (window.innerWidth <= 768) {
+        const timelineSteps = document.getElementById('timeline-steps');
+        const timelineStats = document.getElementById('timeline-stats');
+        
+        if (timelineSteps) {
+          timelineSteps.style.cssText = 'display: flex !important; flex-direction: column !important; gap: 20px !important; align-items: stretch !important;';
+          
+          // Fix each step
+          const steps = timelineSteps.querySelectorAll(':scope > div[style*="flex: 1"]');
+          steps.forEach(step => {
+            if (!step.style.position || step.style.position !== 'absolute') {
+              step.style.cssText = step.style.cssText.replace('flex: 1', 'flex: none') + '; width: 100% !important;';
+            }
+          });
+          
+          // Hide connector line
+          const connector = timelineSteps.querySelector('div[style*="position: absolute"][style*="height: 3px"]');
+          if (connector) connector.style.display = 'none';
+        }
+        
+        if (timelineStats) {
+          timelineStats.style.cssText = 'display: flex !important; flex-direction: column !important; gap: 12px !important; margin-top: 30px; padding-top: 20px; border-top: 2px solid #E0E0E0; text-align: center;';
+          
+          // Style each stat item
+          const statItems = timelineStats.querySelectorAll(':scope > div');
+          statItems.forEach(item => {
+            item.style.cssText += '; padding: 15px !important; background: linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(46, 125, 50, 0.1) 100%) !important; border-radius: 8px !important; border: 1px solid rgba(46, 125, 50, 0.2) !important;';
+          });
+        }
+      }
+    }
+    
+    // Run on load and resize
+    fixTimelineOnMobile();
+    window.addEventListener('resize', fixTimelineOnMobile);
     
     console.log('✅ EcoVillageBuilder Interactive Map fully initialized');
     console.log('🎯 Ready for investor presentations and zone exploration');

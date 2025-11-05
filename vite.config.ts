@@ -7,10 +7,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    proxy: {
-      '/api': 'http://localhost:5001',
-      '/images': 'http://localhost:5001'
-    }
   },
   plugins: [
     react(),
@@ -23,9 +19,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist",
-    emptyOutDir: false,
-    rollupOptions: {
-      input: "index.html"
-    }
-  }
+    sourcemap: true,
+  },
+  root: "./client",
 }));

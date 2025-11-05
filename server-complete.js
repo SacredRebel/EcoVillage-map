@@ -672,10 +672,10 @@ const PROJECT_ZONES = [
     position: [34.433474, -119.156218],
     polygon: [[34.4335, -119.1565], [34.4340, -119.1565], [34.4340, -119.1555], [34.4335, -119.1555]],
     type: "agriculture",
-    budget: "$14,000-$22,000 (Phase 1-2 launch)", 
+    budget: "$2,000-$6,000 (Phase 1-2 launch)", 
     timeline: "Phases 1-3 (Months 0-6+ ramp)",
-    monthlyRevenue: "TBD (post Phase 3 operations)",
-    roi: "Scenario: 288% annual ROI (dependent on yields & partnerships)",
+    monthlyRevenue: "$29,700 per flush (4-week cycles)",
+    roi: "288% annual ROI",
     description: "Commercial mushroom production facility that can operate as an on-site vehicle, mobile commercial unit, or local regenerative supply hub. Multiple growing environments support fresh culinary mushrooms, medicinal extracts, and value-added products for farm-to-table partners, wellness clients, and in-house use across the EcoVillage.",
     features: [
       "Climate-controlled growing rooms",
@@ -687,9 +687,12 @@ const PROJECT_ZONES = [
       "Research and development lab"
     ],
     revenueStreams: [
-      "Fresh mushroom sales: $7,500/month",
-      "Processed products: $2,250/month", 
-      "Educational workshops: $1,500/month"
+      "Revenue per flush: $29,700 (4-week cycles)",
+      "Annual production: 1,980 lbs/flush × 13 flushes = 25,740 lbs/year",
+      "Market price: $15/lb",
+      "Annual gross revenue: $386,100",
+      "Annual net profit: $300,150 (after operational costs)",
+      "ROI: 288% annually"
     ],
     smartCultivationSystems: [
       "Solar-backed microgrid with battery storage powering sealed grow environments",
@@ -700,22 +703,22 @@ const PROJECT_ZONES = [
     ],
     developmentTimeline: [
       {
-        phase: "Phase 1 (Months 0-3)",
-        deliverables: "Clear and grade site, improve access, prep utility tie-ins, and ready pads for trailer delivery.",
+        phase: "Phase 1 (Months 1-2)",
+        deliverables: "Site prep and deal negotiations happen in parallel: Clear and grade site, improve access, prep utility tie-ins, ready pads for trailer delivery, while simultaneously finalizing collaborator agreements.",
         investment: "$1,000-$2,000",
-        status: "Site prepared for cultivation trailers and modular infrastructure"
+        status: "Site prepared and partnerships secured"
       },
       {
-        phase: "Phase 2 (Months 2-4)",
-        deliverables: "Finalize collaborator agreements, schedule trailer drop-off, connect power/water, stage substrate systems, and train core team.",
-        investment: "$8,000-$12,000",
-        status: "Infrastructure installed and business operations activated"
+        phase: "Phase 2 (Month 3)",
+        deliverables: "Container delivery and setup: Schedule trailer drop-off, connect power/water, stage substrate systems, and train core team. Setup takes 1-2 weeks.",
+        investment: "$1,000-$4,000",
+        status: "Infrastructure installed and ready for production"
       },
       {
         phase: "Phase 3 (Months 4-6+)",
-        deliverables: "Launch production, begin fresh mushroom deliveries, produce tinctures and dried blends, expand wholesale and farm-to-table partnerships.",
-        investment: "Reinvested operating capital",
-        status: "Active cultivation with results by Month 6-7+"
+        deliverables: "Install $149K turnkey system (2 production units), launch cultivation cycles, begin fresh mushroom deliveries at 1,980 lbs/flush, produce tinctures and dried blends, expand wholesale and farm-to-table partnerships.",
+        investment: "$149,000 (turnkey system) + operational capital",
+        status: "Active cultivation with $29,700 revenue per flush (4-week cycles), $386,100 annual gross"
       }
     ],
     marketAnalysis: "Functional and culinary mushrooms continue to surge in demand for immunity, cognition, gut health, and culinary innovation. Supplying local restaurants, wellness practitioners, and farm-to-table markets with fresh lion's mane, shiitake, and oyster mushrooms creates premium, regenerative revenue while value-added tinctures and powders unlock e-commerce channels. Educational workshops deepen community wellness and establish loyal customers, while onsite production recycles agricultural byproducts and reinforces EcoVillage food security."
@@ -3455,7 +3458,7 @@ app.get('/', (req, res) => {
       animation: pulse 2s infinite;
     }
     
-    /* Admin Popup Menu Styles */
+    /* Admin Popup Menu Styles - HIDDEN FOR PUBLIC (remove display: none to enable) */
     .admin-menu-toggle {
       position: fixed;
       top: 60px;
@@ -3465,7 +3468,7 @@ app.get('/', (req, res) => {
       background: rgba(0,0,0,0.8);
       color: white;
       border-radius: 50%;
-      display: flex;
+      display: none !important; /* HIDDEN - Remove this line to show admin tools */
       align-items: center;
       justify-content: center;
       cursor: pointer;
@@ -3480,7 +3483,7 @@ app.get('/', (req, res) => {
       transform: scale(1.1);
     }
     
-    /* Territory Drawing Editor Toggle */
+    /* Territory Drawing Editor Toggle - HIDDEN FOR PUBLIC */
     .territory-editor-toggle {
       position: fixed;
       top: 120px;
@@ -3490,7 +3493,7 @@ app.get('/', (req, res) => {
       background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%);
       color: white;
       border-radius: 50%;
-      display: flex;
+      display: none !important; /* HIDDEN - Remove this line to show territory editor */
       align-items: center;
       justify-content: center;
       cursor: pointer;
@@ -3761,6 +3764,148 @@ app.get('/', (req, res) => {
       border-color: rgba(255, 255, 255, 0.5);
       transform: translateY(-2px);
     }
+
+    /* Dropdown Contact Styles */
+    .contact-dropdown {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .dropdown-button {
+      width: 100%;
+      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .dropdown-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .dropdown-arrow {
+      transition: transform 0.3s ease;
+      font-size: 12px;
+    }
+
+    .dropdown-button.active .dropdown-arrow {
+      transform: rotate(180deg);
+    }
+
+    .dropdown-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, padding 0.4s ease;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    .dropdown-content.active {
+      max-height: 400px;
+      padding: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .team-contact-header {
+      color: #2e7d32;
+      font-weight: 600;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    .contact-item {
+      margin-bottom: 12px;
+      padding: 10px;
+      border-left: 3px solid rgba(255, 255, 255, 0.8);
+      padding-left: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+    }
+
+    .contact-name {
+      font-weight: 600;
+      color: #333;
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .contact-email {
+      color: #2e7d32;
+      text-decoration: none;
+      transition: color 0.3s ease;
+      font-size: 13px;
+    }
+
+    .contact-email:hover {
+      color: #1b5e20;
+      text-decoration: underline;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .action-button {
+      flex: 1;
+      min-width: 200px;
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      text-align: center;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .website-button {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      cursor: pointer;
+    }
+
+    .website-button:hover {
+      background: rgba(255, 255, 255, 0.35);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .onboarding-button {
+      background: rgba(150, 150, 150, 0.2);
+      color: rgba(255, 255, 255, 0.6);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 768px) {
+      .action-buttons {
+        flex-direction: column;
+      }
+      
+      .action-button {
+        min-width: 100%;
+      }
+    }
     
     /* Footer Styles */
     .map-footer {
@@ -3994,6 +4139,14 @@ app.get('/', (req, res) => {
     window.panelIsClosing = false;
     window.isInteractingWithGallery = false;
     function suppressMapClicksFor(ms) { window.ignoreMapClicksUntil = Date.now() + ms; }
+    
+    // Dropdown toggle function for Get Involved section
+    function toggleDropdown(button) {
+      button.classList.toggle('active');
+      const content = button.nextElementSibling;
+      content.classList.toggle('active');
+    }
+    
     // Body scroll lock helpers (avoid footer bounce and stuck scroll on iOS)
     function lockBodyScroll() {
       document.body.style.overflow = 'hidden';
@@ -6116,6 +6269,289 @@ app.get('/', (req, res) => {
           </div>
         \` : ''}
         
+        \${zone.id === 'mushroom-cultivation' ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">💰 Investment Options & Returns</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+              
+              <!-- LEFT: Investment Paths -->
+              <div style="background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); padding: 25px; border-radius: 12px; border-left: 4px solid #FF9800;">
+                <h4 style="color: #FF9800; margin: 0 0 15px 0; font-size: 17px;">📊 Investment Paths</h4>
+                
+                <!-- Staged Build Option -->
+                <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.7); border-radius: 8px;">
+                  <div style="font-weight: 700; color: #333; font-size: 15px; margin-bottom: 8px;">
+                    🔨 Staged Development
+                  </div>
+                  <div style="font-size: 24px; font-weight: 700; color: #FF9800; margin-bottom: 8px;">
+                    $2,000 - $6,000
+                  </div>
+                  <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #666; line-height: 1.6;">
+                    <li>Phase 1: Site prep + deal negotiations ($1K-$2K)</li>
+                    <li>Phase 2: Container delivery + setup ($1K-$4K)</li>
+                    <li>Phase 3: Operating capital (reinvested)</li>
+                  </ul>
+                </div>
+                
+                <!-- Turnkey Option -->
+                <div style="padding: 15px; background: rgba(255,255,255,0.7); border-radius: 8px;">
+                  <div style="font-weight: 700; color: #333; font-size: 15px; margin-bottom: 8px;">
+                    🚀 Turnkey System (Partner Quote)
+                  </div>
+                  <div style="font-size: 24px; font-weight: 700; color: #FF9800; margin-bottom: 8px;">
+                    $149,000
+                  </div>
+                  <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #666; line-height: 1.6;">
+                    <li>2 production units complete</li>
+                    <li>Lab + fruiting chambers</li>
+                    <li>Solar & battery backup</li>
+                    <li>Full IoT climate control</li>
+                  </ul>
+                  <div style="margin-top: 10px; padding: 8px; background: rgba(46,125,50,0.1); border-radius: 6px; font-size: 12px; color: #2E7D32;">
+                    📄 <em>Source: MRE - 2 units - Solar Mycology 1.3.pdf</em>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- RIGHT: Revenue Projections -->
+              <div style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 25px; border-radius: 12px; border-left: 4px solid #4CAF50;">
+                <h4 style="color: #4CAF50; margin: 0 0 15px 0; font-size: 17px;">💵 Projected Returns</h4>
+                
+                <div style="margin-bottom: 15px; padding: 10px; background: rgba(255,152,0,0.15); border-radius: 6px; border-left: 3px solid #FF9800;">
+                  <div style="font-size: 12px; color: #E65100; font-weight: 600;">
+                    ⚠️ Note: Revenue projections below are for the full $149K turnkey system (2 production units).
+                  </div>
+                  <div style="font-size: 11px; color: #666; margin-top: 4px;">
+                    Staged development ($2K-$6K) starts with $3.8K-$6K/month scaled operations.
+                  </div>
+                </div>
+                
+                <!-- Yearly Gross -->
+                <div style="margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.8); border-radius: 8px;">
+                  <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Annual Gross Revenue (Full System)</div>
+                  <div style="font-size: 28px; font-weight: 700; color: #4CAF50;">$386,100</div>
+                  <div style="font-size: 12px; color: #888; margin-top: 4px;">~1,980 lb/flush × 13 flushes/year</div>
+                </div>
+                
+                <!-- Yearly Net -->
+                <div style="margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.8); border-radius: 8px;">
+                  <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Annual Net Profit</div>
+                  <div style="font-size: 28px; font-weight: 700; color: #2E7D32;">$300,150</div>
+                  <div style="font-size: 12px; color: #888; margin-top: 4px;">After operational expenses</div>
+                </div>
+                
+                <!-- Per-Flush -->
+                <div style="padding: 15px; background: rgba(255,255,255,0.8); border-radius: 8px;">
+                  <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Revenue Per Flush</div>
+                  <div style="font-size: 22px; font-weight: 700; color: #4CAF50;">$29,700</div>
+                  <div style="font-size: 12px; color: #888; margin-top: 4px;">4-week production cycles</div>
+                </div>
+                
+                <!-- ROI Badge -->
+                <div style="margin-top: 15px; text-align: center; padding: 12px; background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%); border-radius: 8px; color: white;">
+                  <div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px;">Return on Investment</div>
+                  <div style="font-size: 26px; font-weight: 700;">288% ROI</div>
+                </div>
+                
+                <div style="margin-top: 12px; padding: 8px; background: rgba(46,125,50,0.1); border-radius: 6px; font-size: 12px; color: #2E7D32;">
+                  📄 <em>Source: Celium Systems Production Calculations.pdf</em>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+          
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🏭 Production Capacity & Infrastructure</h3>
+            
+            <!-- Capacity Metrics Grid -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+              
+              <div style="background: linear-gradient(135deg, #2E7D3215 0%, #2E7D3240 100%); padding: 20px; border-radius: 10px; text-align: center; border: 2px solid #2E7D32;">
+                <div style="font-size: 36px; margin-bottom: 8px;">📦</div>
+                <div style="font-size: 28px; font-weight: 700; color: #2E7D32; margin-bottom: 4px;">360</div>
+                <div style="font-size: 13px; color: #666;">Total Production Blocks</div>
+                <div style="font-size: 12px; color: #888; margin-top: 4px;">30 racks × 6 shelves × 2 blocks</div>
+              </div>
+              
+              <div style="background: linear-gradient(135deg, #2E7D3215 0%, #2E7D3240 100%); padding: 20px; border-radius: 10px; text-align: center; border: 2px solid #2E7D32;">
+                <div style="font-size: 36px; margin-bottom: 8px;">⚖️</div>
+                <div style="font-size: 28px; font-weight: 700; color: #2E7D32; margin-bottom: 4px;">1,980</div>
+                <div style="font-size: 13px; color: #666;">Pounds Per Flush</div>
+                <div style="font-size: 12px; color: #888; margin-top: 4px;">System-wide yield capacity</div>
+              </div>
+              
+              <div style="background: linear-gradient(135deg, #2E7D3215 0%, #2E7D3240 100%); padding: 20px; border-radius: 10px; text-align: center; border: 2px solid #2E7D32;">
+                <div style="font-size: 36px; margin-bottom: 8px;">⏱️</div>
+                <div style="font-size: 28px; font-weight: 700; color: #2E7D32; margin-bottom: 4px;">13</div>
+                <div style="font-size: 13px; color: #666;">Annual Flushes</div>
+                <div style="font-size: 12px; color: #888; margin-top: 4px;">4-week production cycles</div>
+              </div>
+              
+            </div>
+            
+            <!-- Equipment List -->
+            <div style="background: linear-gradient(135deg, #F5F5F5 0%, #EEEEEE 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #2E7D32;">
+              <h4 style="color: #2E7D32; margin: 0 0 15px 0; font-size: 16px;">🔧 Turnkey System Includes:</h4>
+              <ul class="feature-list">
+                <li><strong>2 Production Units:</strong> Lab/incubation + fruiting chamber</li>
+                <li><strong>Climate Control:</strong> HEPA filtration, cloud IoT monitoring</li>
+                <li><strong>Processing Station:</strong> Flow hood, steam sterilizers, UV freshwater tank</li>
+                <li><strong>Off-Grid Ready:</strong> Solar panels, battery backup, generator port</li>
+                <li><strong>Yield Capacity:</strong> 2,000-2,500 lb per unit (supplier estimate)</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">📊 Unit Economics & Operating Costs</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+              
+              <!-- LEFT: Pricing & Materials -->
+              <div>
+                <h4 style="color: #2E7D32; font-size: 15px; margin-bottom: 12px;">💲 Pricing & Materials</h4>
+                
+                <div style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); padding: 15px; border-radius: 10px; margin-bottom: 12px; border-left: 4px solid #4CAF50;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <div style="font-size: 13px; color: #666;">Market Price per Pound</div>
+                      <div style="font-size: 22px; font-weight: 700; color: #4CAF50;">$15 / lb</div>
+                    </div>
+                    <div style="font-size: 32px;">💵</div>
+                  </div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); padding: 15px; border-radius: 10px; margin-bottom: 12px; border-left: 4px solid #FF9800;">
+                  <div style="font-size: 13px; color: #666; margin-bottom: 8px;">Material Cost per Block</div>
+                  <div style="display: flex; justify-content: space-between; font-size: 14px; color: #555;">
+                    <span>🍄 King Oyster:</span>
+                    <strong style="color: #FF9800;">$1.75</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 14px; color: #555; margin-top: 4px;">
+                    <span>🧠 Lion's Mane:</span>
+                    <strong style="color: #FF9800;">$3.50</strong>
+                  </div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #F5F5F5 0%, #EEEEEE 100%); padding: 15px; border-radius: 10px; border-left: 4px solid #666;">
+                  <div style="font-size: 13px; color: #666;">Monthly Material Budget</div>
+                  <div style="font-size: 20px; font-weight: 700; color: #666;">$787.50</div>
+                </div>
+              </div>
+              
+              <!-- RIGHT: Operating Expenses -->
+              <div>
+                <h4 style="color: #2E7D32; font-size: 15px; margin-bottom: 12px;">💡 Monthly Operating Costs (per unit)</h4>
+                
+                <div style="background: white; padding: 15px; border-radius: 10px; border: 2px solid #E0E0E0; margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #F0F0F0;">
+                    <span style="font-size: 14px; color: #555;">⚡ Utilities</span>
+                    <strong style="font-size: 15px; color: #333;">$200</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #F0F0F0;">
+                    <span style="font-size: 14px; color: #555;">👥 Staffing</span>
+                    <strong style="font-size: 15px; color: #333;">$2,500</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 2px solid #2E7D32;">
+                    <span style="font-size: 15px; font-weight: 600; color: #2E7D32;">Total per Unit</span>
+                    <strong style="font-size: 18px; font-weight: 700; color: #2E7D32;">$3,487.50</strong>
+                  </div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); padding: 12px; border-radius: 8px; text-align: center; border: 2px solid #2196F3;">
+                  <div style="font-size: 12px; color: #1565C0; margin-bottom: 4px;">🔄 Break-Even Point</div>
+                  <div style="font-size: 16px; font-weight: 700; color: #1565C0;">~233 lb/unit/month</div>
+                  <div style="font-size: 11px; color: #1976D2; margin-top: 2px;">@ $15/lb market rate</div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+          
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">🔄 Production Cycle Timeline</h3>
+            
+            <div style="background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%); padding: 30px; border-radius: 12px; position: relative;">
+              
+              <!-- Timeline Flow -->
+              <div style="display: flex; align-items: center; justify-content: space-between; position: relative;">
+                
+                <!-- Connector Line -->
+                <div style="position: absolute; top: 50%; left: 10%; right: 10%; height: 3px; background: linear-gradient(90deg, #2E7D32 0%, #4CAF50 50%, #66BB6A 100%); z-index: 0;"></div>
+                
+                <!-- Step 1 -->
+                <div style="flex: 1; text-align: center; position: relative; z-index: 1;">
+                  <div style="width: 80px; height: 80px; margin: 0 auto 12px auto; background: linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 4px 12px rgba(46,125,50,0.3);">
+                    🧫
+                  </div>
+                  <div style="font-weight: 700; color: #2E7D32; font-size: 15px; margin-bottom: 6px;">Week 0-1</div>
+                  <div style="font-size: 13px; color: #666; line-height: 1.4;">Inoculation<br>& Incubation</div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div style="flex: 1; text-align: center; position: relative; z-index: 1;">
+                  <div style="width: 80px; height: 80px; margin: 0 auto 12px auto; background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 4px 12px rgba(76,175,80,0.3);">
+                    🌱
+                  </div>
+                  <div style="font-weight: 700; color: #4CAF50; font-size: 15px; margin-bottom: 6px;">Week 1-2</div>
+                  <div style="font-size: 13px; color: #666; line-height: 1.4;">Colonization<br>& Growth</div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div style="flex: 1; text-align: center; position: relative; z-index: 1;">
+                  <div style="width: 80px; height: 80px; margin: 0 auto 12px auto; background: linear-gradient(135deg, #66BB6A 0%, #81C784 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 4px 12px rgba(102,187,106,0.3);">
+                    🍄
+                  </div>
+                  <div style="font-weight: 700; color: #66BB6A; font-size: 15px; margin-bottom: 6px;">Week 2-3</div>
+                  <div style="font-size: 13px; color: #666; line-height: 1.4;">Fruiting<br>Chamber</div>
+                </div>
+                
+                <!-- Step 4 -->
+                <div style="flex: 1; text-align: center; position: relative; z-index: 1;">
+                  <div style="width: 80px; height: 80px; margin: 0 auto 12px auto; background: linear-gradient(135deg, #81C784 0%, #A5D6A7 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 4px 12px rgba(129,199,132,0.3);">
+                    📦
+                  </div>
+                  <div style="font-weight: 700; color: #81C784; font-size: 15px; margin-bottom: 6px;">Week 3-4</div>
+                  <div style="font-size: 13px; color: #666; line-height: 1.4;">Harvest<br>& Package</div>
+                </div>
+                
+                <!-- Step 5 -->
+                <div style="flex: 1; text-align: center; position: relative; z-index: 1;">
+                  <div style="width: 80px; height: 80px; margin: 0 auto 12px auto; background: linear-gradient(135deg, #FFC107 0%, #FFD54F 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 4px 12px rgba(255,193,7,0.3);">
+                    💰
+                  </div>
+                  <div style="font-weight: 700; color: #FFA000; font-size: 15px; margin-bottom: 6px;">Week 4+</div>
+                  <div style="font-size: 13px; color: #666; line-height: 1.4;">Distribution<br>& Sales</div>
+                </div>
+                
+              </div>
+              
+              <!-- Bottom Stats -->
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #E0E0E0; display: flex; justify-content: space-around; text-align: center;">
+                <div>
+                  <div style="font-size: 24px; font-weight: 700; color: #2E7D32;">~2 lb</div>
+                  <div style="font-size: 12px; color: #666;">per block yield</div>
+                </div>
+                <div>
+                  <div style="font-size: 24px; font-weight: 700; color: #4CAF50;">360</div>
+                  <div style="font-size: 12px; color: #666;">blocks per system</div>
+                </div>
+                <div>
+                  <div style="font-size: 24px; font-weight: 700; color: #66BB6A;">1,980 lb</div>
+                  <div style="font-size: 12px; color: #666;">per flush output</div>
+                </div>
+                <div>
+                  <div style="font-size: 24px; font-weight: 700; color: #FFA000;">$29,700</div>
+                  <div style="font-size: 12px; color: #666;">revenue per flush</div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        \` : ''}
+        
         \${zone.tropicalFruitTrees ? \`
           <div class="project-section">
             <h3 style="color: \${zoneColor};">🌴 Tropical Fruit Trees & Propagation</h3>
@@ -6395,16 +6831,37 @@ app.get('/', (req, res) => {
             <p style="margin: 0 0 25px 0; opacity: 0.9; font-size: 15px; line-height: 1.5;">
               Be part of creating a sustainable future at Sulphur Mountain Eco-Village. Whether you're an investor, partner, or future resident, we'd love to hear from you.
             </p>
-            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-              <button class="cta-button primary" onclick="window.open('mailto:info@sulphurmountain-ecovillage.com?subject=Partnership Inquiry - \${zone.name}', '_blank')">
+            
+            <div class="contact-dropdown">
+              <button class="dropdown-button" onclick="toggleDropdown(this)">
                 📧 Get In Touch
+                <span class="dropdown-arrow">▼</span>
               </button>
-              <button class="cta-button secondary" onclick="window.open('tel:+1-555-ECO-VILLAGE', '_blank')">
-                📞 Schedule Call
-              </button>
-              <button class="cta-button secondary" onclick="alert('Investment brochure request sent! We\\'ll contact you within 24 hours.')">
-                📄 Request Info
-              </button>
+              <div class="dropdown-content">
+                <div class="team-contact-header">Team Contact:</div>
+                <div class="contact-item">
+                  <span class="contact-name">Mark Panics</span>
+                  <a href="mailto:markeduardpancis@gmail.com" class="contact-email">markeduardpancis@gmail.com</a>
+                </div>
+                <div class="contact-item">
+                  <span class="contact-name">Paul Muresan</span>
+                  <a href="mailto:paulmuresan77@gmail.com" class="contact-email">paulmuresan77@gmail.com</a>
+                </div>
+                <div class="contact-item">
+                  <span class="contact-name">Johnatan Braniff</span>
+                  <a href="mailto:jbraniff1117@gmail.com" class="contact-email">jbraniff1117@gmail.com</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="action-buttons">
+              <a href="https://sulphurmountainroad.vercel.app/" target="_blank" class="action-button website-button">
+                🌐 Visit Website
+              </a>
+              <div class="action-button onboarding-button">
+                � Member/Partner Onboarding Platform
+                <span style="font-size: 13px; margin-left: 5px;">(Coming Soon...)</span>
+              </div>
             </div>
           </div>
         </div>

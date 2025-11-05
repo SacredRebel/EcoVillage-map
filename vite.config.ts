@@ -15,11 +15,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client/src"),
+      "@shared": path.resolve(__dirname, "./shared"),
     },
   },
-  build: {
-    outDir: "dist",
-    sourcemap: true,
-  },
-  root: "./client",
 }));

@@ -2323,28 +2323,29 @@ app.get('/', (req, res) => {
           }
           
           .gallery-content {
-            padding: 25px;
+            padding: 0;
             background: white;
             position: relative;
-            min-height: 400px;
+            min-height: 600px;
             overflow: hidden;
-            will-change: contents;
           }
           
           /* Gallery content containers - prevent layout shift */
           #current-images, #vision-images, #progress-images {
             position: absolute;
-            top: 25px;
-            left: 25px;
-            right: 25px;
-            bottom: 25px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 25px;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+            transition: opacity 0.1s ease, visibility 0s linear 0.1s;
             pointer-events: none;
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
-            will-change: opacity, visibility;
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
           }
@@ -2352,7 +2353,7 @@ app.get('/', (req, res) => {
           #current-images.active, #vision-images.active, #progress-images.active {
             opacity: 1;
             visibility: visible;
-            transition: opacity 0.15s ease, visibility 0s linear 0s;
+            transition: opacity 0.1s ease, visibility 0s linear 0s;
             pointer-events: auto;
           }
           
@@ -3046,7 +3047,7 @@ app.get('/', (req, res) => {
             .panel-header, .property-panel-header {
               padding: 0;
               min-height: 52px;
-              max-height: 52px;
+              max-height: none;
               display: flex !important;
               align-items: center !important;
             }
@@ -3057,8 +3058,8 @@ app.get('/', (req, res) => {
               display: flex !important;
               flex-direction: column !important;
               justify-content: center !important;
-              min-height: 52px !important;
-              overflow: hidden !important;
+              min-height: auto !important;
+              overflow: visible !important;
             }
             
             .project-title {
@@ -5539,9 +5540,15 @@ app.get('/', (req, res) => {
           window.isInteractingWithGallery = true;
           suppressMapClicksFor(1200); // Extended to prevent swipe conflicts
           
-          // Lock scroll position during transition
+          // Lock panel completely during transition
+          const panel = document.getElementById('side-panel');
           const panelContent = document.querySelector('.panel-content');
           const scrollPosition = panelContent ? panelContent.scrollTop : 0;
+          
+          // Disable scrolling temporarily
+          if (panelContent) {
+            panelContent.style.overflow = 'hidden';
+          }
           
           // Remove active class from all tabs
           tabs.forEach(t => t.classList.remove('active'));
@@ -5549,22 +5556,28 @@ app.get('/', (req, res) => {
           // Add active class to clicked tab
           tab.classList.add('active');
           
-          // Hide all gallery content by removing active class (no layout shift)
-          document.querySelectorAll('#current-images, #vision-images, #progress-images').forEach(content => {
-            content.classList.remove('active');
+          // Use requestAnimationFrame for smooth transition
+          requestAnimationFrame(() => {
+            // Hide all gallery content by removing active class (no layout shift)
+            document.querySelectorAll('#current-images, #vision-images, #progress-images').forEach(content => {
+              content.classList.remove('active');
+            });
+            
+            // Show content for clicked tab
+            const targetId = tab.getAttribute('data-tab') + '-images';
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) {
+              targetContent.classList.add('active');
+            }
+            
+            // Restore scroll position and re-enable scrolling after transition
+            setTimeout(() => {
+              if (panelContent) {
+                panelContent.scrollTop = scrollPosition;
+                panelContent.style.overflow = '';
+              }
+            }, 150);
           });
-          
-          // Show content for clicked tab
-          const targetId = tab.getAttribute('data-tab') + '-images';
-          const targetContent = document.getElementById(targetId);
-          if (targetContent) {
-            targetContent.classList.add('active');
-          }
-          
-          // Restore scroll position to prevent jump
-          if (panelContent) {
-            panelContent.scrollTop = scrollPosition;
-          }
           
           // Reset gallery interaction flag after animation - extended duration
           setTimeout(() => {

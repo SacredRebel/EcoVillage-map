@@ -2031,6 +2031,7 @@ app.get('/', (req, res) => {
             touch-action: pan-y;
             height: calc(100vh - 60px);
             overflow-y: auto;
+            overflow-x: hidden;
             scroll-behavior: smooth;
             /* Smooth momentum scrolling on mobile */
             -webkit-transform: translateZ(0);
@@ -2063,6 +2064,9 @@ app.get('/', (req, res) => {
             line-height: 1.3;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             font-weight: 600;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
           }
           
           .project-subtitle {
@@ -3021,6 +3025,7 @@ app.get('/', (req, res) => {
               flex-direction: column !important;
               justify-content: center !important;
               min-height: 52px !important;
+              overflow: hidden !important;
             }
             
             .project-title {
@@ -3033,6 +3038,26 @@ app.get('/', (req, res) => {
               color: #ffffff !important;
               font-weight: 700 !important;
               line-height: 1.3 !important;
+              word-wrap: break-word !important;
+              overflow-wrap: break-word !important;
+              max-width: 100% !important;
+            }
+            
+            /* Responsive title sizing based on length */
+            .project-title.title-medium {
+              font-size: 14px !important;
+              line-height: 1.25 !important;
+            }
+            
+            .project-title.title-long {
+              font-size: 13px !important;
+              line-height: 1.2 !important;
+            }
+            
+            .project-title.title-extra-long {
+              font-size: 12px !important;
+              line-height: 1.15 !important;
+              letter-spacing: -0.2px !important;
             }
             
             .panel-header h2 {
@@ -3063,6 +3088,7 @@ app.get('/', (req, res) => {
               height: calc(100vh - 52px);
               overscroll-behavior: contain;
               -webkit-overflow-scrolling: touch;
+              overflow-x: hidden;
               scroll-behavior: smooth;
             }
             
@@ -3111,6 +3137,23 @@ app.get('/', (req, res) => {
             
             .property-panel.open {
               left: 0;
+            }
+            
+            /* Responsive title sizing based on length */
+            .project-title.title-medium {
+              font-size: 15px !important;
+              line-height: 1.25 !important;
+            }
+            
+            .project-title.title-long {
+              font-size: 14px !important;
+              line-height: 1.2 !important;
+            }
+            
+            .project-title.title-extra-long {
+              font-size: 13px !important;
+              line-height: 1.15 !important;
+              letter-spacing: -0.2px !important;
             }
             
             .zone-controls {
@@ -4544,7 +4587,21 @@ app.get('/', (req, res) => {
       
       // Update header: ALWAYS set title with guaranteed visibility
       if (hero) {
-        hero.innerHTML = '<div class="project-title" style="color: #ffffff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.25); font-weight: 700; line-height: 1.2; letter-spacing: 0.1px; margin: 2px 0; font-size: 18px; display: block; visibility: visible;">' + (zone.emoji + ' ' + zone.name) + '</div>';
+        // Calculate title length for responsive sizing
+        const titleText = zone.emoji + ' ' + zone.name;
+        const titleLength = titleText.length;
+        let fontSizeClass = '';
+        
+        // Assign size classes based on title length
+        if (titleLength > 35) {
+          fontSizeClass = 'title-extra-long'; // Very long titles
+        } else if (titleLength > 25) {
+          fontSizeClass = 'title-long'; // Long titles
+        } else if (titleLength > 20) {
+          fontSizeClass = 'title-medium'; // Medium-long titles
+        }
+        
+        hero.innerHTML = '<div class="project-title ' + fontSizeClass + '" style="color: #ffffff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.25); font-weight: 700; line-height: 1.2; letter-spacing: 0.1px; margin: 2px 0; font-size: 18px; display: block; visibility: visible;">' + titleText + '</div>';
         // Apply zone color theming to hero background
         hero.style.background = 'linear-gradient(135deg, ' + zoneColor + '15 0%, ' + zoneColor + '25 100%)';
         hero.style.borderLeft = '4px solid ' + zoneColor;

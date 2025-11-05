@@ -11,6 +11,8 @@ export default defineConfig({
     }
   },
   server: {
+    port: 8080,
+    host: "::",
     proxy: {
       '/api': 'http://localhost:5001',
       '/images': 'http://localhost:5001'

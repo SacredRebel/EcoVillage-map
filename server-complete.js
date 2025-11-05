@@ -156,7 +156,7 @@ const PROJECT_ZONES = [
       {
         phase: "Phase 1 (Months 0-6): Initial Remodel & Design",
         deliverables: "Remodel existing 1,400 sq ft structure into livable, modern residence. Upgrade to steel frame construction where possible for future integration. Complete architectural design and secure all permits for 4,000-5,000 sq ft expansion.",
-        investment: "$195,000 (Remodel: $150K, Architecture & Permits: $45K)",
+        investment: "$150,000 (Remodel), $45,000 (Architecture & Permits)",
         monthlyRevenue: "$0",
         status: "Currently underway"
       },

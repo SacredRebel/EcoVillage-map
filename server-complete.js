@@ -3154,6 +3154,49 @@ app.get('/', (req, res) => {
               line-height: 1.4 !important;
             }
             
+            /* Production Cycle Timeline mobile optimization */
+            .project-section > div > div[style*="display: flex; align-items: center; justify-content: space-between"] {
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 20px !important;
+            }
+            
+            /* Hide timeline connector line on mobile */
+            .project-section > div > div > div[style*="position: absolute"][style*="height: 3px"] {
+              display: none !important;
+            }
+            
+            /* Timeline steps - full width on mobile */
+            .project-section > div > div > div[style*="flex: 1; text-align: center"] {
+              width: 100% !important;
+              flex: none !important;
+            }
+            
+            /* Bottom stats - stack vertically */
+            .project-section > div > div[style*="display: flex; justify-content: space-around"] {
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 15px !important;
+              align-items: stretch !important;
+            }
+            
+            /* Stats items on mobile */
+            .project-section > div > div[style*="display: flex; justify-content: space-around"] > div {
+              padding: 12px !important;
+              background: rgba(46, 125, 50, 0.05) !important;
+              border-radius: 8px !important;
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+            }
+            
+            /* Make timeline circles smaller on mobile */
+            .project-section div[style*="width: 80px; height: 80px"] {
+              width: 60px !important;
+              height: 60px !important;
+              font-size: 28px !important;
+            }
+            
             /* Gallery content - prevent any movement on mobile */
             .gallery-content {
               overflow: hidden;

@@ -2296,6 +2296,10 @@ app.get('/', (req, res) => {
             color: #6c757d;
             transition: all 0.3s ease;
             position: relative;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
           }
           
           .gallery-tab:hover {
@@ -2322,7 +2326,7 @@ app.get('/', (req, res) => {
             padding: 25px;
             background: white;
             position: relative;
-            min-height: 500px;
+            min-height: 400px;
             overflow: hidden;
             will-change: contents;
           }
@@ -2333,6 +2337,7 @@ app.get('/', (req, res) => {
             top: 25px;
             left: 25px;
             right: 25px;
+            bottom: 25px;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.15s ease, visibility 0s linear 0.15s;
@@ -2340,6 +2345,8 @@ app.get('/', (req, res) => {
             transform: translateZ(0);
             -webkit-transform: translateZ(0);
             will-change: opacity, visibility;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
           }
           
           #current-images.active, #vision-images.active, #progress-images.active {
@@ -5252,9 +5259,13 @@ app.get('/', (req, res) => {
           window.panelIsClosing = true;
           // Animate panel out completely before closing - use translate3d for GPU
           panel.style.transform = 'translate3d(-100%, 0, 0)';
+          // Immediately hide to prevent flash
+          panel.style.opacity = '0';
           setTimeout(function() {
             panel.classList.remove('open');
+            // Reset all styles AFTER animation completes
             panel.style.transform = '';
+            panel.style.opacity = '';
             panel.style.transition = '';
             window.currentZoneId = null;
             window.panelIsClosing = false;
@@ -5306,7 +5317,8 @@ app.get('/', (req, res) => {
         inputType = 'touch';
         const t = e.touches[0];
         const target = e.target;
-        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
+        // Exclude gallery tabs and content from swipe detection
+        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content, .gallery-tab, .gallery-tabs, .gallery-content')) return;
         const rect = panel.getBoundingClientRect();
         startNearEdge = true; // Allow swipe from anywhere
         onStart(t.clientX, t.clientY);
@@ -5501,7 +5513,8 @@ app.get('/', (req, res) => {
         if (inputType && inputType !== 'pointer') return;
         inputType = 'pointer';
         const target = e.target;
-        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
+        // Exclude gallery tabs and content from swipe detection
+        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content, .gallery-tab, .gallery-tabs, .gallery-content')) return;
         const rect = panel.getBoundingClientRect();
         startNearEdge = true; // Allow swipe from anywhere
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
@@ -5524,7 +5537,7 @@ app.get('/', (req, res) => {
           e.stopPropagation();
           e.preventDefault();
           window.isInteractingWithGallery = true;
-          suppressMapClicksFor(800);
+          suppressMapClicksFor(1200); // Extended to prevent swipe conflicts
           
           // Lock scroll position during transition
           const panelContent = document.querySelector('.panel-content');
@@ -5553,10 +5566,10 @@ app.get('/', (req, res) => {
             panelContent.scrollTop = scrollPosition;
           }
           
-          // Reset gallery interaction flag after animation
+          // Reset gallery interaction flag after animation - extended duration
           setTimeout(() => {
             window.isInteractingWithGallery = false;
-          }, 500);
+          }, 800);
         });
       });
     }

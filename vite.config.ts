@@ -1,21 +1,31 @@
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+import { componentTagger } from "lovable-tagger";
 
-// EcoVillage uses a single-file Express server (server-complete.js)
-// No Vite build is needed - this config is for Lovable compatibility only
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  server: {
+    host: "::",
+    port: 8080,
+    proxy: {
+      '/api': 'http://localhost:5001',
+      '/images': 'http://localhost:5001'
+    }
+  },
+  plugins: [
+    react(),
+    mode === 'development' && componentTagger(),
+  ].filter(Boolean),
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./client/src"),
+    },
+  },
   build: {
     outDir: "dist",
     emptyOutDir: false,
     rollupOptions: {
       input: "index.html"
     }
-  },
-  server: {
-    port: 8080,
-    host: "::",
-    proxy: {
-      '/api': 'http://localhost:5001',
-      '/images': 'http://localhost:5001'
-    }
   }
-});
+}));

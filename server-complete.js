@@ -3154,48 +3154,43 @@ app.get('/', (req, res) => {
               line-height: 1.4 !important;
             }
             
-            /* Production Cycle Timeline mobile optimization */
-            .project-section > div > div[style*="display: flex; align-items: center; justify-content: space-between"] {
-              display: block !important;
-            }
-            
-            /* Timeline wrapper - remove flex layout */
-            .project-section > div[style*="position: relative"] > div[style*="display: flex"] {
-              display: block !important;
+            /* Production Cycle Timeline mobile optimization - ID-based targeting */
+            #timeline-steps {
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: stretch !important;
+              gap: 20px !important;
             }
             
             /* Hide timeline connector line on mobile */
-            .project-section > div > div > div[style*="position: absolute"][style*="height: 3px"] {
+            #timeline-steps > div[style*="position: absolute"][style*="height: 3px"] {
               display: none !important;
             }
             
-            /* Timeline steps - make block level */
-            .project-section div[style*="flex: 1; text-align: center; position: relative"] {
-              display: block !important;
-              width: 100% !important;
-              margin-bottom: 25px !important;
+            /* Timeline steps - stack vertically */
+            #timeline-steps > div[style*="flex: 1"] {
               flex: none !important;
-              text-align: center !important;
+              width: 100% !important;
+              margin-bottom: 0 !important;
             }
             
             /* Bottom stats - stack vertically */
-            .project-section > div > div[style*="display: flex; justify-content: space-around"] {
-              display: block !important;
+            #timeline-stats {
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 12px !important;
             }
             
             /* Stats items on mobile - make block with spacing */
-            .project-section div[style*="display: flex; justify-content: space-around"] > div {
-              display: block !important;
-              width: 100% !important;
+            #timeline-stats > div {
               padding: 15px !important;
-              margin-bottom: 12px !important;
               background: linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(46, 125, 50, 0.1) 100%) !important;
               border-radius: 8px !important;
               border: 1px solid rgba(46, 125, 50, 0.2) !important;
             }
             
             /* Make timeline circles smaller on mobile */
-            .project-section div[style*="width: 80px; height: 80px"] {
+            #timeline-steps div[style*="width: 80px; height: 80px"] {
               width: 70px !important;
               height: 70px !important;
               font-size: 32px !important;
@@ -6731,10 +6726,10 @@ app.get('/', (req, res) => {
           <div class="project-section">
             <h3 style="color: \${zoneColor};">🔄 Production Cycle Timeline</h3>
             
-            <div style="background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%); padding: 30px; border-radius: 12px; position: relative;">
+            <div id="timeline-container" style="background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%); padding: 30px; border-radius: 12px; position: relative;">
               
               <!-- Timeline Flow -->
-              <div style="display: flex; align-items: center; justify-content: space-between; position: relative;">
+              <div id="timeline-steps" style="display: flex; align-items: center; justify-content: space-between; position: relative;">
                 
                 <!-- Connector Line -->
                 <div style="position: absolute; top: 50%; left: 10%; right: 10%; height: 3px; background: linear-gradient(90deg, #2E7D32 0%, #4CAF50 50%, #66BB6A 100%); z-index: 0;"></div>
@@ -6787,7 +6782,7 @@ app.get('/', (req, res) => {
               </div>
               
               <!-- Bottom Stats -->
-              <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #E0E0E0; display: flex; justify-content: space-around; text-align: center;">
+              <div id="timeline-stats" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #E0E0E0; display: flex; justify-content: space-around; text-align: center;">
                 <div>
                   <div style="font-size: 24px; font-weight: 700; color: #2E7D32;">~2 lb</div>
                   <div style="font-size: 12px; color: #666;">per block yield</div>

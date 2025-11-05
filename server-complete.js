@@ -6906,22 +6906,29 @@ app.get('/', (req, res) => {
         \${zone.projectedValue ? \`
           <div class="project-section">
             <h3 style="color: \${zoneColor};">💎 Projected Value Creation</h3>
-            <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 25px; border-radius: 12px; border-left: 4px solid #ff9800;">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                <div>
-                  <div style="font-weight: 700; color: #ff9800; font-size: 14px; margin-bottom: 8px;">Total Development Investment</div>
-                  <div style="font-size: 24px; font-weight: 700; color: #333;">\${zone.projectedValue.totalDevelopment}</div>
+            <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #ff9800;">
+              
+              <!-- Investment & Value Grid -->
+              <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <div style="background: rgba(255,255,255,0.8); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,152,0,0.3);">
+                  <div style="font-weight: 700; color: #ff9800; font-size: 13px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Total Development Investment</div>
+                  <div style="font-size: 26px; font-weight: 700; color: #333; line-height: 1.2;">\${zone.projectedValue.totalDevelopment}</div>
                 </div>
-                <div>
-                  <div style="font-weight: 700; color: #ff9800; font-size: 14px; margin-bottom: 8px;">Post-Build Property Value</div>
-                  <div style="font-size: 24px; font-weight: 700; color: #ff9800;">\${zone.projectedValue.postBuildValue}</div>
+                
+                <div style="background: rgba(255,255,255,0.8); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,152,0,0.3);">
+                  <div style="font-weight: 700; color: #ff9800; font-size: 13px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Post-Build Property Value</div>
+                  <div style="font-size: 26px; font-weight: 700; color: #ff9800; line-height: 1.2;">\${zone.projectedValue.postBuildValue}</div>
                 </div>
               </div>
-              <div style="background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                <div style="font-weight: 700; color: #ff9800; font-size: 15px; margin-bottom: 8px;">Return on Investment (ROI)</div>
-                <div style="font-size: 26px; font-weight: 700; color: #ff9800;">\${zone.projectedValue.valueIncrease}</div>
+              
+              <!-- ROI Highlight -->
+              <div style="background: linear-gradient(135deg, rgba(255,152,0,0.15) 0%, rgba(255,152,0,0.25) 100%); padding: 18px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #ff9800;">
+                <div style="font-weight: 700; color: #ff9800; font-size: 14px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Return on Investment (ROI)</div>
+                <div style="font-size: 28px; font-weight: 700; color: #ff9800; line-height: 1.2;">\${zone.projectedValue.valueIncrease}</div>
               </div>
-              <p style="color: #e65100; margin: 0; font-size: 13px; line-height: 1.5; font-style: italic;">
+              
+              <!-- Note -->
+              <p style="color: #e65100; margin: 0; font-size: 13px; line-height: 1.6; font-style: italic; background: rgba(255,255,255,0.6); padding: 12px; border-radius: 6px;">
                 \${zone.projectedValue.note}
               </p>
             </div>

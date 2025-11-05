@@ -2321,6 +2321,32 @@ app.get('/', (req, res) => {
           .gallery-content {
             padding: 25px;
             background: white;
+            position: relative;
+            min-height: 500px;
+            overflow: hidden;
+            will-change: contents;
+          }
+          
+          /* Gallery content containers - prevent layout shift */
+          #current-images, #vision-images, #progress-images {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            right: 25px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+            pointer-events: none;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            will-change: opacity, visibility;
+          }
+          
+          #current-images.active, #vision-images.active, #progress-images.active {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.15s ease, visibility 0s linear 0s;
+            pointer-events: auto;
           }
           
           .image-placeholder {
@@ -3090,6 +3116,19 @@ app.get('/', (req, res) => {
               -webkit-overflow-scrolling: touch;
               overflow-x: hidden;
               scroll-behavior: smooth;
+            }
+            
+            /* Gallery content - prevent any movement on mobile */
+            .gallery-content {
+              overflow: hidden;
+              -webkit-overflow-scrolling: auto;
+            }
+            
+            #current-images, #vision-images, #progress-images {
+              transform: translate3d(0, 0, 0);
+              -webkit-transform: translate3d(0, 0, 0);
+              backface-visibility: hidden;
+              -webkit-backface-visibility: hidden;
             }
             
             .carousel-main {
@@ -5486,33 +5525,38 @@ app.get('/', (req, res) => {
           e.preventDefault();
           window.isInteractingWithGallery = true;
           suppressMapClicksFor(800);
+          
+          // Lock scroll position during transition
+          const panelContent = document.querySelector('.panel-content');
+          const scrollPosition = panelContent ? panelContent.scrollTop : 0;
+          
           // Remove active class from all tabs
           tabs.forEach(t => t.classList.remove('active'));
           
           // Add active class to clicked tab
           tab.classList.add('active');
           
-          // Hide all content with smooth transition
+          // Hide all gallery content by removing active class (no layout shift)
           document.querySelectorAll('#current-images, #vision-images, #progress-images').forEach(content => {
-            content.style.display = 'none';
+            content.classList.remove('active');
           });
           
           // Show content for clicked tab
           const targetId = tab.getAttribute('data-tab') + '-images';
           const targetContent = document.getElementById(targetId);
           if (targetContent) {
-            targetContent.style.display = 'block';
+            targetContent.classList.add('active');
+          }
+          
+          // Restore scroll position to prevent jump
+          if (panelContent) {
+            panelContent.scrollTop = scrollPosition;
           }
           
           // Reset gallery interaction flag after animation
           setTimeout(() => {
             window.isInteractingWithGallery = false;
           }, 500);
-          targetContent.style.opacity = '0';
-          setTimeout(() => {
-            targetContent.style.opacity = '1';
-            targetContent.style.transition = 'opacity 0.3s ease';
-          }, 50);
         });
       });
     }
@@ -6212,10 +6256,10 @@ app.get('/', (req, res) => {
             <div class="gallery-tab" data-tab="vision">🎨 Vision</div>
           </div>
           <div class="gallery-content">
-            <div id="current-images">
+            <div id="current-images" class="active">
               <div class="loading-images">⏳ Loading images...</div>
             </div>
-            <div id="vision-images" style="display: none;">
+            <div id="vision-images">
               <div class="loading-images">⏳ Loading images...</div>
             </div>
           </div>

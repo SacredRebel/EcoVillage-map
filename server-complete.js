@@ -3126,6 +3126,34 @@ app.get('/', (req, res) => {
               scroll-behavior: smooth;
             }
             
+            /* Force all content to fit within panel width */
+            .project-section {
+              max-width: 100% !important;
+              overflow-x: hidden !important;
+              box-sizing: border-box !important;
+            }
+            
+            .project-section * {
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            
+            /* Reduce padding on mobile for more space */
+            .project-section > div > div[style*="padding"] {
+              padding: 15px !important;
+            }
+            
+            /* Make lists more compact on mobile */
+            .project-section ul {
+              padding-left: 18px !important;
+              font-size: 13px !important;
+            }
+            
+            .project-section ul li {
+              margin-bottom: 6px !important;
+              line-height: 1.4 !important;
+            }
+            
             /* Gallery content - prevent any movement on mobile */
             .gallery-content {
               overflow: hidden;
@@ -3157,6 +3185,27 @@ app.get('/', (req, res) => {
             .gallery-tab {
               padding: 8px 12px;
               font-size: 12px;
+            }
+            
+            /* Extra mobile optimization for mushroom page */
+            .project-section {
+              padding: 15px !important;
+            }
+            
+            .project-section h3 {
+              font-size: 16px !important;
+              word-wrap: break-word !important;
+            }
+            
+            .project-section h4 {
+              font-size: 14px !important;
+              word-wrap: break-word !important;
+            }
+            
+            /* Smaller cards on small screens */
+            .project-section > div > div {
+              padding: 12px !important;
+              margin-bottom: 10px !important;
             }
           }
           
@@ -3214,6 +3263,41 @@ app.get('/', (req, res) => {
             
             .image-grid {
               grid-template-columns: 1fr;
+            }
+            
+            /* Mushroom page mobile optimization - force single column */
+            .project-section > div[style*="grid-template-columns: 1fr 1fr"],
+            .project-section > div[style*="grid-template-columns: repeat(3, 1fr)"],
+            .project-section > div[style*="grid-template-columns: repeat(2, 1fr)"] {
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 15px !important;
+            }
+            
+            /* Ensure all nested grids also become single column */
+            .project-section div[style*="display: grid"] {
+              display: flex !important;
+              flex-direction: column !important;
+            }
+            
+            /* Fix overflow for mushroom investment cards */
+            .project-section > div > div[style*="background: linear-gradient"] {
+              width: 100% !important;
+              box-sizing: border-box !important;
+              overflow: hidden !important;
+            }
+            
+            /* Make font sizes smaller on mobile for mushroom page */
+            .project-section div[style*="font-size: 28px"] {
+              font-size: 24px !important;
+            }
+            
+            .project-section div[style*="font-size: 26px"] {
+              font-size: 22px !important;
+            }
+            
+            .project-section div[style*="font-size: 36px"] {
+              font-size: 32px !important;
             }
             
             .carousel-main {

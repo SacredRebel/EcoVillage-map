@@ -110,9 +110,9 @@ const PROJECT_ZONES = [
     timeline: "Phase 1-3 (16 months)",
     monthlyRevenue: "$25K-$30K (post-construction)",
     roi: "43-68% annual + ~$7.7M property increase",
-    description: "5,000 sq ft modern eco-retreat center with bio-architecture, curved designs, and regenerative building materials - the operational hub of the EcoVillage.",
+    description: "4,000-5,000 sq ft modern eco-retreat center with bio-architecture, curved designs, and regenerative building materials - the operational hub of the EcoVillage.",
     features: [
-      "5,000 sq ft modern retreat center with bio-architecture design",
+      "4,000-5,000 sq ft modern retreat center with bio-architecture design",
       "5-6 bedrooms (3 main suites, 2 guest rooms), 6 bathrooms",
       "Main kitchen and spacious living areas",
       "High ceilings with open floor plan and ceremonial fire space",
@@ -144,20 +144,18 @@ const PROJECT_ZONES = [
       appraisedPrefab: "$6,900,000",
       projectedCustom: "~$10,000,000",
       increase: "~$7,700,000",
-      note: "Official appraisal for 5,000 sq ft prefab home with standard design. Projected custom eco-retreat with curved bio-architecture, steel frame, and regenerative systems commands premium market value."
+      note: "Official appraisal for 4,000-5,000 sq ft prefab home with standard design. Projected custom eco-retreat with curved bio-architecture, steel frame, and regenerative systems commands premium market value."
     },
     
     revenueStreams: [
-      "Executive High-End Retreats: $8,000-$12,000/month",
-      "Events, Weddings, Gatherings: $6,000-$10,000/month",
-      "Private Meetings & Corporate Retreats: $5,000-$8,000/month",
+      "Retreats, Events & Private Gatherings: $5,000-$15,000+/month",
       "EcoVillage Operations Hub: Included in management"
     ],
     
     developmentTimeline: [
       {
         phase: "Phase 1 (Months 0-6)",
-        deliverables: "Hire architect for 5,000 sq ft eco-retreat design, finalize curved bio-architecture plans with steel frame, obtain all building permits and approvals, finalize material selections (fireproof, sustainable, high-end), site surveys and engineering assessments",
+        deliverables: "Hire architect for 4,000-5,000 sq ft eco-retreat design, finalize curved bio-architecture plans with steel frame, obtain all building permits and approvals, finalize material selections (fireproof, sustainable, high-end), site surveys and engineering assessments",
         investment: "$20,000-$50,000",
         monthlyRevenue: "$0",
         status: "Planning & permitting phase"
@@ -6882,7 +6880,7 @@ app.get('/', (req, res) => {
                 <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Current Property Value:</div>
                 <div style="font-size: 18px; font-weight: 700; color: #333; margin-bottom: 16px;">\${zone.propertyValue.current}</div>
                 
-                <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Appraised Value (5,000 sq ft Prefab):</div>
+                <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Appraised Value (4,000-5,000 sq ft Prefab):</div>
                 <div style="font-size: 18px; font-weight: 700; color: #333; margin-bottom: 16px;">\${zone.propertyValue.appraisedPrefab}</div>
                 
                 <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Projected Custom Eco-Retreat Value:</div>

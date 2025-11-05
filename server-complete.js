@@ -7605,20 +7605,36 @@ app.get('/', (req, res) => {
     // Make handleImageUpload globally available
     window.handleImageUpload = handleImageUpload;
     
-    // Mobile timeline fix - force vertical layout on mobile viewports
+    // Mobile timeline fix - icon + content horizontal layout on mobile viewports
     function fixTimelineOnMobile() {
       if (window.innerWidth <= 768) {
         const timelineSteps = document.getElementById('timeline-steps');
         const timelineStats = document.getElementById('timeline-stats');
         
         if (timelineSteps) {
-          timelineSteps.style.cssText = 'display: flex !important; flex-direction: column !important; gap: 20px !important; align-items: stretch !important;';
+          timelineSteps.style.cssText = 'display: flex !important; flex-direction: column !important; gap: 15px !important; align-items: stretch !important;';
           
-          // Fix each step
+          // Fix each step - make horizontal row (icon left, content right)
           const steps = timelineSteps.querySelectorAll(':scope > div[style*="flex: 1"]');
           steps.forEach(step => {
             if (!step.style.position || step.style.position !== 'absolute') {
-              step.style.cssText = step.style.cssText.replace('flex: 1', 'flex: none') + '; width: 100% !important;';
+              // Make step a horizontal flexbox
+              step.style.cssText = 'display: flex !important; flex-direction: row !important; align-items: center !important; gap: 15px !important; padding: 15px !important; background: linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(46, 125, 50, 0.1) 100%) !important; border-radius: 10px !important; border: 1px solid rgba(46, 125, 50, 0.15) !important; width: 100% !important;';
+              
+              // Find the icon circle (first child) and make it smaller, fixed width
+              const iconCircle = step.querySelector('div[style*="width: 80px"]');
+              if (iconCircle) {
+                iconCircle.style.cssText = iconCircle.style.cssText.replace('width: 80px', 'width: 60px').replace('height: 80px', 'height: 60px').replace('font-size: 36px', 'font-size: 28px') + '; flex-shrink: 0 !important; margin: 0 !important;';
+              }
+              
+              // Create content wrapper for text elements
+              const textDivs = Array.from(step.children).slice(1); // All children except icon
+              if (textDivs.length > 0) {
+                textDivs.forEach(div => {
+                  div.style.textAlign = 'left';
+                  div.style.margin = '0';
+                });
+              }
             }
           });
           

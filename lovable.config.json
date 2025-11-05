@@ -1,0 +1,30 @@
+{
+  "name": "EcoVillage Interactive Map",
+  "description": "Interactive map for Sulphur Mountain EcoVillage with 18 project zones, image galleries, and investor presentation tools",
+  "version": "1.0.0",
+  "entry": "server-complete.js",
+  "buildCommand": "echo 'No build required - single file server'",
+  "startCommand": "node server-complete.js",
+  "port": 5001,
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "5001",
+    "SUPABASE_URL": "${SUPABASE_URL}",
+    "SUPABASE_ANON_KEY": "${SUPABASE_ANON_KEY}",
+    "SUPABASE_BUCKET": "eco-village-images"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5"
+  },
+  "features": [
+    "Interactive Leaflet map",
+    "18 project zones with detailed content",
+    "Image galleries with Supabase storage",
+    "Mobile-optimized responsive design",
+    "Swipe gestures for mobile panels",
+    "Property boundary visualization",
+    "Investment tracking ($1.32M total)"
+  ]
+}

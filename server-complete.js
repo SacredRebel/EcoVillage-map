@@ -148,33 +148,40 @@ const PROJECT_ZONES = [
     },
     
     revenueStreams: [
-      "Retreats, Events & Private Gatherings: $5,000-$15,000+/month",
+      "Retreats, Events & Private Gatherings: $5,000-$15,000+/month (post-construction)",
       "EcoVillage Operations Hub: Included in management"
     ],
     
     developmentTimeline: [
       {
-        phase: "Phase 1 (Months 0-6)",
-        deliverables: "Hire architect for 4,000-5,000 sq ft eco-retreat design, finalize curved bio-architecture plans with steel frame, obtain all building permits and approvals, finalize material selections (fireproof, sustainable, high-end), site surveys and engineering assessments",
-        investment: "$20,000-$50,000",
+        phase: "Phase 1 (Months 0-6): Initial Remodel & Design",
+        deliverables: "Remodel existing 1,400 sq ft structure into livable, modern residence. Upgrade to steel frame construction where possible for future integration. Complete architectural design and secure all permits for 4,000-5,000 sq ft expansion.",
+        investment: "$195,000 (Remodel: $150K, Architecture & Permits: $45K)",
         monthlyRevenue: "$0",
-        status: "Planning & permitting phase"
+        status: "Currently underway"
       },
       {
-        phase: "Phase 2 (Months 6-12)",
-        deliverables: "Clear and prepare landscape around build site, excavation and foundation preparation, measure and mark exact house positioning, prepare utilities connections (water, power, septic), grade land and prepare drainage systems, prepare access roads and staging areas",
-        investment: "$50,000",
+        phase: "Phase 2 (Months 7-12): Site Preparation",
+        deliverables: "Clear and grade land for 4,000-5,000 sq ft footprint. Install drainage systems and upgrade utilities infrastructure. Prepare foundations and structural supports per approved plans. Final site readiness for main construction phase.",
+        investment: "$50,000-$100,000",
         monthlyRevenue: "$0",
-        status: "Land preparation & excavation"
+        status: "Begins after Phase 1 completion"
       },
       {
-        phase: "Phase 3 (Months 12-16)",
-        deliverables: "Bring in builders (Faruk's team), steel frame construction, curved wall and rounded structure implementation, install fireproof and sustainable materials, plumbing/electrical/HVAC systems, interior finishes, windows, doors, outdoor pool/hot tub/sauna installation, landscaping and sacred geometry gardens, final inspections and certificate of occupancy",
-        investment: "$350,000-$500,000 (Materials: $100K-$250K, Labor: $100K-$150K, Contingency: $100K)",
-        monthlyRevenue: "$25,000-$30,000",
-        status: "Full construction & completion"
+        phase: "Phase 3 (Months 13-24): Main Residence Construction",
+        deliverables: "Build and expand main residence to 4,000-5,000 sq ft with steel frame, bio-architecture, and eco-design throughout. Modern sustainable construction using premium materials. Full build executed per approved architectural plans. Construction partner contributes materials and labor for proportional equity stake in property.",
+        investment: "$1,500,000 (Partner equity contribution: materials + labor)",
+        monthlyRevenue: "$5,000-$15,000+ (post-completion)",
+        status: "Pending Phases 1 & 2"
       }
-    ]
+    ],
+    
+    projectedValue: {
+      totalDevelopment: "~$1,750,000",
+      postBuildValue: "$7,000,000-$10,000,000+",
+      valueIncrease: "400-500%+ ROI",
+      note: "Comparable 5,000 sq ft prefab homes appraised at $6.9M+. Bio-architecture steel frame eco-design on 9.47 acres commands premium valuation. Subject to professional appraisal post-construction."
+    }
   },
   {
     id: "community-hub",
@@ -6891,6 +6898,31 @@ app.get('/', (req, res) => {
               </div>
               <p style="color: #155724; margin: 0; font-size: 13px; line-height: 1.5; font-style: italic;">
                 \${zone.propertyValue.note}
+              </p>
+            </div>
+          </div>
+        \` : ''}
+        
+        \${zone.projectedValue ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">💎 Projected Value Creation</h3>
+            <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 25px; border-radius: 12px; border-left: 4px solid #ff9800;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                  <div style="font-weight: 700; color: #ff9800; font-size: 14px; margin-bottom: 8px;">Total Development Investment</div>
+                  <div style="font-size: 24px; font-weight: 700; color: #333;">\${zone.projectedValue.totalDevelopment}</div>
+                </div>
+                <div>
+                  <div style="font-weight: 700; color: #ff9800; font-size: 14px; margin-bottom: 8px;">Post-Build Property Value</div>
+                  <div style="font-size: 24px; font-weight: 700; color: #ff9800;">\${zone.projectedValue.postBuildValue}</div>
+                </div>
+              </div>
+              <div style="background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="font-weight: 700; color: #ff9800; font-size: 15px; margin-bottom: 8px;">Return on Investment (ROI)</div>
+                <div style="font-size: 26px; font-weight: 700; color: #ff9800;">\${zone.projectedValue.valueIncrease}</div>
+              </div>
+              <p style="color: #e65100; margin: 0; font-size: 13px; line-height: 1.5; font-style: italic;">
+                \${zone.projectedValue.note}
               </p>
             </div>
           </div>

@@ -3156,9 +3156,12 @@ app.get('/', (req, res) => {
             
             /* Production Cycle Timeline mobile optimization */
             .project-section > div > div[style*="display: flex; align-items: center; justify-content: space-between"] {
-              display: flex !important;
-              flex-direction: column !important;
-              gap: 20px !important;
+              display: block !important;
+            }
+            
+            /* Timeline wrapper - remove flex layout */
+            .project-section > div[style*="position: relative"] > div[style*="display: flex"] {
+              display: block !important;
             }
             
             /* Hide timeline connector line on mobile */
@@ -3166,35 +3169,36 @@ app.get('/', (req, res) => {
               display: none !important;
             }
             
-            /* Timeline steps - full width on mobile */
-            .project-section > div > div > div[style*="flex: 1; text-align: center"] {
+            /* Timeline steps - make block level */
+            .project-section div[style*="flex: 1; text-align: center; position: relative"] {
+              display: block !important;
               width: 100% !important;
+              margin-bottom: 25px !important;
               flex: none !important;
+              text-align: center !important;
             }
             
             /* Bottom stats - stack vertically */
             .project-section > div > div[style*="display: flex; justify-content: space-around"] {
-              display: flex !important;
-              flex-direction: column !important;
-              gap: 15px !important;
-              align-items: stretch !important;
+              display: block !important;
             }
             
-            /* Stats items on mobile */
-            .project-section > div > div[style*="display: flex; justify-content: space-around"] > div {
-              padding: 12px !important;
-              background: rgba(46, 125, 50, 0.05) !important;
+            /* Stats items on mobile - make block with spacing */
+            .project-section div[style*="display: flex; justify-content: space-around"] > div {
+              display: block !important;
+              width: 100% !important;
+              padding: 15px !important;
+              margin-bottom: 12px !important;
+              background: linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(46, 125, 50, 0.1) 100%) !important;
               border-radius: 8px !important;
-              display: flex !important;
-              justify-content: space-between !important;
-              align-items: center !important;
+              border: 1px solid rgba(46, 125, 50, 0.2) !important;
             }
             
             /* Make timeline circles smaller on mobile */
             .project-section div[style*="width: 80px; height: 80px"] {
-              width: 60px !important;
-              height: 60px !important;
-              font-size: 28px !important;
+              width: 70px !important;
+              height: 70px !important;
+              font-size: 32px !important;
             }
             
             /* Gallery content - prevent any movement on mobile */

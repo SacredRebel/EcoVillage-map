@@ -110,9 +110,9 @@ const PROJECT_ZONES = [
     timeline: "Phase 1-3 (16 months)",
     monthlyRevenue: "$25K-$30K (post-construction)",
     roi: "43-68% annual + ~$7.7M property increase",
-    description: "5,000 sq ft modern eco-retreat center with bio-architecture, curved designs, and regenerative building materials - the operational hub of the EcoVillage.",
+    description: "4,000-5,000 sq ft modern eco-retreat center with bio-architecture, curved designs, and regenerative building materials - the operational hub of the EcoVillage.",
     features: [
-      "5,000 sq ft modern retreat center with bio-architecture design",
+      "4,000-5,000 sq ft modern retreat center with bio-architecture design",
       "5-6 bedrooms (3 main suites, 2 guest rooms), 6 bathrooms",
       "Main kitchen and spacious living areas",
       "High ceilings with open floor plan and ceremonial fire space",
@@ -144,39 +144,44 @@ const PROJECT_ZONES = [
       appraisedPrefab: "$6,900,000",
       projectedCustom: "~$10,000,000",
       increase: "~$7,700,000",
-      note: "Official appraisal for 5,000 sq ft prefab home with standard design. Projected custom eco-retreat with curved bio-architecture, steel frame, and regenerative systems commands premium market value."
+      note: "Official appraisal for 4,000-5,000 sq ft prefab home with standard design. Projected custom eco-retreat with curved bio-architecture, steel frame, and regenerative systems commands premium market value."
     },
     
     revenueStreams: [
-      "Executive High-End Retreats: $8,000-$12,000/month",
-      "Events, Weddings, Gatherings: $6,000-$10,000/month",
-      "Private Meetings & Corporate Retreats: $5,000-$8,000/month",
+      "Retreats, Events & Private Gatherings: $5,000-$15,000+/month (post-construction)",
       "EcoVillage Operations Hub: Included in management"
     ],
     
     developmentTimeline: [
       {
-        phase: "Phase 1 (Months 0-6)",
-        deliverables: "Hire architect for 5,000 sq ft eco-retreat design, finalize curved bio-architecture plans with steel frame, obtain all building permits and approvals, finalize material selections (fireproof, sustainable, high-end), site surveys and engineering assessments",
-        investment: "$20,000-$50,000",
+        phase: "Phase 1 (Months 0-6): Initial Remodel & Design",
+        deliverables: "Remodel existing 1,400 sq ft structure into livable, modern residence. Upgrade to steel frame construction where possible for future integration. Complete architectural design and secure all permits for 4,000-5,000 sq ft expansion.",
+        investment: "$150,000 (Remodel), $45,000 (Architecture & Permits)",
         monthlyRevenue: "$0",
-        status: "Planning & permitting phase"
+        status: "Currently underway"
       },
       {
-        phase: "Phase 2 (Months 6-12)",
-        deliverables: "Clear and prepare landscape around build site, excavation and foundation preparation, measure and mark exact house positioning, prepare utilities connections (water, power, septic), grade land and prepare drainage systems, prepare access roads and staging areas",
-        investment: "$50,000",
+        phase: "Phase 2 (Months 7-12): Site Preparation",
+        deliverables: "Clear and grade land for 4,000-5,000 sq ft footprint. Install drainage systems and upgrade utilities infrastructure. Prepare foundations and structural supports per approved plans. Final site readiness for main construction phase.",
+        investment: "$50,000-$100,000",
         monthlyRevenue: "$0",
-        status: "Land preparation & excavation"
+        status: "Begins after Phase 1 completion"
       },
       {
-        phase: "Phase 3 (Months 12-16)",
-        deliverables: "Bring in builders (Faruk's team), steel frame construction, curved wall and rounded structure implementation, install fireproof and sustainable materials, plumbing/electrical/HVAC systems, interior finishes, windows, doors, outdoor pool/hot tub/sauna installation, landscaping and sacred geometry gardens, final inspections and certificate of occupancy",
-        investment: "$350,000-$500,000 (Materials: $100K-$250K, Labor: $100K-$150K, Contingency: $100K)",
-        monthlyRevenue: "$25,000-$30,000",
-        status: "Full construction & completion"
+        phase: "Phase 3 (Months 13-24): Main Residence Construction",
+        deliverables: "Build and expand main residence to 4,000-5,000 sq ft with steel frame, bio-architecture, and eco-design throughout. Modern sustainable construction using premium materials. Full build executed per approved architectural plans. Construction partner contributes materials and labor for proportional equity stake in property.",
+        investment: "$1,500,000 (Partner equity contribution: materials + labor)",
+        monthlyRevenue: "$5,000-$15,000+ (post-completion)",
+        status: "Pending Phases 1 & 2"
       }
-    ]
+    ],
+    
+    projectedValue: {
+      totalDevelopment: "~$1,750,000",
+      postBuildValue: "$7,000,000-$10,000,000+",
+      valueIncrease: "400-500%+ ROI",
+      note: "Comparable 5,000 sq ft prefab homes appraised at $6.9M+. Bio-architecture steel frame eco-design on 9.47 acres commands premium valuation. Subject to professional appraisal post-construction."
+    }
   },
   {
     id: "community-hub",
@@ -2031,6 +2036,7 @@ app.get('/', (req, res) => {
             touch-action: pan-y;
             height: calc(100vh - 60px);
             overflow-y: auto;
+            overflow-x: hidden;
             scroll-behavior: smooth;
             /* Smooth momentum scrolling on mobile */
             -webkit-transform: translateZ(0);
@@ -2063,6 +2069,9 @@ app.get('/', (req, res) => {
             line-height: 1.3;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             font-weight: 600;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
           }
           
           .project-subtitle {
@@ -2292,6 +2301,10 @@ app.get('/', (req, res) => {
             color: #6c757d;
             transition: all 0.3s ease;
             position: relative;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
           }
           
           .gallery-tab:hover {
@@ -2315,8 +2328,38 @@ app.get('/', (req, res) => {
           }
           
           .gallery-content {
-            padding: 25px;
+            padding: 0;
             background: white;
+            position: relative;
+            min-height: 600px;
+            overflow: hidden;
+          }
+          
+          /* Gallery content containers - prevent layout shift */
+          #current-images, #vision-images, #progress-images {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 25px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.1s ease, visibility 0s linear 0.1s;
+            pointer-events: none;
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+          
+          #current-images.active, #vision-images.active, #progress-images.active {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.1s ease, visibility 0s linear 0s;
+            pointer-events: auto;
           }
           
           .image-placeholder {
@@ -3009,7 +3052,7 @@ app.get('/', (req, res) => {
             .panel-header, .property-panel-header {
               padding: 0;
               min-height: 52px;
-              max-height: 52px;
+              max-height: none;
               display: flex !important;
               align-items: center !important;
             }
@@ -3020,7 +3063,8 @@ app.get('/', (req, res) => {
               display: flex !important;
               flex-direction: column !important;
               justify-content: center !important;
-              min-height: 52px !important;
+              min-height: auto !important;
+              overflow: visible !important;
             }
             
             .project-title {
@@ -3033,6 +3077,26 @@ app.get('/', (req, res) => {
               color: #ffffff !important;
               font-weight: 700 !important;
               line-height: 1.3 !important;
+              word-wrap: break-word !important;
+              overflow-wrap: break-word !important;
+              max-width: 100% !important;
+            }
+            
+            /* Responsive title sizing based on length */
+            .project-title.title-medium {
+              font-size: 14px !important;
+              line-height: 1.25 !important;
+            }
+            
+            .project-title.title-long {
+              font-size: 13px !important;
+              line-height: 1.2 !important;
+            }
+            
+            .project-title.title-extra-long {
+              font-size: 12px !important;
+              line-height: 1.15 !important;
+              letter-spacing: -0.2px !important;
             }
             
             .panel-header h2 {
@@ -3061,9 +3125,95 @@ app.get('/', (req, res) => {
             /* Optimize content scrolling on mobile */
             .panel-content, .property-panel-content {
               height: calc(100vh - 52px);
-              overscroll-behavior: contain;
+              overscroll-behavior: none;  /* Changed from contain to none - prevent scroll boundary events */
               -webkit-overflow-scrolling: touch;
-              scroll-behavior: smooth;
+              overflow-x: hidden;
+              overflow-y: auto;
+              scroll-behavior: auto;  /* Changed from smooth to auto - prevent momentum conflicts */
+              touch-action: pan-y;  /* CRITICAL: Allow only vertical scrolling, block horizontal */
+            }
+            
+            /* Force all content to fit within panel width */
+            .project-section {
+              max-width: 100% !important;
+              overflow-x: hidden !important;
+              box-sizing: border-box !important;
+            }
+            
+            .project-section * {
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            
+            /* Reduce padding on mobile for more space */
+            .project-section > div > div[style*="padding"] {
+              padding: 15px !important;
+            }
+            
+            /* Make lists more compact on mobile */
+            .project-section ul {
+              padding-left: 18px !important;
+              font-size: 13px !important;
+            }
+            
+            .project-section ul li {
+              margin-bottom: 6px !important;
+              line-height: 1.4 !important;
+            }
+            
+            /* Production Cycle Timeline mobile optimization - ID-based targeting */
+            #timeline-steps {
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: stretch !important;
+              gap: 20px !important;
+            }
+            
+            /* Hide timeline connector line on mobile */
+            #timeline-steps > div[style*="position: absolute"][style*="height: 3px"] {
+              display: none !important;
+            }
+            
+            /* Timeline steps - stack vertically */
+            #timeline-steps > div[style*="flex: 1"] {
+              flex: none !important;
+              width: 100% !important;
+              margin-bottom: 0 !important;
+            }
+            
+            /* Bottom stats - stack vertically */
+            #timeline-stats {
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 12px !important;
+            }
+            
+            /* Stats items on mobile - make block with spacing */
+            #timeline-stats > div {
+              padding: 15px !important;
+              background: linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(46, 125, 50, 0.1) 100%) !important;
+              border-radius: 8px !important;
+              border: 1px solid rgba(46, 125, 50, 0.2) !important;
+            }
+            
+            /* Make timeline circles smaller on mobile */
+            #timeline-steps div[style*="width: 80px; height: 80px"] {
+              width: 70px !important;
+              height: 70px !important;
+              font-size: 32px !important;
+            }
+            
+            /* Gallery content - prevent any movement on mobile */
+            .gallery-content {
+              overflow: hidden;
+              -webkit-overflow-scrolling: auto;
+            }
+            
+            #current-images, #vision-images, #progress-images {
+              transform: translate3d(0, 0, 0);
+              -webkit-transform: translate3d(0, 0, 0);
+              backface-visibility: hidden;
+              -webkit-backface-visibility: hidden;
             }
             
             .carousel-main {
@@ -3084,6 +3234,27 @@ app.get('/', (req, res) => {
             .gallery-tab {
               padding: 8px 12px;
               font-size: 12px;
+            }
+            
+            /* Extra mobile optimization for mushroom page */
+            .project-section {
+              padding: 15px !important;
+            }
+            
+            .project-section h3 {
+              font-size: 16px !important;
+              word-wrap: break-word !important;
+            }
+            
+            .project-section h4 {
+              font-size: 14px !important;
+              word-wrap: break-word !important;
+            }
+            
+            /* Smaller cards on small screens */
+            .project-section > div > div {
+              padding: 12px !important;
+              margin-bottom: 10px !important;
             }
           }
           
@@ -3113,6 +3284,23 @@ app.get('/', (req, res) => {
               left: 0;
             }
             
+            /* Responsive title sizing based on length */
+            .project-title.title-medium {
+              font-size: 15px !important;
+              line-height: 1.25 !important;
+            }
+            
+            .project-title.title-long {
+              font-size: 14px !important;
+              line-height: 1.2 !important;
+            }
+            
+            .project-title.title-extra-long {
+              font-size: 13px !important;
+              line-height: 1.15 !important;
+              letter-spacing: -0.2px !important;
+            }
+            
             .zone-controls {
               max-width: 280px;
               padding: 15px;
@@ -3124,6 +3312,41 @@ app.get('/', (req, res) => {
             
             .image-grid {
               grid-template-columns: 1fr;
+            }
+            
+            /* Mushroom page mobile optimization - force single column */
+            .project-section > div[style*="grid-template-columns: 1fr 1fr"],
+            .project-section > div[style*="grid-template-columns: repeat(3, 1fr)"],
+            .project-section > div[style*="grid-template-columns: repeat(2, 1fr)"] {
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 15px !important;
+            }
+            
+            /* Ensure all nested grids also become single column */
+            .project-section div[style*="display: grid"] {
+              display: flex !important;
+              flex-direction: column !important;
+            }
+            
+            /* Fix overflow for mushroom investment cards */
+            .project-section > div > div[style*="background: linear-gradient"] {
+              width: 100% !important;
+              box-sizing: border-box !important;
+              overflow: hidden !important;
+            }
+            
+            /* Make font sizes smaller on mobile for mushroom page */
+            .project-section div[style*="font-size: 28px"] {
+              font-size: 24px !important;
+            }
+            
+            .project-section div[style*="font-size: 26px"] {
+              font-size: 22px !important;
+            }
+            
+            .project-section div[style*="font-size: 36px"] {
+              font-size: 32px !important;
             }
             
             .carousel-main {
@@ -4544,7 +4767,21 @@ app.get('/', (req, res) => {
       
       // Update header: ALWAYS set title with guaranteed visibility
       if (hero) {
-        hero.innerHTML = '<div class="project-title" style="color: #ffffff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.25); font-weight: 700; line-height: 1.2; letter-spacing: 0.1px; margin: 2px 0; font-size: 18px; display: block; visibility: visible;">' + (zone.emoji + ' ' + zone.name) + '</div>';
+        // Calculate title length for responsive sizing
+        const titleText = zone.emoji + ' ' + zone.name;
+        const titleLength = titleText.length;
+        let fontSizeClass = '';
+        
+        // Assign size classes based on title length
+        if (titleLength > 35) {
+          fontSizeClass = 'title-extra-long'; // Very long titles
+        } else if (titleLength > 25) {
+          fontSizeClass = 'title-long'; // Long titles
+        } else if (titleLength > 20) {
+          fontSizeClass = 'title-medium'; // Medium-long titles
+        }
+        
+        hero.innerHTML = '<div class="project-title ' + fontSizeClass + '" style="color: #ffffff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.25); font-weight: 700; line-height: 1.2; letter-spacing: 0.1px; margin: 2px 0; font-size: 18px; display: block; visibility: visible;">' + titleText + '</div>';
         // Apply zone color theming to hero background
         hero.style.background = 'linear-gradient(135deg, ' + zoneColor + '15 0%, ' + zoneColor + '25 100%)';
         hero.style.borderLeft = '4px solid ' + zoneColor;
@@ -4600,6 +4837,11 @@ app.get('/', (req, res) => {
         content.innerHTML = generateProjectDetails(zone);
         setupImageGalleryTabs();
         loadZoneImages(zone.id);
+        
+        // Fix timeline on mobile after content loads
+        if (window.innerWidth <= 768 && typeof fixTimelineOnMobile === 'function') {
+          setTimeout(fixTimelineOnMobile, 100);
+        }
         
         // CRITICAL: Always scroll panel content to TOP when opening (both mobile & desktop)
         requestAnimationFrame(function() {
@@ -5156,9 +5398,13 @@ app.get('/', (req, res) => {
           window.panelIsClosing = true;
           // Animate panel out completely before closing - use translate3d for GPU
           panel.style.transform = 'translate3d(-100%, 0, 0)';
+          // Immediately hide to prevent flash
+          panel.style.opacity = '0';
           setTimeout(function() {
             panel.classList.remove('open');
+            // Reset all styles AFTER animation completes
             panel.style.transform = '';
+            panel.style.opacity = '';
             panel.style.transition = '';
             window.currentZoneId = null;
             window.panelIsClosing = false;
@@ -5210,7 +5456,8 @@ app.get('/', (req, res) => {
         inputType = 'touch';
         const t = e.touches[0];
         const target = e.target;
-        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
+        // Exclude gallery tabs and content from swipe detection
+        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content, .gallery-tab, .gallery-tabs, .gallery-content')) return;
         const rect = panel.getBoundingClientRect();
         startNearEdge = true; // Allow swipe from anywhere
         onStart(t.clientX, t.clientY);
@@ -5284,22 +5531,33 @@ app.get('/', (req, res) => {
           if (!gesture) {
             const absX = Math.abs(dx), absY = Math.abs(dy);
             if (absX > 10 || absY > 10) {
-              if (absY > absX * 1.2) gesture = 'v';
-              else if (absX > absY * 1.2) gesture = 'h';
+              // CRITICAL: Prioritize vertical scrolling over horizontal swiping
+              if (absY > absX * 0.5) gesture = 'v';  // Changed from 1.2 to 0.5 - if ANY vertical movement, treat as scroll
+              else if (absX > absY * 2.0) gesture = 'h';  // Keep horizontal strict (changed from 1.2)
             }
           }
           if (gesture === 'v') {
             isTracking = false;
+            isSwiping = false;
             panel.style.transition = '';
             panel.style.animation = '';
+            panel.style.touchAction = '';
             return;
           }
           const absX = Math.abs(dx), absY = Math.abs(dy);
-          const ratioReq = 2.0;
-          const minDx = 24;
+          const ratioReq = 3.0;  // Changed from 2.0 - require MUCH more horizontal than vertical
+          const minDx = 40;  // Changed from 24 - require more horizontal distance
           const horizontal = absX > absY * ratioReq && absX > ANGLE_THRESHOLD;
           const closingDirOk = closeToLeft ? (dx < 0) : (dx > 0);
-          if (!horizontal || !closingDirOk || absX < minDx) return;
+          // If ANY vertical movement detected during gesture, stop tracking
+          if (!horizontal || !closingDirOk || absX < minDx || absY > 5) {
+            if (absY > 5) {
+              isTracking = false;
+              isSwiping = false;
+              panel.style.touchAction = '';
+            }
+            return;
+          }
           if (horizontal && closingDirOk) {
             isSwiping = true;
             panel.classList.add('swiping');
@@ -5405,7 +5663,8 @@ app.get('/', (req, res) => {
         if (inputType && inputType !== 'pointer') return;
         inputType = 'pointer';
         const target = e.target;
-        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content')) return;
+        // Exclude gallery tabs and content from swipe detection
+        if (target.closest('.carousel-main, .carousel-thumbnails, .image-carousel, .sub-nav-tabs, .sub-nav-tab, .lightbox-content, .gallery-tab, .gallery-tabs, .gallery-content')) return;
         const rect = panel.getBoundingClientRect();
         startNearEdge = true; // Allow swipe from anywhere
         try { panel.setPointerCapture(e.pointerId); } catch(_) {}
@@ -5428,34 +5687,51 @@ app.get('/', (req, res) => {
           e.stopPropagation();
           e.preventDefault();
           window.isInteractingWithGallery = true;
-          suppressMapClicksFor(800);
+          suppressMapClicksFor(1200); // Extended to prevent swipe conflicts
+          
+          // Lock panel completely during transition
+          const panel = document.getElementById('side-panel');
+          const panelContent = document.querySelector('.panel-content');
+          const scrollPosition = panelContent ? panelContent.scrollTop : 0;
+          
+          // Disable scrolling temporarily
+          if (panelContent) {
+            panelContent.style.overflow = 'hidden';
+          }
+          
           // Remove active class from all tabs
           tabs.forEach(t => t.classList.remove('active'));
           
           // Add active class to clicked tab
           tab.classList.add('active');
           
-          // Hide all content with smooth transition
-          document.querySelectorAll('#current-images, #vision-images, #progress-images').forEach(content => {
-            content.style.display = 'none';
+          // Use requestAnimationFrame for smooth transition
+          requestAnimationFrame(() => {
+            // Hide all gallery content by removing active class (no layout shift)
+            document.querySelectorAll('#current-images, #vision-images, #progress-images').forEach(content => {
+              content.classList.remove('active');
+            });
+            
+            // Show content for clicked tab
+            const targetId = tab.getAttribute('data-tab') + '-images';
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) {
+              targetContent.classList.add('active');
+            }
+            
+            // Restore scroll position and re-enable scrolling after transition
+            setTimeout(() => {
+              if (panelContent) {
+                panelContent.scrollTop = scrollPosition;
+                panelContent.style.overflow = '';
+              }
+            }, 150);
           });
           
-          // Show content for clicked tab
-          const targetId = tab.getAttribute('data-tab') + '-images';
-          const targetContent = document.getElementById(targetId);
-          if (targetContent) {
-            targetContent.style.display = 'block';
-          }
-          
-          // Reset gallery interaction flag after animation
+          // Reset gallery interaction flag after animation - extended duration
           setTimeout(() => {
             window.isInteractingWithGallery = false;
-          }, 500);
-          targetContent.style.opacity = '0';
-          setTimeout(() => {
-            targetContent.style.opacity = '1';
-            targetContent.style.transition = 'opacity 0.3s ease';
-          }, 50);
+          }, 800);
         });
       });
     }
@@ -6155,10 +6431,10 @@ app.get('/', (req, res) => {
             <div class="gallery-tab" data-tab="vision">🎨 Vision</div>
           </div>
           <div class="gallery-content">
-            <div id="current-images">
+            <div id="current-images" class="active">
               <div class="loading-images">⏳ Loading images...</div>
             </div>
-            <div id="vision-images" style="display: none;">
+            <div id="vision-images">
               <div class="loading-images">⏳ Loading images...</div>
             </div>
           </div>
@@ -6473,10 +6749,10 @@ app.get('/', (req, res) => {
           <div class="project-section">
             <h3 style="color: \${zoneColor};">🔄 Production Cycle Timeline</h3>
             
-            <div style="background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%); padding: 30px; border-radius: 12px; position: relative;">
+            <div id="timeline-container" style="background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%); padding: 30px; border-radius: 12px; position: relative;">
               
               <!-- Timeline Flow -->
-              <div style="display: flex; align-items: center; justify-content: space-between; position: relative;">
+              <div id="timeline-steps" style="display: flex; align-items: center; justify-content: space-between; position: relative;">
                 
                 <!-- Connector Line -->
                 <div style="position: absolute; top: 50%; left: 10%; right: 10%; height: 3px; background: linear-gradient(90deg, #2E7D32 0%, #4CAF50 50%, #66BB6A 100%); z-index: 0;"></div>
@@ -6529,7 +6805,7 @@ app.get('/', (req, res) => {
               </div>
               
               <!-- Bottom Stats -->
-              <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #E0E0E0; display: flex; justify-content: space-around; text-align: center;">
+              <div id="timeline-stats" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #E0E0E0; display: flex; justify-content: space-around; text-align: center;">
                 <div>
                   <div style="font-size: 24px; font-weight: 700; color: #2E7D32;">~2 lb</div>
                   <div style="font-size: 12px; color: #666;">per block yield</div>
@@ -6624,7 +6900,7 @@ app.get('/', (req, res) => {
                 <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Current Property Value:</div>
                 <div style="font-size: 18px; font-weight: 700; color: #333; margin-bottom: 16px;">\${zone.propertyValue.current}</div>
                 
-                <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Appraised Value (5,000 sq ft Prefab):</div>
+                <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Appraised Value (4,000-5,000 sq ft Prefab):</div>
                 <div style="font-size: 18px; font-weight: 700; color: #333; margin-bottom: 16px;">\${zone.propertyValue.appraisedPrefab}</div>
                 
                 <div style="font-weight: 700; color: #28a745; font-size: 15px; margin-bottom: 8px;">Projected Custom Eco-Retreat Value:</div>
@@ -6635,6 +6911,38 @@ app.get('/', (req, res) => {
               </div>
               <p style="color: #155724; margin: 0; font-size: 13px; line-height: 1.5; font-style: italic;">
                 \${zone.propertyValue.note}
+              </p>
+            </div>
+          </div>
+        \` : ''}
+        
+        \${zone.projectedValue ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">💎 Projected Value Creation</h3>
+            <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #ff9800;">
+              
+              <!-- Investment & Value Grid -->
+              <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <div style="background: rgba(255,255,255,0.8); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,152,0,0.3);">
+                  <div style="font-weight: 700; color: #ff9800; font-size: 13px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Total Development Investment</div>
+                  <div style="font-size: 26px; font-weight: 700; color: #333; line-height: 1.2;">\${zone.projectedValue.totalDevelopment}</div>
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.8); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,152,0,0.3);">
+                  <div style="font-weight: 700; color: #ff9800; font-size: 13px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Post-Build Property Value</div>
+                  <div style="font-size: 26px; font-weight: 700; color: #ff9800; line-height: 1.2;">\${zone.projectedValue.postBuildValue}</div>
+                </div>
+              </div>
+              
+              <!-- ROI Highlight -->
+              <div style="background: linear-gradient(135deg, rgba(255,152,0,0.15) 0%, rgba(255,152,0,0.25) 100%); padding: 18px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #ff9800;">
+                <div style="font-weight: 700; color: #ff9800; font-size: 14px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Return on Investment (ROI)</div>
+                <div style="font-size: 28px; font-weight: 700; color: #ff9800; line-height: 1.2;">\${zone.projectedValue.valueIncrease}</div>
+              </div>
+              
+              <!-- Note -->
+              <p style="color: #e65100; margin: 0; font-size: 13px; line-height: 1.6; font-style: italic; background: rgba(255,255,255,0.6); padding: 12px; border-radius: 6px;">
+                \${zone.projectedValue.note}
               </p>
             </div>
           </div>
@@ -7346,6 +7654,60 @@ app.get('/', (req, res) => {
     
     // Make handleImageUpload globally available
     window.handleImageUpload = handleImageUpload;
+    
+    // Mobile timeline fix - icon + content horizontal layout on mobile viewports
+    function fixTimelineOnMobile() {
+      if (window.innerWidth <= 768) {
+        const timelineSteps = document.getElementById('timeline-steps');
+        const timelineStats = document.getElementById('timeline-stats');
+        
+        if (timelineSteps) {
+          timelineSteps.style.cssText = 'display: flex !important; flex-direction: column !important; gap: 15px !important; align-items: stretch !important;';
+          
+          // Fix each step - make horizontal row (icon left, content right)
+          const steps = timelineSteps.querySelectorAll(':scope > div[style*="flex: 1"]');
+          steps.forEach(step => {
+            if (!step.style.position || step.style.position !== 'absolute') {
+              // Make step a horizontal flexbox
+              step.style.cssText = 'display: flex !important; flex-direction: row !important; align-items: center !important; gap: 15px !important; padding: 15px !important; background: linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(46, 125, 50, 0.1) 100%) !important; border-radius: 10px !important; border: 1px solid rgba(46, 125, 50, 0.15) !important; width: 100% !important;';
+              
+              // Find the icon circle (first child) and make it smaller, fixed width
+              const iconCircle = step.querySelector('div[style*="width: 80px"]');
+              if (iconCircle) {
+                iconCircle.style.cssText = iconCircle.style.cssText.replace('width: 80px', 'width: 60px').replace('height: 80px', 'height: 60px').replace('font-size: 36px', 'font-size: 28px') + '; flex-shrink: 0 !important; margin: 0 !important;';
+              }
+              
+              // Create content wrapper for text elements
+              const textDivs = Array.from(step.children).slice(1); // All children except icon
+              if (textDivs.length > 0) {
+                textDivs.forEach(div => {
+                  div.style.textAlign = 'left';
+                  div.style.margin = '0';
+                });
+              }
+            }
+          });
+          
+          // Hide connector line
+          const connector = timelineSteps.querySelector('div[style*="position: absolute"][style*="height: 3px"]');
+          if (connector) connector.style.display = 'none';
+        }
+        
+        if (timelineStats) {
+          timelineStats.style.cssText = 'display: flex !important; flex-direction: column !important; gap: 12px !important; margin-top: 30px; padding-top: 20px; border-top: 2px solid #E0E0E0; text-align: center;';
+          
+          // Style each stat item
+          const statItems = timelineStats.querySelectorAll(':scope > div');
+          statItems.forEach(item => {
+            item.style.cssText += '; padding: 15px !important; background: linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(46, 125, 50, 0.1) 100%) !important; border-radius: 8px !important; border: 1px solid rgba(46, 125, 50, 0.2) !important;';
+          });
+        }
+      }
+    }
+    
+    // Run on load and resize
+    fixTimelineOnMobile();
+    window.addEventListener('resize', fixTimelineOnMobile);
     
     console.log('✅ EcoVillageBuilder Interactive Map fully initialized');
     console.log('🎯 Ready for investor presentations and zone exploration');

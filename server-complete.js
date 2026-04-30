@@ -2687,13 +2687,24 @@ app.get('/', (req, res) => {
             background: rgba(255,255,255,0.25);
           }
           
-          .subcategory-content {
-            display: none;
-            animation: fadeInUp 0.4s ease-out;
+          .subcategory-gallery {
+            position: relative;
           }
-          
+
+          .subcategory-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            visibility: hidden;
+            pointer-events: none;
+          }
+
           .subcategory-content.active {
-            display: block;
+            position: relative;
+            visibility: visible;
+            pointer-events: auto;
+            animation: fadeInUp 0.4s ease-out;
           }
           
           @keyframes fadeInUp {

@@ -5895,6 +5895,25 @@ app.get('/', (req, res) => {
           content.classList.remove('active');
         }
       });
+
+      // Trigger image loading for the now-visible subcategory
+      // Images in previously hidden containers may not have loaded properly
+      const activeContent = container.querySelector('.subcategory-content[data-subcategory="' + subcategoryName + '"]');
+      if (activeContent) {
+        const images = activeContent.querySelectorAll('.carousel-image');
+        images.forEach((img, index) => {
+          // Force reload if image hasn't loaded
+          if (!img.complete || img.naturalWidth === 0) {
+            const currentSrc = img.src;
+            img.src = '';
+            img.src = currentSrc;
+          }
+          // Ensure first image is active and loaded
+          if (index === 0) {
+            img.classList.add('active', 'loaded');
+          }
+        });
+      }
     };
     
     // Create image carousel HTML with optimized loading

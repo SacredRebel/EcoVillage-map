@@ -5,20 +5,25 @@
     {
       "src": "server-complete.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "images/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    { "handle": "filesystem" },
     {
-      "src": "/api/images/(.*)",
-      "dest": "/server-complete.js",
-      "methods": ["GET"],
+      "src": "/images/(.*)",
+      "dest": "/images/$1",
       "headers": {
         "Cache-Control": "public, max-age=31536000, immutable"
       }
     },
     {
-      "src": "/images/(.*)",
+      "src": "/api/images/(.*)",
       "dest": "/server-complete.js",
+      "methods": ["GET"],
       "headers": {
         "Cache-Control": "public, max-age=31536000, immutable"
       }

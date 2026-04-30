@@ -5721,15 +5721,13 @@ app.get('/', (req, res) => {
               carousels.forEach(carousel => {
                 const images = carousel.querySelectorAll('.carousel-image, .carousel-thumbnail');
                 images.forEach((img, index) => {
-                  // Remove lazy gate so the browser will fetch even off-screen
+                  // Remove lazy gate so the browser will fetch even off-screen.
+                  // Re-assign the same src (without clearing it) to trigger a fetch.
                   img.loading = 'eager';
                   img.setAttribute('fetchpriority', index === 0 ? 'high' : 'auto');
-                  if (!img.complete || img.naturalWidth === 0) {
-                    const currentSrc = img.src || img.dataset.src || '';
-                    if (currentSrc) {
-                      img.removeAttribute('src');
-                      requestAnimationFrame(() => { img.src = currentSrc; });
-                    }
+                  if (img.naturalWidth === 0) {
+                    const src = img.getAttribute('src');
+                    if (src) img.setAttribute('src', src);
                   }
                   if (index === 0 && img.classList.contains('carousel-image')) {
                     img.classList.add('active', 'loaded');
@@ -5925,12 +5923,9 @@ app.get('/', (req, res) => {
         images.forEach((img, index) => {
           img.loading = 'eager';
           img.setAttribute('fetchpriority', index === 0 ? 'high' : 'auto');
-          if (!img.complete || img.naturalWidth === 0) {
-            const currentSrc = img.src || img.dataset.src || '';
-            if (currentSrc) {
-              img.removeAttribute('src');
-              requestAnimationFrame(() => { img.src = currentSrc; });
-            }
+          if (img.naturalWidth === 0) {
+            const src = img.getAttribute('src');
+            if (src) img.setAttribute('src', src);
           }
           if (index === 0 && img.classList.contains('carousel-image')) {
             img.classList.add('active', 'loaded');

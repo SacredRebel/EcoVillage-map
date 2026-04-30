@@ -39,7 +39,7 @@ export const IMAGE_URLS = {
       '/images/Agricultural%20Hub/current/IMG_9261.JPG',
       '/images/Agricultural%20Hub/current/IMG_9279.JPG',
       '/images/Agricultural%20Hub/current/IMG_9283.JPG',
-      '/images/Agricultural%20Hub/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(25).webp'
+      '/images/Agricultural%20Hub/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(25).jpg'
     ],
     vision: [
       '/images/Agricultural%20Hub/vision/vision%20for%20agricullture.jpg',
@@ -194,7 +194,7 @@ export const IMAGE_URLS = {
       '/images/Infrastructure%20&%20Utilities/current/IMG_9228.JPG',
       '/images/Infrastructure%20&%20Utilities/current/IMG_9411.JPG',
       '/images/Infrastructure%20&%20Utilities/current/IMG_9496.JPG',
-      '/images/Infrastructure%20&%20Utilities/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(33).webp'
+      '/images/Infrastructure%20&%20Utilities/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(33).jpg'
     ],
     vision: {
       'Electric': [
@@ -240,10 +240,10 @@ export const IMAGE_URLS = {
       '/images/Livestock%20&%20Dairy%20Program/current/IMG_9237.JPG',
       '/images/Livestock%20&%20Dairy%20Program/current/IMG_9293.JPG',
       '/images/Livestock%20&%20Dairy%20Program/current/IMG_9295.JPG',
-      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(20).webp',
-      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(21).webp',
-      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(22).webp',
-      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(23).webp'
+      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(20).jpg',
+      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(21).jpg',
+      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(22).jpg',
+      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(23).jpg'
     ],
     vision: [
       '/images/Livestock%20&%20Dairy%20Program/vision/Animal%20sanctuary%20%20(2).png',
@@ -265,10 +265,10 @@ export const IMAGE_URLS = {
       '/images/Livestock%20&%20Dairy%20Program/current/IMG_9237.JPG',
       '/images/Livestock%20&%20Dairy%20Program/current/IMG_9293.JPG',
       '/images/Livestock%20&%20Dairy%20Program/current/IMG_9295.JPG',
-      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(20).webp',
-      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(21).webp',
-      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(22).webp',
-      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(23).webp'
+      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(20).jpg',
+      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(21).jpg',
+      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(22).jpg',
+      '/images/Livestock%20&%20Dairy%20Program/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(23).jpg'
     ],
     vision: [
       '/images/Livestock%20&%20Dairy%20Program/vision/Animal%20sanctuary%20%20(2).png',
@@ -284,16 +284,16 @@ export const IMAGE_URLS = {
       '/images/Main%20Residence%20Compound/current/IMG_9286.JPG',
       '/images/Main%20Residence%20Compound/current/IMG_9287.JPG',
       '/images/Main%20Residence%20Compound/current/IMG_9491.JPG',
-      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(10).webp',
-      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(11).webp',
-      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(12).webp',
-      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(13).webp',
-      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(14).webp',
-      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(16).webp',
-      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(5).webp',
-      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(6).webp',
-      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(8).webp',
-      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(9).webp'
+      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(10).jpg',
+      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(11).jpg',
+      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(12).jpg',
+      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(13).jpg',
+      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(14).jpg',
+      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(16).jpg',
+      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(5).jpg',
+      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(6).jpg',
+      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(8).jpg',
+      '/images/Main%20Residence%20Compound/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(9).jpg'
     ],
     vision: {
       'Floor Plans': [
@@ -354,8 +354,8 @@ export const IMAGE_URLS = {
       '/images/McQueen\'s%20Garage%20&%20Creative/current/IMG_9346.JPG',
       '/images/McQueen\'s%20Garage%20&%20Creative/current/IMG_9347.JPG',
       '/images/McQueen\'s%20Garage%20&%20Creative/current/IMG_9348.JPG',
-      '/images/McQueen\'s%20Garage%20&%20Creative/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(27).webp',
-      '/images/McQueen\'s%20Garage%20&%20Creative/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(29).webp'
+      '/images/McQueen\'s%20Garage%20&%20Creative/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(27).jpg',
+      '/images/McQueen\'s%20Garage%20&%20Creative/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(29).jpg'
     ],
     vision: [
       '/images/McQueen\'s%20Garage%20&%20Creative/vision/mcqeen%20ceremonial%20space%20and%20event%20venue%20%20(2).jpg',
@@ -375,7 +375,7 @@ export const IMAGE_URLS = {
     vision: [
       '/images/Mushroom%20Cultivation/vision/mushroom%20container%20growth%202.jpg',
       '/images/Mushroom%20Cultivation/vision/mushroom%20container%20growth.jpg',
-      '/images/Mushroom%20Cultivation/vision/mushroom%20growth%20container.webp',
+      '/images/Mushroom%20Cultivation/vision/mushroom%20growth%20container.jpg',
       '/images/Mushroom%20Cultivation/vision/mushroom%20growth.jpg'
     ]
   },
@@ -502,7 +502,7 @@ export const IMAGE_URLS = {
       '/images/Wellness%20&%20Spa%20Facilities/current/IMG_9502.JPG',
       '/images/Wellness%20&%20Spa%20Facilities/current/IMG_9503.JPG',
       '/images/Wellness%20&%20Spa%20Facilities/current/IMG_9504.JPG',
-      '/images/Wellness%20&%20Spa%20Facilities/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(19).webp'
+      '/images/Wellness%20&%20Spa%20Facilities/current/Sulphut%20mt%20rd%20-%20property%20pictures%20(19).jpg'
     ],
     vision: [
       '/images/Wellness%20&%20Spa%20Facilities/vision/ChatGPT%20Image%20Oct%2018,%202025,%2002_33_58%20PM.png',
@@ -575,8 +575,8 @@ export const IMAGE_URLS = {
       '/images/Property/Map/Sulphur%20mt%20rd%20-%20property%20land%20map%2003.jpg',
       '/images/Property/Map/Sulphut%20mt%20rd%20-%20property%20land%20map%2001.png',
       '/images/Property/Map/Sulphut%20mt%20rd%20-%20property%20land%20map%2002.jpg',
-      '/images/Property/Map/Sulphut%20mt%20rd%20-%20property%20pictures%20(4).webp',
-      '/images/Property/Map/Sulphut%20mt%20rd%20-%20property%20pictures%20(5).webp'
+      '/images/Property/Map/Sulphut%20mt%20rd%20-%20property%20pictures%20(4).jpg',
+      '/images/Property/Map/Sulphut%20mt%20rd%20-%20property%20pictures%20(5).jpg'
     ],
     vision: []
   }

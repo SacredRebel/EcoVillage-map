@@ -6,7 +6,7 @@
 
 Interactive web application showcasing 18 regenerative development zones across a 10-acre eco-village property in Ojai Valley, California. Built for investor presentations, partner onboarding, and public engagement.
 
-- **Total Investment**: $1.32M
+- **Total Investment**: $3M
 - **18 Project Zones**: Agriculture, Housing, Events, Infrastructure
 - **Interactive Features**: Click zones for detailed project pages, image galleries, financials
 - **Mobile Optimized**: Touch gestures, responsive design, fast loading

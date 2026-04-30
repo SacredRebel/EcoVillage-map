@@ -5711,14 +5711,31 @@ app.get('/', (req, res) => {
             document.querySelectorAll('#current-images, #vision-images, #progress-images').forEach(content => {
               content.classList.remove('active');
             });
-            
+
             // Show content for clicked tab
             const targetId = tab.getAttribute('data-tab') + '-images';
             const targetContent = document.getElementById(targetId);
             if (targetContent) {
               targetContent.classList.add('active');
+
+              // Trigger image loading for all carousels in the newly visible container
+              // Images in previously hidden containers may not have loaded properly
+              const carousels = targetContent.querySelectorAll('.image-carousel');
+              carousels.forEach(carousel => {
+                const images = carousel.querySelectorAll('.carousel-image');
+                images.forEach((img, index) => {
+                  if (!img.complete || img.naturalWidth === 0) {
+                    const currentSrc = img.src;
+                    img.src = '';
+                    img.src = currentSrc;
+                  }
+                  if (index === 0) {
+                    img.classList.add('active', 'loaded');
+                  }
+                });
+              });
             }
-            
+
             // Restore scroll position and re-enable scrolling after transition
             setTimeout(() => {
               if (panelContent) {

@@ -1,30 +1,32 @@
 /**
  * compress-images.js
  *
- * Compresses all images from SOURCE_DIR into OUTPUT_DIR (repo's images/ folder).
+ * Compresses all images from SOURCE_DIR into OUTPUT_DIR.
+ * Writes to a separate folder so it's safe even if SOURCE_DIR is your repo's images/.
+ *
  * Run from the repo root: node scripts/compress-images.js
  *
  * Requirements: npm install --save-dev sharp
  */
 
 import sharp from 'sharp';
-import { readdir, mkdir, stat } from 'fs/promises';
-import { join, extname, relative } from 'path';
+import { readdir, mkdir, stat, rm, rename } from 'fs/promises';
+import { join, extname, relative, dirname, resolve } from 'path';
 
 // ── Configure these two paths ────────────────────────────────────────────────
 const SOURCE_DIR = 'F:\\AI apps & websites\\EcoVillageBuilder\\EcoVillageBuilder\\images';
-const OUTPUT_DIR = './images'; // repo root — already served at /images by Express
+const OUTPUT_DIR = './images-compressed'; // temp folder; rename to images/ after
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SUPPORTED = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
-const MAX_WIDTH = 1920;   // px — enough for full-screen display
-const JPEG_QUALITY = 82;  // 0-100, 82 is a great balance of size vs quality
+const MAX_WIDTH = 1920;
+const JPEG_QUALITY = 82;
 const PNG_QUALITY = 80;
 
 let processed = 0;
-let skipped = 0;
 let errors = 0;
 let savedBytes = 0;
+let totalOutputBytes = 0;
 
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -42,28 +44,37 @@ async function walk(dir) {
 
 async function compress(srcPath) {
   const relPath = relative(SOURCE_DIR, srcPath);
-  const destPath = join(OUTPUT_DIR, relPath);
-  const destDir = join(OUTPUT_DIR, relative(SOURCE_DIR, srcPath.substring(0, srcPath.lastIndexOf('\\') || srcPath.lastIndexOf('/'))));
+  let destPath = join(OUTPUT_DIR, relPath);
 
-  await mkdir(destDir, { recursive: true });
-
+  // Re-encode webp/gif to .jpg for better compatibility & size
   const ext = extname(srcPath).toLowerCase();
+  if (ext === '.webp' || ext === '.gif') {
+    destPath = destPath.replace(/\.(webp|gif)$/i, '.jpg');
+  }
+
+  await mkdir(dirname(destPath), { recursive: true });
+
+  if (resolve(srcPath) === resolve(destPath)) {
+    console.error(`⛔ Source and destination are the same file: ${srcPath}`);
+    errors++;
+    return;
+  }
+
   const srcStat = await stat(srcPath);
 
   try {
-    const image = sharp(srcPath).resize({ width: MAX_WIDTH, withoutEnlargement: true });
+    const image = sharp(srcPath).rotate().resize({ width: MAX_WIDTH, withoutEnlargement: true });
 
     if (ext === '.png') {
       await image.png({ compressionLevel: 9, quality: PNG_QUALITY }).toFile(destPath);
     } else {
-      // JPG, JPEG, WEBP, GIF → output as JPEG for best compression
-      const outPath = destPath.replace(/\.(webp|gif)$/i, '.jpg');
-      await image.jpeg({ quality: JPEG_QUALITY, mozjpeg: true }).toFile(outPath);
+      await image.jpeg({ quality: JPEG_QUALITY, mozjpeg: true }).toFile(destPath);
     }
 
     const destStat = await stat(destPath);
     const saved = srcStat.size - destStat.size;
     savedBytes += saved;
+    totalOutputBytes += destStat.size;
     processed++;
 
     const pct = Math.round((1 - destStat.size / srcStat.size) * 100);
@@ -79,6 +90,9 @@ async function main() {
   console.log(`   Source : ${SOURCE_DIR}`);
   console.log(`   Output : ${OUTPUT_DIR}`);
   console.log('');
+
+  // Wipe any previous attempt
+  try { await rm(OUTPUT_DIR, { recursive: true, force: true }); } catch {}
 
   let files;
   try {
@@ -104,12 +118,23 @@ async function main() {
   console.log('─────────────────────────────────────────');
   console.log(`✅ Done!  ${processed} compressed, ${errors} errors`);
   console.log(`💾 Space saved: ${(savedBytes / 1024 / 1024).toFixed(1)} MB`);
+  console.log(`📦 Output folder size: ${(totalOutputBytes / 1024 / 1024).toFixed(1)} MB`);
   console.log('');
-  console.log('Next steps:');
-  console.log('  1. Check the images/ folder looks correct');
-  console.log('  2. git add images/');
-  console.log('  3. git commit -m "Add compressed images for local hosting"');
-  console.log('  4. git push');
+
+  if (errors > 0) {
+    console.log('⚠️  Some files failed. Review the errors above before swapping folders.');
+    return;
+  }
+
+  console.log('Next steps (run from your repo root):');
+  console.log('  1. Inspect images-compressed/ — make sure it looks right');
+  console.log('  2. Backup or delete the old images folder:');
+  console.log('       Remove-Item -Recurse -Force images   # PowerShell');
+  console.log('  3. Rename the compressed folder:');
+  console.log('       Rename-Item images-compressed images');
+  console.log('  4. git add images/');
+  console.log('  5. git commit -m "Add compressed images for local hosting"');
+  console.log('  6. git push');
 }
 
 main();

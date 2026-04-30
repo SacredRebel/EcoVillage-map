@@ -4274,7 +4274,7 @@ app.get('/', (req, res) => {
   
   <!-- Footer -->
   <div class="map-footer">
-    © 2025 Sulphur Mountain Eco-Village | 18 Project Zones | $1.33M Development Investment
+    © 2025 Sulphur Mountain Eco-Village | 18 Project Zones | $3M Development Investment
   </div>
   
   <script>
@@ -7179,7 +7179,7 @@ app.get('/', (req, res) => {
             <div class="footer-title">🌿 Sulphur Mountain Eco-Village</div>
             <div class="footer-info">
               <span>18 Project Zones</span> • 
-              <span>$1.33M Investment</span> • 
+              <span>$3M Investment</span> • 
               <span>10-Acre Property</span> • 
               <span>Ojai Valley, CA</span>
             </div>

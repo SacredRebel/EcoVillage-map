@@ -5939,7 +5939,7 @@ app.get('/', (req, res) => {
         <img src="\${src}" 
              class="carousel-image \${index === 0 ? 'active' : ''}" 
              alt="Image \${index + 1}"
-             loading="\${index === 0 ? 'eager' : 'lazy'}"
+             loading="eager"
              fetchpriority="\${index === 0 ? 'high' : 'low'}"
              sizes="(max-width: 768px) 100vw, 580px"
              decoding="async"
@@ -5953,7 +5953,7 @@ app.get('/', (req, res) => {
              class="carousel-thumbnail \${index === 0 ? 'active' : ''}" 
              alt="Thumbnail \${index + 1}"
              data-index="\${index}"
-             loading="lazy"
+             loading="eager"
              decoding="async"
              onclick="goToSlide('\${category}', \${index})">
       \`).join('');

@@ -2687,24 +2687,13 @@ app.get('/', (req, res) => {
             background: rgba(255,255,255,0.25);
           }
           
-          .subcategory-gallery {
-            position: relative;
-          }
-
           .subcategory-content {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            visibility: hidden;
-            pointer-events: none;
+            display: none;
+            animation: fadeInUp 0.4s ease-out;
           }
 
           .subcategory-content.active {
-            position: relative;
-            visibility: visible;
-            pointer-events: auto;
-            animation: fadeInUp 0.4s ease-out;
+            display: block;
           }
           
           @keyframes fadeInUp {
@@ -5896,6 +5885,17 @@ app.get('/', (req, res) => {
         const subcategory = content.getAttribute('data-subcategory');
         const carouselCategory = \`\${category}-\${subcategory}\`;
         initializeCarousel(carouselCategory);
+
+        // Preload every image in this subcategory using new Image() so the browser
+        // caches them regardless of display:none on the parent. When the tab becomes
+        // active and the actual <img> tag is shown, it pulls from cache instantly.
+        const imgEls = content.querySelectorAll('.carousel-image, .carousel-thumbnail');
+        imgEls.forEach(img => {
+          const src = img.getAttribute('src');
+          if (!src) return;
+          const preloader = new Image();
+          preloader.src = src;
+        });
       });
     }
     
@@ -6000,10 +6000,23 @@ app.get('/', (req, res) => {
     function initializeCarousel(category) {
       const carousel = document.querySelector(\`[data-category="\${category}"]\`);
       if (!carousel) return;
-      
+
       const images = Array.from(carousel.querySelectorAll('.carousel-image'));
       if (images.length === 0) return;
-      
+
+      // Aggressively preload every image via new Image() so the browser caches
+      // them regardless of CSS display state on the parent. When the actual
+      // <img> becomes visible later it pulls from cache instantly.
+      images.forEach(img => {
+        const src = img.getAttribute('src');
+        if (src) { const p = new Image(); p.src = src; }
+      });
+      const thumbs = carousel.querySelectorAll('.carousel-thumbnail');
+      thumbs.forEach(thumb => {
+        const src = thumb.getAttribute('src');
+        if (src) { const p = new Image(); p.src = src; }
+      });
+
       // Initialize current index once
       if (!carousel.dataset.currentIndex) carousel.dataset.currentIndex = '0';
       

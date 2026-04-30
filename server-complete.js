@@ -2442,7 +2442,6 @@ app.get('/', (req, res) => {
             background: #000;
             opacity: 0;
             transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1), filter 350ms cubic-bezier(0.16, 1, 0.3, 1);
-            filter: blur(8px);
             will-change: opacity, filter;
             image-rendering: auto;
             transform: translate3d(0,0,0);
@@ -2457,10 +2456,6 @@ app.get('/', (req, res) => {
           
           .carousel-image.active {
             opacity: 1;
-          }
-          
-          .carousel-image.loaded {
-            filter: blur(0);
           }
           
           .carousel-loading {

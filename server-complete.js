@@ -140,11 +140,11 @@ const PROJECT_ZONES = [
     ],
     
     propertyValue: {
-      current: "$2,300,000",
+      current: "$1,500,000",
       appraisedPrefab: "$6,900,000",
       projectedCustom: "~$10,000,000",
-      increase: "~$7,700,000",
-      note: "Official appraisal for 4,000-5,000 sq ft prefab home with standard design. Projected custom eco-retreat with curved bio-architecture, steel frame, and regenerative systems commands premium market value."
+      increase: "~$8,500,000",
+      note: "Current value reflects land with existing structure to be demolished. Official appraisal for 4,000-5,000 sq ft prefab home with standard design. Projected custom eco-retreat with curved bio-architecture, steel frame, and regenerative systems commands premium market value."
     },
     
     revenueStreams: [
@@ -154,33 +154,33 @@ const PROJECT_ZONES = [
     
     developmentTimeline: [
       {
-        phase: "Phase 1 (Months 0-6): Initial Remodel & Design",
-        deliverables: "Remodel existing 1,400 sq ft structure into livable, modern residence. Upgrade to steel frame construction where possible for future integration. Complete architectural design and secure all permits for 4,000-5,000 sq ft expansion.",
-        investment: "$150,000 (Remodel), $45,000 (Architecture & Permits)",
+        phase: "Phase 1 (Months 0-6): Demolition, Design & Permits",
+        deliverables: "Demolish existing 1,400 sq ft structure and remove all debris. Complete architectural design for 4,000-5,000 sq ft eco-retreat with bio-architecture and curved steel frame. Secure all building permits and approvals. Clear and grade building site, establish construction access, and install temporary utilities for construction phase.",
+        investment: "$75,000 (Demolition & Site Clearance), $45,000 (Architecture & Permits)",
         monthlyRevenue: "$0",
         status: "Currently underway"
       },
       {
-        phase: "Phase 2 (Months 7-12): Site Preparation",
-        deliverables: "Clear and grade land for 4,000-5,000 sq ft footprint. Install drainage systems and upgrade utilities infrastructure. Prepare foundations and structural supports per approved plans. Final site readiness for main construction phase.",
-        investment: "$50,000-$100,000",
+        phase: "Phase 2 (Months 7-12): Foundation & Infrastructure",
+        deliverables: "Install drainage systems and upgrade utilities infrastructure to support main residence. Pour foundation and structural supports per approved bio-architecture plans. Complete site readiness for main construction phase including staging areas and material delivery access.",
+        investment: "$80,000",
         monthlyRevenue: "$0",
         status: "Begins after Phase 1 completion"
       },
       {
         phase: "Phase 3 (Months 13-24): Main Residence Construction",
         deliverables: "Build and expand main residence to 4,000-5,000 sq ft with steel frame, bio-architecture, and eco-design throughout. Modern sustainable construction using premium materials. Full build executed per approved architectural plans. Construction partner contributes materials and labor for proportional equity stake in property.",
-        investment: "$1,500,000 (Partner equity contribution: materials + labor)",
+        investment: "$1,300,000 (Partner equity contribution: materials + labor)",
         monthlyRevenue: "$5,000-$15,000+ (post-completion)",
         status: "Pending Phases 1 & 2"
       }
     ],
     
     projectedValue: {
-      totalDevelopment: "~$1,750,000",
+      totalDevelopment: "~$1,500,000",
       postBuildValue: "$7,000,000-$10,000,000+",
       valueIncrease: "400-500%+ ROI",
-      note: "Comparable 5,000 sq ft prefab homes appraised at $6.9M+. Bio-architecture steel frame eco-design on 9.47 acres commands premium valuation. Subject to professional appraisal post-construction."
+      note: "Total investment: $120,000 (Phase 1) + $80,000 (Phase 2) + $1,300,000 (Phase 3 partner contribution). Comparable 5,000 sq ft prefab homes appraised at $6.9M+. Bio-architecture steel frame eco-design on 9.47 acres commands premium valuation. Subject to professional appraisal post-construction."
     }
   },
   {
@@ -4942,7 +4942,7 @@ app.get('/', (req, res) => {
       '<div class="property-info-section">' +
         '<h4>✨ Property Features</h4>' +
         '<ul class="property-features-list">' +
-          '<li><strong>Valuation:</strong> Current value $2.3M | Projected ARV $6.9M+ (Phase 3 completion)</li>' +
+          '<li><strong>Valuation:</strong> Current value $1.5M | Projected ARV $6.9M+ (Phase 3 completion)</li>' +
           '<li><strong>Water Access:</strong> Active on-site well producing 17 GPM, connected to structures</li>' +
           '<li><strong>Power:</strong> Two live power lines currently connected</li>' +
           '<li><strong>Sewer:</strong> Main residence connected to city sewer system</li>' +
@@ -5713,18 +5713,25 @@ app.get('/', (req, res) => {
             if (targetContent) {
               targetContent.classList.add('active');
 
-              // Trigger image loading for all carousels in the newly visible container
-              // Images in previously hidden containers may not have loaded properly
+              // Trigger image loading for all carousels in the newly visible container.
+              // Images with loading="lazy" inside a previously hidden tab may not have
+              // started downloading. Force eager loading and (if still pending) re-set
+              // the src to kick the browser into fetching them.
               const carousels = targetContent.querySelectorAll('.image-carousel');
               carousels.forEach(carousel => {
-                const images = carousel.querySelectorAll('.carousel-image');
+                const images = carousel.querySelectorAll('.carousel-image, .carousel-thumbnail');
                 images.forEach((img, index) => {
+                  // Remove lazy gate so the browser will fetch even off-screen
+                  img.loading = 'eager';
+                  img.setAttribute('fetchpriority', index === 0 ? 'high' : 'auto');
                   if (!img.complete || img.naturalWidth === 0) {
-                    const currentSrc = img.src;
-                    img.src = '';
-                    img.src = currentSrc;
+                    const currentSrc = img.src || img.dataset.src || '';
+                    if (currentSrc) {
+                      img.removeAttribute('src');
+                      requestAnimationFrame(() => { img.src = currentSrc; });
+                    }
                   }
-                  if (index === 0) {
+                  if (index === 0 && img.classList.contains('carousel-image')) {
                     img.classList.add('active', 'loaded');
                   }
                 });
@@ -5908,20 +5915,24 @@ app.get('/', (req, res) => {
         }
       });
 
-      // Trigger image loading for the now-visible subcategory
-      // Images in previously hidden containers may not have loaded properly
+      // Trigger image loading for the now-visible subcategory.
+      // Carousel images have loading="lazy" set (except the first), so they will not
+      // download while their parent tab is hidden. When this tab becomes active we
+      // remove the lazy gate and force a re-fetch on any image that hasn't loaded.
       const activeContent = container.querySelector('.subcategory-content[data-subcategory="' + subcategoryName + '"]');
       if (activeContent) {
-        const images = activeContent.querySelectorAll('.carousel-image');
+        const images = activeContent.querySelectorAll('.carousel-image, .carousel-thumbnail');
         images.forEach((img, index) => {
-          // Force reload if image hasn't loaded
+          img.loading = 'eager';
+          img.setAttribute('fetchpriority', index === 0 ? 'high' : 'auto');
           if (!img.complete || img.naturalWidth === 0) {
-            const currentSrc = img.src;
-            img.src = '';
-            img.src = currentSrc;
+            const currentSrc = img.src || img.dataset.src || '';
+            if (currentSrc) {
+              img.removeAttribute('src');
+              requestAnimationFrame(() => { img.src = currentSrc; });
+            }
           }
-          // Ensure first image is active and loaded
-          if (index === 0) {
+          if (index === 0 && img.classList.contains('carousel-image')) {
             img.classList.add('active', 'loaded');
           }
         });

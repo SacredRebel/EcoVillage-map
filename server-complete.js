@@ -5718,18 +5718,25 @@ app.get('/', (req, res) => {
             if (targetContent) {
               targetContent.classList.add('active');
 
-              // Trigger image loading for all carousels in the newly visible container
-              // Images in previously hidden containers may not have loaded properly
+              // Trigger image loading for all carousels in the newly visible container.
+              // Images with loading="lazy" inside a previously hidden tab may not have
+              // started downloading. Force eager loading and (if still pending) re-set
+              // the src to kick the browser into fetching them.
               const carousels = targetContent.querySelectorAll('.image-carousel');
               carousels.forEach(carousel => {
-                const images = carousel.querySelectorAll('.carousel-image');
+                const images = carousel.querySelectorAll('.carousel-image, .carousel-thumbnail');
                 images.forEach((img, index) => {
+                  // Remove lazy gate so the browser will fetch even off-screen
+                  img.loading = 'eager';
+                  img.setAttribute('fetchpriority', index === 0 ? 'high' : 'auto');
                   if (!img.complete || img.naturalWidth === 0) {
-                    const currentSrc = img.src;
-                    img.src = '';
-                    img.src = currentSrc;
+                    const currentSrc = img.src || img.dataset.src || '';
+                    if (currentSrc) {
+                      img.removeAttribute('src');
+                      requestAnimationFrame(() => { img.src = currentSrc; });
+                    }
                   }
-                  if (index === 0) {
+                  if (index === 0 && img.classList.contains('carousel-image')) {
                     img.classList.add('active', 'loaded');
                   }
                 });
@@ -5913,20 +5920,24 @@ app.get('/', (req, res) => {
         }
       });
 
-      // Trigger image loading for the now-visible subcategory
-      // Images in previously hidden containers may not have loaded properly
+      // Trigger image loading for the now-visible subcategory.
+      // Carousel images have loading="lazy" set (except the first), so they will not
+      // download while their parent tab is hidden. When this tab becomes active we
+      // remove the lazy gate and force a re-fetch on any image that hasn't loaded.
       const activeContent = container.querySelector('.subcategory-content[data-subcategory="' + subcategoryName + '"]');
       if (activeContent) {
-        const images = activeContent.querySelectorAll('.carousel-image');
+        const images = activeContent.querySelectorAll('.carousel-image, .carousel-thumbnail');
         images.forEach((img, index) => {
-          // Force reload if image hasn't loaded
+          img.loading = 'eager';
+          img.setAttribute('fetchpriority', index === 0 ? 'high' : 'auto');
           if (!img.complete || img.naturalWidth === 0) {
-            const currentSrc = img.src;
-            img.src = '';
-            img.src = currentSrc;
+            const currentSrc = img.src || img.dataset.src || '';
+            if (currentSrc) {
+              img.removeAttribute('src');
+              requestAnimationFrame(() => { img.src = currentSrc; });
+            }
           }
-          // Ensure first image is active and loaded
-          if (index === 0) {
+          if (index === 0 && img.classList.contains('carousel-image')) {
             img.classList.add('active', 'loaded');
           }
         });

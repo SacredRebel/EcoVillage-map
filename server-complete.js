@@ -1983,6 +1983,7 @@ app.get('/', (req, res) => {
           }
           
           .panel-header {
+            position: relative;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 16px 24px 14px 24px;
@@ -3032,22 +3033,29 @@ app.get('/', (req, res) => {
           @media (max-width: 375px) {
             .side-panel {
               width: 100vw;
-              left: -100vw;
-              transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+              left: 0;
+              transform: translateX(-100%);
+              transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+              will-change: transform;
+            }
+
+            .side-panel.open {
+              transform: translateX(0);
             }
 
             .property-panel {
               width: 100vw;
-              right: -100vw;
-              left: 0;
-              transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+              right: 0;
+              left: auto;
+              transform: translateX(100%);
+              transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+              will-change: transform;
             }
 
-            
             .property-panel.open {
-              left: 0;
+              transform: translateX(0);
             }
-            
+
             .panel-header, .property-panel-header {
               padding: 0;
               min-height: 52px;
@@ -3269,19 +3277,27 @@ app.get('/', (req, res) => {
           @media (max-width: 768px) {
             .side-panel {
               width: 100vw;
-              left: -100vw;
-              transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+              left: 0;
+              transform: translateX(-100%);
+              transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+              will-change: transform;
             }
-            
+
+            .side-panel.open {
+              transform: translateX(0);
+            }
+
             .property-panel {
               width: 100vw;
-              right: -100vw;
-              left: 0;
-              transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+              right: 0;
+              left: auto;
+              transform: translateX(100%);
+              transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+              will-change: transform;
             }
-            
+
             .property-panel.open {
-              left: 0;
+              transform: translateX(0);
             }
             
             /* Responsive title sizing based on length */
@@ -3497,11 +3513,7 @@ app.get('/', (req, res) => {
       -webkit-transform: translateZ(0);
       transform: translateZ(0);
     }
-      overscroll-behavior-y: contain;
-      -webkit-overflow-scrolling: touch;
-      touch-action: pan-y;
-    }
-    
+
     .property-panel-content::-webkit-scrollbar {
       width: 8px;
     }
@@ -3616,15 +3628,15 @@ app.get('/', (req, res) => {
     @media (max-width: 768px) {
       .property-panel {
         width: 100vw;
-        left: -100vw;
-        right: auto;
-        transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        will-change: left, transform;
-      }
-      
-      .property-panel.open {
         left: 0;
         right: auto;
+        transform: translateX(-100%);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        will-change: transform;
+      }
+
+      .property-panel.open {
+        transform: translateX(0);
       }
       
       .property-panel-title h3 {

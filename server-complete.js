@@ -1954,7 +1954,7 @@ app.get('/', (req, res) => {
     
           /* Ultra-Polished Left-Side Panel */
           .side-panel {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: -600px;
             width: 580px;
@@ -3471,7 +3471,7 @@ app.get('/', (req, res) => {
           
     /* Property Boundary Info Panel */
     .property-panel {
-      position: absolute;
+      position: fixed;
       top: 0;
       right: -480px;
       width: 460px;

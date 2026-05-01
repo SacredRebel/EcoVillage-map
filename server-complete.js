@@ -4779,8 +4779,8 @@ app.get('/', (req, res) => {
         }
         
         hero.innerHTML = '<div class="project-title ' + fontSizeClass + '" style="color: #ffffff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.25); font-weight: 700; line-height: 1.2; letter-spacing: 0.1px; margin: 2px 0; font-size: 18px; display: block; visibility: visible;">' + titleText + '</div>';
-        // Apply zone color theming to hero background
-        hero.style.background = 'linear-gradient(135deg, ' + zoneColor + '15 0%, ' + zoneColor + '25 100%)';
+        // Keep the solid purple gradient (don't override with transparent zone color — causes invisible header on mobile)
+        hero.style.background = '';
         hero.style.borderLeft = '4px solid ' + zoneColor;
         hero.style.display = 'flex';
         hero.style.visibility = 'visible';

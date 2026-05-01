@@ -3123,7 +3123,8 @@ app.get('/', (req, res) => {
             
             /* Optimize content scrolling on mobile */
             .panel-content, .property-panel-content {
-              height: calc(100vh - 52px);
+              flex: 1;
+              min-height: 0;
               overscroll-behavior: none;  /* Changed from contain to none - prevent scroll boundary events */
               -webkit-overflow-scrolling: touch;
               overflow-x: hidden;

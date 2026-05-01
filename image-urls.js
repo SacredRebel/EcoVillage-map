@@ -334,16 +334,16 @@ export const IMAGE_URLS = {
         '/images/Main%20Residence%20Compound/vision/Indoor/main%20livingroom%20view.jpg'
       ],
       'Outdoor': [
+        '/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(1).jpg',
+        '/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(4).jpg',
+        '/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(3).jpg',
+        '/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(2).jpg',
+        '/images/Main%20Residence%20Compound/vision/Outdoor/main%20ecohouse.jpg',
         '/images/Main%20Residence%20Compound/vision/Outdoor/bio%20architecture%20main%20house%20deisgn.jpg',
         '/images/Main%20Residence%20Compound/vision/Outdoor/concept%20design.jpg',
         '/images/Main%20Residence%20Compound/vision/Outdoor/design%20concept%202.jpg',
         '/images/Main%20Residence%20Compound/vision/Outdoor/design%20concept.jpg',
-        '/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(1).jpg',
-        '/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(2).jpg',
-        '/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(3).jpg',
-        '/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20retreat%20center%20(4).jpg',
         '/images/Main%20Residence%20Compound/vision/Outdoor/Eco%20village%20prototype.jpg',
-        '/images/Main%20Residence%20Compound/vision/Outdoor/main%20ecohouse.jpg',
         '/images/Main%20Residence%20Compound/vision/Outdoor/retreat%20concept.jpg',
         '/images/Main%20Residence%20Compound/vision/Outdoor/retret%20center%20concept%20design.jpg',
         '/images/Main%20Residence%20Compound/vision/Outdoor/structure.jpg'

@@ -20,7 +20,7 @@
       "src": "/images/(.*)",
       "status": 302,
       "headers": {
-        "Location": "https://cdn.jsdelivr.net/gh/SacredRebel/EcoVillage-map@main/images/$1",
+        "Location": "https://raw.githubusercontent.com/SacredRebel/EcoVillage-map/main/images/$1",
         "Cache-Control": "public, max-age=86400"
       }
     },

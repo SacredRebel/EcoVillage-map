@@ -3057,15 +3057,21 @@ app.get('/', (req, res) => {
             }
 
             .panel-header, .property-panel-header {
-              padding: 0;
-              min-height: 52px;
-              max-height: none;
+              padding-top: calc(env(safe-area-inset-top) + 10px) !important;
+              padding-bottom: 10px !important;
+              padding-left: 16px !important;
+              padding-right: 0 !important;
+              min-height: calc(env(safe-area-inset-top) + 52px) !important;
+              max-height: none !important;
               display: flex !important;
               align-items: center !important;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             }
-            
+
             .project-hero {
-              padding: 10px 50px 10px 16px !important;
+              background: transparent !important;
+              border-bottom: none !important;
+              padding: 0 50px 0 0 !important;
               flex: 1 !important;
               display: flex !important;
               flex-direction: column !important;
@@ -3298,6 +3304,36 @@ app.get('/', (req, res) => {
 
             .property-panel.open {
               transform: translateX(0);
+            }
+
+            /* Fix header hidden under iOS status bar / notch (viewport-fit=cover) */
+            .panel-header, .property-panel-header {
+              padding-top: calc(env(safe-area-inset-top) + 10px) !important;
+              padding-bottom: 10px !important;
+              padding-left: 16px !important;
+              padding-right: 0 !important;
+              min-height: calc(env(safe-area-inset-top) + 52px) !important;
+              max-height: none !important;
+              display: flex !important;
+              align-items: center !important;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            }
+
+            /* Hero fills remaining header space, transparent so panel-header bg shows */
+            .project-hero {
+              background: transparent !important;
+              border-bottom: none !important;
+              padding: 0 50px 0 0 !important;
+              flex: 1 !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: center !important;
+              min-height: auto !important;
+              overflow: visible !important;
+            }
+
+            .close-panel {
+              top: calc(env(safe-area-inset-top) + 6px) !important;
             }
             
             /* Responsive title sizing based on length */

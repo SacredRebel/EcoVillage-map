@@ -1970,6 +1970,8 @@ app.get('/', (req, res) => {
             transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             border-right: 1px solid rgba(0,0,0,0.06);
             backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
           }
           
           .side-panel.open {
@@ -1981,8 +1983,6 @@ app.get('/', (req, res) => {
           }
           
           .panel-header {
-            position: sticky;
-            top: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 16px 24px 14px 24px;
@@ -2034,7 +2034,8 @@ app.get('/', (req, res) => {
             overscroll-behavior-y: contain;
             -webkit-overflow-scrolling: touch;
             touch-action: pan-y;
-            height: calc(100vh - 60px);
+            flex: 1;
+            min-height: 0;
             overflow-y: auto;
             overflow-x: hidden;
             scroll-behavior: smooth;
@@ -2283,6 +2284,7 @@ app.get('/', (req, res) => {
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            content-visibility: auto;
           }
           
           .gallery-tabs {
@@ -2331,7 +2333,7 @@ app.get('/', (req, res) => {
             padding: 0;
             background: white;
             position: relative;
-            min-height: 600px;
+            min-height: 0;
             overflow: hidden;
           }
           
@@ -2360,6 +2362,7 @@ app.get('/', (req, res) => {
             visibility: visible;
             transition: opacity 0.1s ease, visibility 0s linear 0s;
             pointer-events: auto;
+            position: relative;
           }
           
           .image-placeholder {
@@ -3032,13 +3035,14 @@ app.get('/', (req, res) => {
               left: -100vw;
               transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             }
-            
+
             .property-panel {
               width: 100vw;
               right: -100vw;
               left: 0;
               transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             }
+
             
             .property-panel.open {
               left: 0;
@@ -3212,9 +3216,9 @@ app.get('/', (req, res) => {
             }
             
             .carousel-main {
-              height: 240px;
+              height: 220px;
             }
-            
+
             .carousel-nav {
               width: 36px;
               height: 36px;
@@ -3256,7 +3260,7 @@ app.get('/', (req, res) => {
           /* Standard phones (iPhone 12-14, most Android) - 376-428px */
           @media (min-width: 376px) and (max-width: 428px) {
             .carousel-main {
-              height: 280px;
+              height: 250px;
             }
           }
           
@@ -3345,7 +3349,7 @@ app.get('/', (req, res) => {
             }
             
             .carousel-main {
-              height: 300px;
+              height: 260px;
               transition: transform 0.3s ease-out;
             }
             
@@ -3384,22 +3388,6 @@ app.get('/', (req, res) => {
               border-radius: 12px;
             }
             
-            /* Smooth panel transitions */
-            .side-panel.open,
-            .property-panel.open {
-              animation: slideInFromLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            }
-            
-            @keyframes slideInFromLeft {
-              from {
-                transform: translateX(-100%);
-                opacity: 0.8;
-              }
-              to {
-                transform: translateX(0);
-                opacity: 1;
-              }
-            }
           }
           
           /* Tablets (iPad, iPad Pro) - 769-1024px */
@@ -3445,6 +3433,8 @@ app.get('/', (req, res) => {
       transform: translateZ(0);
       transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       border-left: 2px solid rgba(255,255,255,0.2);
+      display: flex;
+      flex-direction: column;
     }
     
     .property-panel.open {
@@ -3452,8 +3442,6 @@ app.get('/', (req, res) => {
     }
     
     .property-panel-header {
-      position: sticky;
-      top: 0;
       background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
       color: white;
       padding: 16px 24px 14px 24px;
@@ -3497,7 +3485,8 @@ app.get('/', (req, res) => {
       padding: 25px;
       background: rgba(255, 255, 255, 0.95);
       margin: 0;
-      height: calc(100vh - 80px);
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
       scroll-behavior: smooth;
       overscroll-behavior-y: contain;

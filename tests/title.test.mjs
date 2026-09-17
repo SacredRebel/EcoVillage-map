@@ -103,6 +103,26 @@ check('compose: provider rows sit right after the owner block', withEntity.slice
   check('providers: the fan-out runs only the providers whose key is set', both && both.providers.join() === 'RentCast' && both.rows.length === 1, both);
   rentcastCacheClear();
 
+  // ---- the durable miss list: a parcel the vendor does not hold is asked about once, not forever
+  {
+    const { missRead, missHas, missAdd, missReset, MISS_PATH } = await import('../lib/providers.js');
+    missReset();
+    let stored = null, writes = 0;
+    const store = { readJson: async (p, d) => (p === MISS_PATH ? stored || d : d), updateJson: async (p, mut) => { writes++; stored = mut(stored); return { data: stored }; } };
+    await missAdd(store, 'rentcast', '0320010090', '2026-09-17');
+    check('misses: the file records the APN and the date, and nothing else', writes === 1 && stored.rentcast['0320010090'] === '2026-09-17' && !/name|owner|address|situs/i.test(JSON.stringify(stored.rentcast)) && Object.values(stored.rentcast).every(v => /^\d{4}-\d{2}-\d{2}$/.test(v)), stored.rentcast);
+    check('misses: a fresh miss is remembered, a 60-day-old one has expired', missHas(await missRead(store), 'rentcast', '0320010090', '2026-10-01') && !missHas(await missRead(store), 'rentcast', '0320010090', '2026-12-01') && !missHas(await missRead(store), 'rentcast', '9999999999', '2026-09-18'));
+    // the adapter must not spend a request on a remembered miss
+    missReset(); rentcastCacheClear();
+    process.env.RENTCAST_KEY = 'rc-test';
+    const missStore = { readJson: async () => ({ schema: 1, rentcast: { '0370012125': new Date().toISOString().slice(0, 10) } }), updateJson: async () => { throw new Error('should not write'); } };
+    let spent = 0;
+    globalThis.fetch = async () => { spent++; return { ok: true, json: async () => [REC] }; };
+    const remembered = await rentcastTitle({ apn10: '0370012125', lat: 34.4326, lon: -119.1564, situs: '11962 SULPHUR MOUNTAIN RD', store: missStore });
+    check('misses: a remembered miss costs no request and says so', spent === 0 && remembered.remembered === true && /held no record for this parcel when it was last asked, so the lookup was not spent again/.test(remembered.rows[0][1]), remembered.rows[0][1]);
+    missReset(); rentcastCacheClear();   // the key stays set — the meter block below needs it
+  }
+
   // ---- the spend meter: the free plan is 50/month and bills $0.20 after, so it must be capped
   const { meterCap, meterCount, meterBump, meterRead, meterReset, METER_PATH } = await import('../lib/providers.js');
   meterReset();

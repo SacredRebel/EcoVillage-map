@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<!-- The social preview card, rendered to public/og.png by scripts/make-og.mjs.
+     Entirely self-contained: no fonts, images or scripts are fetched, so the
+     render is identical anywhere and reproducible byte for byte. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; }
+  body {
+    background: #04060a;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #e8eef6;
+    position: relative;
+    overflow: hidden;
+  }
+  /* the land: contour rings, the thing the atlas is actually about */
+  .topo { position: absolute; inset: 0; }
+  /* a warm horizon glow, low and to the right, like late Ojai light */
+  .glow {
+    position: absolute; right: -180px; bottom: -260px;
+    width: 900px; height: 900px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,160,74,0.26) 0%, rgba(212,160,74,0.10) 38%, rgba(4,6,10,0) 68%);
+  }
+  .wrap { position: relative; padding: 74px 80px; height: 100%; display: flex; flex-direction: column; }
+  .kicker {
+    font-size: 19px; letter-spacing: 0.30em; text-transform: uppercase;
+    color: #d4a04a; font-weight: 600;
+  }
+  h1 {
+    font-size: 112px; line-height: 0.96; letter-spacing: -0.035em;
+    font-weight: 700; margin-top: 20px;
+    background: linear-gradient(103deg, #ffffff 0%, #dfe8f4 46%, #a9bdd6 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .rule { width: 132px; height: 4px; margin-top: 30px; border-radius: 2px;
+          background: linear-gradient(90deg, #d4a04a 0%, #a071d6 100%); }
+  .lede { margin-top: 28px; font-size: 27px; line-height: 1.42; color: #9fb0c6; max-width: 790px; }
+  .lede b { color: #e8eef6; font-weight: 600; }
+  .props { margin-top: auto; display: flex; gap: 11px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid rgba(160,113,214,0.42);
+    background: rgba(160,113,214,0.11);
+    color: #cbd6e6; border-radius: 999px;
+    padding: 10px 19px; font-size: 20px; font-weight: 500; white-space: nowrap;
+  }
+  .foot {
+    margin-top: 30px; display: flex; align-items: baseline; gap: 20px;
+    font-size: 21px; color: #63748c; border-top: 1px solid rgba(255,255,255,0.09); padding-top: 22px;
+  }
+  .foot .url { color: #d4a04a; font-weight: 600; letter-spacing: 0.01em; }
+  .foot .sep { opacity: 0.4; }
+</style>
+</head>
+<body>
+  <svg class="topo" viewBox="0 0 1200 630" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="line" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%"   stop-color="#3f5a7a" stop-opacity="0.50"/>
+        <stop offset="55%"  stop-color="#4a6f8f" stop-opacity="0.30"/>
+        <stop offset="100%" stop-color="#d4a04a" stop-opacity="0.20"/>
+      </linearGradient>
+    </defs>
+    <g fill="none" stroke="url(#line)" stroke-width="1.6">
+      <!-- concentric ridge contours: each ring is the previous one nudged outward -->
+      <path d="M980 600 C 880 512, 806 508, 742 546 C 676 586, 596 578, 556 528 C 512 474, 430 470, 372 512 C 316 552, 236 548, 176 498"/>
+      <path d="M1010 556 C 902 462, 818 458, 748 500 C 676 544, 590 534, 548 478 C 500 418, 414 414, 352 460 C 292 504, 210 500, 146 446"/>
+      <path d="M1040 512 C 924 412, 830 408, 754 454 C 676 502, 584 490, 540 428 C 488 362, 398 358, 332 408 C 268 456, 184 452, 116 394"/>
+      <path d="M1070 468 C 946 362, 842 358, 760 408 C 676 460, 578 446, 532 378 C 476 306, 382 302, 312 356 C 244 408, 158 404, 86 342"/>
+      <path d="M1100 424 C 968 312, 854 308, 766 362 C 676 418, 572 402, 524 328 C 464 250, 366 246, 292 304 C 220 360, 132 356, 56 290"/>
+      <path d="M1130 380 C 990 262, 866 258, 772 316 C 676 376, 566 358, 516 278 C 452 194, 350 190, 272 252 C 196 312, 106 308, 26 238"/>
+      <path d="M1160 336 C 1012 212, 878 208, 778 270 C 676 334, 560 314, 508 228 C 440 138, 334 134, 252 200 C 172 264, 80 260, -4 186"/>
+    </g>
+    <g fill="none" stroke="#d4a04a" stroke-opacity="0.34" stroke-width="2.4">
+      <!-- one parcel boundary, the atlas's signature shape -->
+      <path d="M786 236 L 962 206 L 1004 322 L 900 402 L 812 356 Z"/>
+    </g>
+    <g fill="#d4a04a" fill-opacity="0.85">
+      <circle cx="786" cy="236" r="4.5"/><circle cx="962" cy="206" r="4.5"/>
+      <circle cx="1004" cy="322" r="4.5"/><circle cx="900" cy="402" r="4.5"/>
+      <circle cx="812" cy="356" r="4.5"/>
+    </g>
+  </svg>
+  <div class="glow"></div>
+
+  <div class="wrap">
+    <div class="kicker">Ojai&nbsp;Valley&nbsp;·&nbsp;Ventura&nbsp;County</div>
+    <h1>Ojai Atlas</h1>
+    <div class="rule"></div>
+    <p class="lede">
+      Six properties on one map engine — <b>80 years of county aerials</b>,
+      historic topography, geology, faults, soils and water,
+      and the <b>full county record for any parcel</b>.
+    </p>
+
+    <div class="props">
+      <span class="chip">Howard</span>
+      <span class="chip">Sulphur Mountain Eco-Village</span>
+      <span class="chip">Keri's</span>
+      <span class="chip">Cher's</span>
+      <span class="chip">Black Mountain Ranch · 63 lots</span>
+      <span class="chip">Rose Valley</span>
+    </div>
+
+    <div class="foot">
+      <span class="url">eco-village-map.vercel.app</span>
+      <span class="sep">—</span>
+      <span>2D &amp; 3D terrain · 1945 → 2025 · ownership, title and taxes per APN</span>
+    </div>
+  </div>
+</body>
+</html>

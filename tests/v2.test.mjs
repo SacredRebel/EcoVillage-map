@@ -256,6 +256,51 @@ check('api: POST /api/upload is gated the same way', up.status === 501 || up.sta
 const props = await (await fetch(BASE + '/api/properties')).json();
 check('api: /api/properties carries county on every property and an APN on every single-parcel one', props.length === 6 && props.every(p => p.county) && props.filter(p => !p.lots).every(p => p.apn), props.map(p => p.id + ':' + p.apn));
 
+// ---- the social card: one image, both pages (V0.39) ----
+const cardMeta = (html) => {
+  const g = (re) => (html.match(re) || [, null])[1];
+  return {
+    img: g(/<meta property="og:image" content="([^"]+)"/),
+    card: g(/<meta name="twitter:card" content="([^"]+)"/),
+    title: g(/<meta property="og:title" content="([^"]+)"/),
+    url: g(/<meta property="og:url" content="([^"]+)"/),
+    w: g(/<meta property="og:image:width" content="([^"]+)"/),
+    h: g(/<meta property="og:image:height" content="([^"]+)"/),
+    alt: g(/<meta property="og:image:alt" content="([^"]+)"/),
+    icon: /<link rel="icon"/.test(html),
+    canon: g(/<link rel="canonical" href="([^"]+)"/)
+  };
+};
+const ogAtlas = cardMeta(await (await fetch(BASE + '/')).text());
+const ogClassic = cardMeta(await (await fetch(BASE + '/classic')).text());
+const wellFormed = (m, path) =>
+  /^https:\/\/eco-village-map\.vercel\.app\/og\.jpg$/.test(m.img) &&
+  m.card === 'summary_large_image' && m.w === '1200' && m.h === '630' &&
+  !!m.title && !!m.alt && m.icon &&
+  m.url === 'https://eco-village-map.vercel.app' + path && m.canon === m.url;
+check('social card: both pages carry og:image, the twitter card, the size, the alt text and their own canonical URL',
+  wellFormed(ogAtlas, '/') && wellFormed(ogClassic, '/classic'), { atlas: ogAtlas.url, classic: ogClassic.url, img: ogAtlas.img });
+const ogRes = await fetch(BASE + '/og.jpg');
+const ogBuf = Buffer.from(await ogRes.arrayBuffer());
+// JPEG: walk the markers to the SOF frame header — height then width, big-endian, at +5 and +7
+const jpegSize = (b) => {
+  if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8) return null;
+  let i = 2;
+  while (i + 9 < b.length) {
+    if (b[i] !== 0xff) { i++; continue; }
+    const m = b[i + 1], len = b.readUInt16BE(i + 2);
+    if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)];
+    i += 2 + len;
+  }
+  return null;
+};
+const ogSize = jpegSize(ogBuf);
+check('social card: /og.jpg is served as a real 1200x630 JPEG, cached for scrapers',
+  ogRes.status === 200 && /image\/jpeg/.test(ogRes.headers.get('content-type') || '') &&
+  ogSize && ogSize[0] === 1200 && ogSize[1] === 630 &&
+  /max-age=\d{5,}/.test(ogRes.headers.get('cache-control') || ''),
+  { status: ogRes.status, size: ogSize, bytes: ogBuf.length, cache: ogRes.headers.get('cache-control') });
+
 const real = errs.filter(e => !/WebGL|GL_INVALID|calculateFogMatrix|hillshade layer and for 3D terrain|swiftshader|GPU stall|Service Worker registration blocked|Failed to load resource/i.test(e));
 check('no page errors (GL warnings from software rendering excluded)', real.length === 0, real.slice(0, 5));
 const badReal = bad.filter(x => !/demotiles|apn=999/.test(x));

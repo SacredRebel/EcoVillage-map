@@ -7,7 +7,7 @@
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
-          "public/v2/**",
+          "public/**",
           "data/**"
         ],
         "maxDuration": 30

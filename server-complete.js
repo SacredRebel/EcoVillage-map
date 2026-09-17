@@ -114,6 +114,25 @@ function serveClassic(req, res) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Ojai Valley Properties — Interactive Development Map</title>
+  <!-- the social preview: one card, both pages (scripts/og-card.html -> public/og.png) -->
+  <link rel="canonical" href="https://eco-village-map.vercel.app/classic">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2304060a'/><path d='M2 24C7 19 12 25 17 20 21 16 26 19 30 15' fill='none' stroke='%233f5a7a' stroke-width='1.4'/><path d='M8 11 21 8 25 16 18 23 9 19Z' fill='none' stroke='%23d4a04a' stroke-width='2' stroke-linejoin='round'/></svg>">
+  <meta name="description" content="80 years of county aerials, historic topography, geology, faults, soils and water - and the full county record for any parcel, resolved on the spot.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Ojai Atlas">
+  <meta property="og:title" content="Ojai Atlas - six properties on one map engine">
+  <meta property="og:description" content="80 years of county aerials, historic topography, geology, faults, soils and water - and the full county record for any parcel, resolved on the spot.">
+  <meta property="og:url" content="https://eco-village-map.vercel.app/classic">
+  <meta property="og:image" content="https://eco-village-map.vercel.app/og.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Ojai Atlas card: contour lines and a gold parcel boundary on a dark field, with the six properties listed.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Ojai Atlas - six properties on one map engine">
+  <meta name="twitter:description" content="80 years of county aerials, historic topography, geology, faults, soils and water - and the full county record for any parcel, resolved on the spot.">
+  <meta name="twitter:image" content="https://eco-village-map.vercel.app/og.jpg">
+  <meta name="twitter:image:alt" content="The Ojai Atlas card: contour lines and a gold parcel boundary on a dark field, with the six properties listed.">
   <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin>
   <link rel="preconnect" href="https://s3.amazonaws.com" crossorigin>
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
@@ -8592,6 +8611,14 @@ app.get('/api/tile', async (req, res) => {
     res.set('Cache-Control', 'no-store');
     res.status(504).end();
   }
+});
+// The social preview card (public/og.jpg, rendered by scripts/make-og.mjs). Scrapers fetch it
+// once and cache hard, so it is served with a long max-age; it only changes when the card does.
+app.get('/og.jpg', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'og.jpg'), {
+    maxAge: '7d',
+    headers: { 'Cache-Control': 'public, max-age=604800, s-maxage=2592000, stale-while-revalidate=604800' }
+  }, (err) => { if (err && !res.headersSent) res.status(404).end(); });
 });
 app.use('/v2/assets', express.static(join(__dirname, 'public', 'v2', 'assets'), { maxAge: '365d', immutable: true }));
 app.use('/v2', express.static(join(__dirname, 'public', 'v2'), { maxAge: 0, etag: true, index: 'index.html' }));

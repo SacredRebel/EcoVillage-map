@@ -152,7 +152,7 @@ The user's instruction: *pull from as many sources as possible, from different a
 | Env var on Vercel | Unlocks | Status |
 |---|---|---|
 | `EDIT_PIN` + `GITHUB_TOKEN` | the editor's saves, uploads, research sync, **report imports** | code live (V0.31–32); keys not yet set |
-| `SOS_API_KEY` | live Secretary of State rows for every company on title (`sosEntity`) | code live (V0.33); free key at calicodev.sos.ca.gov |
+| `SOS_API_KEY` | live Secretary of State rows for every company on title (`sosEntity`) | code live (V0.33); free key at calicodev.sos.ca.gov — **the subscription is approval-gated: it sits in state `Submitted` with no keys visible until a person at the SOS approves it, which the API guide does not mention** |
 | `REGRID_TOKEN` | live Regrid ownership/value rows (`regridTitle`) | code live (V0.32); paid |
 | `RENTCAST_KEY` | live RentCast owner / mailing / sale history / assessment rows (`rentcastTitle`), matched to the APN | code live (V0.35); free plan 50 requests a month |
 | — (no key) | county GIS, 2018 roll, federal/state layers, imported reports, portals | live |

@@ -158,6 +158,73 @@ check('ground card: the county record resolves for the parcel under the point', 
 await ev(() => { const p = window.atlas.props.props.find(x => x.id === 'black-mountain-ranch'); const lot = p.lots[0]; window.atlas.props.selectLot(lot.id); window.atlas.props.onSelect('lot', { pid: p.id, lid: lot.id, apn: lot.apn, name: lot.name, acreage: lot.acreage }); return true; }); await wait(700);
 const lc = await ev(() => ({ title: document.querySelector('#insp-parcel .card-head b')?.textContent, rows: [...document.querySelectorAll('#insp-parcel .rows .k')].map(k => k.textContent).join('|'), acts: document.querySelectorAll('#insp-parcel .acts .mini').length, sel: JSON.stringify(window.atlas.eng.map.getFilter('lot-sel')) }));
 check('lot card: APN rows, actions, the cyan selection filter', !!lc.title && /APN/.test(lc.rows) && lc.acts >= 3 && /lid|id/.test(lc.sel), lc);
+
+// ---- the county's buildings, extruded (V0.41) ----
+const bld = await ev(() => {
+  const m = window.atlas.eng.map;
+  const src = m.getStyle().sources.bldg;
+  const n = src && src.data && src.data.features ? src.data.features.length : 0;
+  const h = m.getLayer('bldg-3d') ? m.getPaintProperty('bldg-3d', 'fill-extrusion-height') : null;
+  const kinds = window.atlas.props.structures.map(f => f.properties.pid);
+  return { n, layer: !!m.getLayer('bldg-3d'), line: !!m.getLayer('bldg-line'), type: m.getLayer('bldg-3d')?.type, h: JSON.stringify(h), pids: [...new Set(kinds)].sort().join(',') };
+});
+check('buildings: the county footprints load and extrude, height in feet converted to metres',
+  bld.n >= 5 && bld.layer && bld.line && bld.type === 'fill-extrusion' && /0\.3048/.test(bld.h) && /sulphur-mountain/.test(bld.pids), bld);
+const bcard = await ev(() => {
+  const f = window.atlas.props.structures.find(x => x.properties.pid === 'chers-property') || window.atlas.props.structures[0];
+  window.atlas.props.onSelect('structure', Object.assign({ oid: String(f.id || '') }, f.properties));
+  return true;
+});
+await wait(500);
+const bc = await ev(() => ({
+  title: document.querySelector('#insp-parcel .card-head b')?.textContent,
+  rows: [...document.querySelectorAll('#insp-parcel .rows .r .k')].map(e => e.textContent).join('|'),
+  note: document.querySelector('#insp-parcel .note-p')?.textContent || '',
+  height: [...document.querySelectorAll('#insp-parcel .rows .r')].map(e => e.textContent).find(t => /Drawn height/.test(t)) || ''
+}));
+check('buildings: the card names the structure and says the height is a class default, not a measurement',
+  !!bcard && /Dwelling|Structure|Outbuilding/.test(bc.title || '') && /On parcel/.test(bc.rows) && /default for this building class/.test(bc.height) && /massing/.test(bc.note), bc);
+
+// ---- the Vision half: proposed structures, and the county's own kept to Today (V0.41) ----
+const vis = await ev(() => {
+  const m = window.atlas.eng.map, src = m.getStyle().sources.vis;
+  return {
+    n: src && src.data && src.data.features ? src.data.features.length : 0,
+    site: !!m.getLayer('vis-site'), line: !!m.getLayer('vis-site-line'), ext: !!m.getLayer('vis-3d'),
+    extType: m.getLayer('vis-3d')?.type,
+    registry: window.atlas.models.structures.map(s => s.id + ':' + s.status + ':' + s.mode).join(','),
+    threeLoaded: !!document.querySelector('script[src*="three"]')
+  };
+});
+check('vision: the designed-structure registry loads and draws a reserved site, not a building',
+  vis.n >= 1 && vis.site && vis.line && vis.ext && vis.extType === 'fill-extrusion' && /sulphur-oak-house:site:vision/.test(vis.registry), vis);
+// Today shows what stands, Vision shows what is proposed - never both at once
+await ev(() => { window.atlas.hud.setMode ? window.atlas.hud.setMode('vision') : (window.atlas.props.applyMode('vision'), window.atlas.models.applyMode('vision')); });
+await wait(400);
+const modes = await ev(() => {
+  const m = window.atlas.eng.map;
+  const visv = JSON.stringify(m.getFilter('vis-site'));
+  const bldgv = m.getLayoutProperty('bldg-3d', 'visibility');
+  window.atlas.props.applyMode('today'); window.atlas.models.applyMode('today');
+  return { visionSiteFilter: visv, bldgInVision: bldgv, bldgInToday: m.getLayoutProperty('bldg-3d', 'visibility'), visTodayFilter: JSON.stringify(m.getFilter('vis-site')) };
+});
+check('vision: the county buildings belong to Today and the proposed site to Vision',
+  /vision/.test(modes.visionSiteFilter) && modes.bldgInVision === 'none' && modes.bldgInToday !== 'none' && /current/.test(modes.visTodayFilter), modes);
+await ev(() => { const s = window.atlas.models.structures[0]; window.atlas.models.onSelect(s); });
+await wait(400);
+const vc = await ev(() => ({
+  title: document.querySelector('#insp-parcel .card-head b')?.textContent,
+  strip: document.querySelector('#insp-parcel .strip')?.textContent,
+  state: [...document.querySelectorAll('#insp-parcel .rows .r')].map(e => e.textContent).find(t => /State/.test(t)) || '',
+  note: document.querySelector('#insp-parcel .note-p')?.textContent || ''
+}));
+check('vision: the card says the ground is reserved and nothing is designed on it yet',
+  /Oak House/.test(vc.title || '') && /VISION/.test(vc.strip || '') && /reserved/i.test(vc.state) && /sun study/.test(vc.note), vc);
+// three.js is a capability, not a cost: nothing is loaded until a model is actually placed
+const chunks = await ev(() => performance.getEntriesByType('resource').map(r => r.name).filter(n => /three|GLTFLoader/i.test(n)).length);
+check('vision: three.js and the glTF loader stay unloaded while no model is placed', chunks === 0, { chunks });
+// the two cards above replaced the inspector's contents; put the lot card back for the fly test
+await ev(() => { const p = window.atlas.props.props.find(x => x.id === 'black-mountain-ranch'); const lot = p.lots[0]; window.atlas.props.selectLot(lot.id); window.atlas.props.onSelect('lot', { pid: p.id, lid: lot.id, apn: lot.apn, name: lot.name, acreage: lot.acreage }); return true; }); await wait(700);
 const zBefore = await ev(() => window.atlas.eng.map.getZoom()); const cBefore = await ev(() => window.atlas.eng.map.getCenter().lng);
 await ev(() => document.querySelector('#insp-parcel [data-lot]').click()); await wait(500);
 await pg.waitForFunction(() => !window.atlas.eng.map.isMoving(), { timeout: 10000 }).catch(() => {}); await wait(300);

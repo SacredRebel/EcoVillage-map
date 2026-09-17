@@ -8623,6 +8623,35 @@ app.get('/og.jpg', (req, res) => {
 app.use('/v2/assets', express.static(join(__dirname, 'public', 'v2', 'assets'), { maxAge: '365d', immutable: true }));
 app.use('/v2', express.static(join(__dirname, 'public', 'v2'), { maxAge: 0, etag: true, index: 'index.html' }));
 
+// Building footprints (V0.41): the county's own polygons for every structure standing on a
+// property, baked by scripts/fetch-footprints.mjs. Geometry and baseM are the county's survey of
+// record; heightFt is the county's CLASS DEFAULT for the building type, never a measured roofline
+// - the atlas draws massing and the card says exactly that. A few dozen polygons, so it ships as a
+// file rather than a live query: the map has buildings before the first network round trip.
+app.get('/api/footprints', (req, res) => {
+  try {
+    const doc = JSON.parse(readFileSync(join(__dirname, 'data', 'footprints.json'), 'utf8'));
+    const pid = String(req.query.property || '').trim();
+    const body = pid ? Object.assign({}, doc, { features: doc.features.filter((f) => f.properties && f.properties.pid === pid) }) : doc;
+    res.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    res.json(body);
+  } catch (e) { res.status(500).json({ error: 'Footprint data unavailable.' }); }
+});
+
+// Designed structures (V0.41): what is PROPOSED for each property, as opposed to the county's
+// footprints above, which are what stands there. Three states - a reserved site outline, a massing
+// block with a designed height, or a real glTF model placed through the atlas's three.js layer.
+// Adding a building is a row in data/structures.json plus, for a model, a file under public/models.
+app.get('/api/structures', (req, res) => {
+  try {
+    const doc = JSON.parse(readFileSync(join(__dirname, 'data', 'structures.json'), 'utf8'));
+    const pid = String(req.query.property || '').trim();
+    const body = pid ? Object.assign({}, doc, { structures: doc.structures.filter((s) => s.pid === pid) }) : doc;
+    res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
+    res.json(body);
+  } catch (e) { res.status(500).json({ error: 'Structure data unavailable.' }); }
+});
+
 app.get('/api/survey/:propertyId', (req, res) => {
   const f = SURVEY_FILES[req.params.propertyId];
   if (!f) return res.status(404).json({ error: 'No survey data for this property.' });

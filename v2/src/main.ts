@@ -2,6 +2,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.css';
 import { Engine } from './engine/map';
 import { PropertyLayer } from './data/properties';
+import { ModelLayer } from './data/models';
 import { Hud } from './ui/hud';
 import { DEFAULT_STATE, readHash, writeHash, type AppState } from './engine/state';
 import { FLIGHTS, OVERLAYS, GROUPS, histYear, overlayById } from './layers/registry';
@@ -32,8 +33,9 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
   window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(e => console.info('[atlas] sw', e)); });
 }
 const props = new PropertyLayer(eng);
+const models = new ModelLayer(eng);   // the Vision half: proposed structures, sites and models
 let mode = state.mode;
-const hud = new Hud(app, { eng, props, mode, onMode: m => { mode = m; props.applyMode(m); persist(); } });
+const hud = new Hud(app, { eng, props, models, mode, onMode: m => { mode = m; props.applyMode(m); models.applyMode(m); persist(); } });
 // remembered render quality (low / medium / high) - applied before the first real frame
 try { const q = localStorage.getItem('atlasQuality'); if (q === 'low' || q === 'medium' || q === 'high') { eng.setQuality(q); const sel = document.getElementById('ctl-quality') as HTMLSelectElement | null; if (sel) sel.value = q; } } catch { /* private mode */ }
 
@@ -60,6 +62,9 @@ async function boot() {
     await props.load();
     props.build();
     props.applyMode(mode);
+    await models.load();
+    models.build();
+    models.applyMode(mode);
     hud.setCrumb(`Ojai Valley · ${props.props.length} properties · ${props.props.reduce((n, p) => n + (p.zones?.length || 0), 0)} zones`);
     if (!location.hash) eng.map.fitBounds(props.bounds(), { padding: { top: 80, bottom: 150, left: 40, right: 40 }, duration: 0 });
     const want = new URLSearchParams(location.search).get('p');
@@ -74,9 +79,9 @@ async function boot() {
 if (eng.map.loaded()) boot(); else eng.map.once('load', boot);
 
 // test hooks
-declare global { interface Window { atlas: { eng: Engine; props: PropertyLayer; hud: Hud; ready?: boolean; catalog: () => unknown; state: () => unknown }; } }
+declare global { interface Window { atlas: { eng: Engine; props: PropertyLayer; models: ModelLayer; hud: Hud; ready?: boolean; catalog: () => unknown; state: () => unknown }; } }
 window.atlas = {
-  eng, props, hud,
+  eng, props, models, hud,
   catalog: () => ({ groups: GROUPS.length, overlays: OVERLAYS.map(o => ({ id: o.id, group: o.group, kind: o.kind || 'export', z: o.z, parts: (o.parts || []).length })), flights: FLIGHTS.length }),
   state: () => ({ base: eng.base, overlays: [...eng.active], histYear, terrain: eng.terrain, mode, zoom: eng.map.getZoom(), pitch: eng.map.getPitch(), layers: eng.map.getStyle().layers.map(l => l.id) })
 };

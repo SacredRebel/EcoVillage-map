@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "note": "Designed structures — the Vision half of the map. These are what is PROPOSED for the land, never what stands on it (the county's own footprints are data/footprints.json and show only in Today mode). A structure moves through three states: 'site' is a reserved ground outline with nothing built on it, 'massing' extrudes that outline to a designed height, and 'model' places a real .glb through the three.js custom layer. Adding a building is a row here plus, for a model, a file under public/models — never a code change.",
+  "updatedAt": "2026-09-17",
+  "structures": [
+    {
+      "id": "sulphur-oak-house",
+      "pid": "sulphur-mountain",
+      "mode": "vision",
+      "status": "site",
+      "name": "The Oak House — site",
+      "note": "Placeholder position. The outline is the largest structure the county maps on this parcel, standing in until the siting is decided — and the siting decision wants the sun study first, since orientation is the one thing that cannot be fixed later. Move it in the editor, then raise it to 'massing' with a height, then to 'model' when the .glb exists.",
+      "outline": [[-119.155266, 34.433171], [-119.155268, 34.43312], [-119.155269, 34.43307], [-119.155291, 34.43307], [-119.155292, 34.433026], [-119.155353, 34.433027], [-119.155351, 34.433108], [-119.155379, 34.433109], [-119.155378, 34.433142], [-119.15535, 34.433142], [-119.155349, 34.433172], [-119.155289, 34.433171], [-119.155266, 34.433171]],
+      "heightFt": null,
+      "model": null,
+      "position": [-119.15532, 34.433111],
+      "altitudeM": null,
+      "rotationDeg": 0,
+      "scale": 1
+    }
+  ]
+}

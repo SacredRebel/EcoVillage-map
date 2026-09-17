@@ -22,6 +22,12 @@ export interface Property {
   footerTitle?: string; footerInfo?: string[];
 }
 export interface LotPick { pid: string; lid: string; apn: string; name: string; acreage: string; }
+// A structure the county has mapped standing on one of our parcels. The geometry and the base
+// elevation are the county's own; heightFt is its CLASS DEFAULT for the building type (20 ft for an
+// occupied dwelling, 17 agricultural, 8 an outbuilding), never a measured roofline - so this is
+// massing, and the card says so rather than implying a survey.
+export interface StructureProps { pid: string; lid: string | null; apn: string; kind: string; use: string; heightFt: number | null; baseM: number | null; year: string | null; sqft: number | null; sqft2: number | null; address: string | null; }
+export type StructurePick = StructureProps & { oid: string };
 
 // the classic page's zone palette, so the territories look the same on both maps
 export const ZONE_COLORS: Record<string, string> = {
@@ -82,7 +88,8 @@ export class PropertyLayer {
   props: Property[] = [];
   private markers: maplibregl.Marker[] = [];
   private icons = new Set<string>();
-  onSelect: (kind: 'property' | 'zone' | 'lot', payload: unknown) => void = () => {};
+  onSelect: (kind: 'property' | 'zone' | 'lot' | 'structure', payload: unknown) => void = () => {};
+  structures: GeoJSON.Feature[] = [];
   mode: 'today' | 'vision' = 'today';
   private phase = 0;
   private rainbowTimer: number | null = null;
@@ -93,6 +100,12 @@ export class PropertyLayer {
   async load(): Promise<Property[]> {
     const r = await fetch('/api/properties');
     this.props = await r.json();
+    // the county's structures, baked - a parcel with none is a normal answer, and a failure here
+    // must never stop the map drawing, so it is awaited separately and swallowed
+    try {
+      const f = await fetch('/api/footprints');
+      if (f.ok) { const j = await f.json(); this.structures = Array.isArray(j?.features) ? j.features : []; }
+    } catch { this.structures = []; }
     return this.props;
   }
 
@@ -159,6 +172,17 @@ export class PropertyLayer {
     m.addLayer({ id: 'terr-fill', type: 'fill', source: 'terr', minzoom: 10, paint: { 'fill-color': ['get', 'color'], 'fill-opacity': revealOpacity(0.28), 'fill-opacity-transition': { duration: 350, delay: 0 } } }, PROP_ANCHOR);
     m.addLayer({ id: 'terr-line', type: 'line', source: 'terr', minzoom: 10, paint: { 'line-color': ['get', 'color'], 'line-width': 1.6, 'line-opacity': revealOpacity(0.85), 'line-opacity-transition': { duration: 350, delay: 0 } } }, PROP_ANCHOR);
     // a searched / clicked parcel that is not one of ours: cyan dashed outline (the research candidate)
+    // Buildings the county has mapped, extruded. Height is feet -> metres; the base rides the
+    // terrain, so with 3D on they stand on the hillside rather than floating at sea level.
+    m.addSource('bldg', { type: 'geojson', data: { type: 'FeatureCollection', features: this.structures } });
+    m.addLayer({ id: 'bldg-3d', type: 'fill-extrusion', source: 'bldg', minzoom: 14.5, paint: {
+      'fill-extrusion-color': ['match', ['get', 'kind'], 'RESIDENTIAL/OCCUPIED', '#d9c9a8', 'RESIDENTIAL/OUTBUILDING', '#b9a88c', '#a89a84'],
+      'fill-extrusion-height': ['*', ['coalesce', ['get', 'heightFt'], 12], 0.3048],
+      'fill-extrusion-base': 0,
+      'fill-extrusion-opacity': 0.92,
+      'fill-extrusion-vertical-gradient': true
+    } }, PROP_ANCHOR);
+    m.addLayer({ id: 'bldg-line', type: 'line', source: 'bldg', minzoom: 14.5, paint: { 'line-color': '#f0e6d2', 'line-width': 1, 'line-opacity': 0.5 } }, PROP_ANCHOR);
     m.addSource('cand', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     m.addLayer({ id: 'cand-fill', type: 'fill', source: 'cand', paint: { 'fill-color': '#7ff0ff', 'fill-opacity': 0.08 } }, PROP_ANCHOR);
     m.addLayer({ id: 'cand-line', type: 'line', source: 'cand', layout: { 'line-join': 'round' }, paint: { 'line-color': '#7ff0ff', 'line-width': 2.4, 'line-dasharray': [2, 1.2], 'line-opacity': 0.95 } }, PROP_ANCHOR);
@@ -174,6 +198,7 @@ export class PropertyLayer {
     m.on('click', 'zones', e => { const f = e.features?.[0]; if (f && revealed(f)) { const p = this.props.find(x => x.id === f.properties.pid); const z = p?.zones.find(x => x.id === f.properties.zid); if (p && z) this.onSelect('zone', { property: p, zone: z }); } });
     m.on('click', 'terr-fill', e => { if (m.queryRenderedFeatures(e.point, { layers: ['zones'] }).some(revealed)) return; const f = e.features?.[0]; if (f && revealed(f)) { const p = this.props.find(x => x.id === f.properties.pid); const z = p?.zones.find(x => x.id === f.properties.zid); if (p && z) this.onSelect('zone', { property: p, zone: z }); } });
     m.on('click', 'prop-fill', e => { if (m.queryRenderedFeatures(e.point, { layers: ['zones', 'terr-fill'] }).some(revealed)) return; const f = e.features?.[0]; const p = f && this.props.find(x => x.id === f.properties.pid); if (p) this.onSelect('property', p); });
+    m.on('click', 'bldg-3d', e => { const f = e.features?.[0]; if (f) this.onSelect('structure', Object.assign({ oid: String(f.id ?? '') }, f.properties as unknown as StructureProps)); });
     m.on('click', 'lot-fill', e => { if (m.queryRenderedFeatures(e.point, { layers: ['zones', 'terr-fill'] }).some(revealed)) return; if (m.queryRenderedFeatures(e.point, { layers: ['prop-fill'] }).length && m.getZoom() < 14) return; const f = e.features?.[0]; if (f) { this.selectLot(String(f.properties.lid)); this.onSelect('lot', f.properties as unknown as LotPick); } });
     for (const l of ['zones', 'prop-fill', 'lot-fill', 'terr-fill']) { m.on('mouseenter', l, () => { m.getCanvas().style.cursor = 'pointer'; }); m.on('mouseleave', l, () => { m.getCanvas().style.cursor = ''; }); }
     m.on('zoom', () => this.tuckChips());
@@ -198,7 +223,7 @@ export class PropertyLayer {
   }
   hitsOwn(point: maplibregl.Point): boolean {
     const m = this.eng.map, z = m.getZoom();
-    return m.queryRenderedFeatures(point, { layers: ['zones', 'terr-fill', 'prop-fill', 'lot-fill'].filter(l => !!m.getLayer(l)) }).some(f => f.properties.minz == null || z >= Number(f.properties.minz));
+    return m.queryRenderedFeatures(point, { layers: ['zones', 'terr-fill', 'prop-fill', 'lot-fill', 'bldg-3d'].filter(l => !!m.getLayer(l)) }).some(f => f.properties.minz == null || z >= Number(f.properties.minz));
   }
 
   selectLot(lid: string | null) {
@@ -237,6 +262,9 @@ export class PropertyLayer {
     const m = this.eng.map;
     const modeFilter: maplibregl.FilterSpecification = ['all', ['any', ['==', ['get', 'mode'], 'both'], ['==', ['get', 'mode'], mode === 'today' ? 'current' : 'vision']], ['!=', ['get', 'pid'], this.editing || '']];
     for (const l of ['zones', 'terr-fill', 'terr-line']) if (m.getLayer(l)) m.setFilter(l, modeFilter);
+    // the county's buildings are what stands there, so they belong to Today. Vision keeps the
+    // ground clear for what is proposed - the designed structures, placed as real models.
+    for (const l of ['bldg-3d', 'bldg-line']) if (m.getLayer(l)) m.setLayoutProperty(l, 'visibility', mode === 'today' ? 'visible' : 'none');
     for (const mk of this.markers) { const el = mk.getElement(); const p = this.props.find(x => x.id === el.dataset.pid); if (p) el.textContent = (mode === 'vision' && p.visionLabelChip) || p.labelChip || p.shortLabel || p.name; }
   }
 

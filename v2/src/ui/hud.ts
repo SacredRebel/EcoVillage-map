@@ -7,7 +7,8 @@ import type { Engine } from '../engine/map';
 import { BASE_LABELS, ml } from '../engine/map';
 import { GROUPS, OVERLAYS, FLIGHTS, HIST_YEARS, HIST_NOTES, overlayById, histYear, type OverlayDef } from '../layers/registry';
 import { legendFor } from '../layers/legend';
-import type { PropertyLayer, Property, Zone, LotPick } from '../data/properties';
+import type { PropertyLayer, Property, Zone, LotPick, StructurePick } from '../data/properties';
+import type { ModelLayer, Structure } from '../data/models';
 import { galleryFor, galleryHTML, wireGallery, isOpen as lightboxOpen, invalidate as invalidateGallery } from './gallery';
 import { Editor } from './editor';
 import { RecordStore, renderRecord, research, compareHTML, type Target, type RecordData, type ResearchItem, type CompareCol, cloud, storedPin, askPin, syncResearch, pushResearch } from './record';
@@ -28,7 +29,7 @@ function lotBoundsCenter(rings: [number, number][][]): [number, number] { let la
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
 const el = (html: string) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild as HTMLElement; };
 
-export interface HudOpts { eng: Engine; props: PropertyLayer; mode: 'today' | 'vision'; onMode: (m: 'today' | 'vision') => void; }
+export interface HudOpts { eng: Engine; props: PropertyLayer; mode: 'today' | 'vision'; onMode: (m: 'today' | 'vision') => void;  models: ModelLayer;}
 
 export class Hud {
   root: HTMLElement;
@@ -38,7 +39,8 @@ export class Hud {
   private onMode: (m: 'today' | 'vision') => void;
   private peek = new Set<string>();
   private legendSig = '';
-  private selected: { kind: 'property' | 'zone' | 'lot' | 'ground' | 'search'; payload: unknown } | null = null;
+  private selected: { kind: 'property' | 'zone' | 'lot' | 'ground' | 'search' | 'structure' | 'designed'; payload: unknown } | null = null;
+  private models!: ModelLayer;
   private groundPopup: maplibregl.Popup | null = null;
   private dockOpen = window.innerWidth > 760;
   private inspectorOpen = window.innerWidth > 1100;
@@ -62,7 +64,7 @@ export class Hud {
   private get editing() { return Hud.editorEnabled(); }
 
   constructor(container: HTMLElement, o: HudOpts) {
-    this.eng = o.eng; this.props = o.props; this.mode = o.mode; this.onMode = o.onMode;
+    this.eng = o.eng; this.props = o.props; this.models = o.models; this.mode = o.mode; this.onMode = o.onMode;
     this.root = el('<div class="hud"></div>');
     container.appendChild(this.root);
     this.root.append(this.buildTop(), this.buildDock(), this.buildInspector(), this.buildTimeline(), this.buildControls(), this.buildIntro(), el('<div class="toast" id="toast" hidden></div>'));
@@ -235,6 +237,7 @@ export class Hud {
       else this.lowFps = 0;
     });
     // selection from the map
+    this.models.onSelect = s => { this.selected = { kind: 'designed', payload: s }; this.inspectorOpen = true; this.lastPanel = 'insp'; this.setTab('parcel'); this.renderParcel(); this.syncPanels(); };
     this.props.onSelect = (kind, payload) => { if (kind !== 'lot') this.props.selectLot(null); this.groundPopup?.remove(); this.selected = { kind, payload }; this.inspectorOpen = true; this.lastPanel = 'insp'; this.setTab('parcel'); this.renderParcel(); this.syncPanels(); };
     // click on open ground: the readout (coordinates, elevation, dossier for whatever parcel is there)
     map.on('click', e => { if (this.editor.open || this.props.hitsOwn(e.point)) return; this.ground(e.lngLat); });
@@ -486,6 +489,36 @@ export class Hud {
       h += this.recordShell(`One of ${p?.lots?.length || '—'} county parcels drawn from the assessor fabric. The record below is this parcel alone.`);
       box.innerHTML = h;
       this.showRecord({ apn: l.apn, county: p?.county });
+    } else if (kind === 'designed') {
+      const d = payload as Structure, p = this.props.props.find(x => x.id === d.pid);
+      const state = d.status === 'site' ? 'Ground reserved \u2014 nothing designed on it yet'
+        : d.status === 'massing' ? 'Massing only \u2014 the footprint and a height, no design'
+        : 'A model is placed here';
+      const rows: [string, string][] = [['State', state]];
+      if (d.heightFt) rows.push(['Designed height', d.heightFt + ' ft']);
+      if (d.position) rows.push(['Centre', d.position[1].toFixed(6) + ', ' + d.position[0].toFixed(6)]);
+      box.innerHTML = `<div class="card"><span class="strip vision">VISION \u00b7 proposed</span><div class="card-head"><b>${esc(d.name)}</b><span class="apn">${esc(p?.shortLabel || p?.name || '')}</span></div>
+        <div class="rows">${rows.map(r => `<div class="r"><span class="k">${esc(r[0])}</span><span class="v">${esc(r[1])}</span></div>`).join('')}</div>
+        ${d.note ? `<p class="note-p">${esc(d.note)}</p>` : ''}
+        <div class="acts">${p ? `<button class="mini" data-fly="${p.id}">the whole property</button>` : ''}</div></div>`;
+    } else if (kind === 'structure') {
+      const b = payload as StructurePick, p = this.props.props.find(x => x.id === b.pid);
+      const ft = b.heightFt == null ? null : b.heightFt;
+      const storeys = ft == null ? null : Math.max(1, Math.round(ft / 10));
+      const title = b.kind === 'RESIDENTIAL/OCCUPIED' ? 'Dwelling' : b.kind === 'RESIDENTIAL/OUTBUILDING' ? 'Outbuilding' : 'Structure';
+      const sentence = (t: string) => t.toLowerCase().replace(/(^|[.;] )([a-z])/g, (_m, a1: string, c: string) => a1 + c.toUpperCase());
+      const rows: [string, string][] = [];
+      if (b.use) rows.push(['County classification', sentence(b.use)]);
+      if (b.address) rows.push(['Address on the footprint', b.address]);
+      if (b.year) rows.push(['Year built', b.year]);
+      if (b.sqft) rows.push(['Floor area', b.sqft.toLocaleString() + ' sq ft' + (b.sqft2 ? ' on the first floor, ' + b.sqft2.toLocaleString() + ' on the second' : '')]);
+      if (ft != null) rows.push(['Drawn height', ft + ' ft \u2014 the county\u2019s default for this building class, not a measurement' + (storeys ? ' (about ' + storeys + ' storey' + (storeys > 1 ? 's' : '') + ')' : '')]);
+      if (b.baseM != null) rows.push(['Ground at its base', Math.round(b.baseM * 3.28084).toLocaleString() + ' ft \u00b7 ' + b.baseM.toFixed(1) + ' m']);
+      rows.push(['On parcel', b.apn]);
+      box.innerHTML = `<div class="card">${strip}<div class="card-head"><b>${esc(title)}</b><span class="apn">${esc(p?.shortLabel || p?.name || '')}</span></div>
+        <div class="rows">${rows.map(r => `<div class="r"><span class="k">${esc(r[0])}</span><span class="v">${esc(r[1])}</span></div>`).join('')}</div>
+        <div class="acts">${p ? `<button class="mini" data-fly="${p.id}">the whole property</button>` : ''}<button class="mini" data-copy="${esc(b.apn)}">copy APN</button></div>
+        <p class="note-p">Ventura County GIS maps every structure standing on a parcel, and this is its polygon and its ground elevation. What it does not carry is a measured roofline \u2014 the height above is a class default, so read this as massing. A photogrammetric scan replaces it with the real thing.</p></div>`;
     } else if (kind === 'search') {
       const c = payload as { apn: string | null; situs: string | null; acreage: number | null; center: [number, number]; county?: { name: string; stateName?: string | null; fips?: string; adapter?: string | null } | null; label?: string };
       const saved = c.apn ? research.has(c.apn) : false;

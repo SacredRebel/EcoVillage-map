@@ -1,0 +1,453 @@
+{
+ "type": "FeatureCollection",
+ "note": "Ventura County building footprints. Geometry and base elevation (baseM, metres) are the county’s; heightFt is the county’s CLASS DEFAULT for the building type, not a measured roofline.",
+ "source": "Ventura County GIS · DataDownloads/CommonData/0",
+ "parcelsAsked": 68,
+ "generated": "2026-09-17",
+ "features": [
+  {
+   "type": "Feature",
+   "id": 202,
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -119.319361,
+       34.425948
+      ],
+      [
+       -119.319424,
+       34.425948
+      ],
+      [
+       -119.319488,
+       34.425947
+      ],
+      [
+       -119.319489,
+       34.425991
+      ],
+      [
+       -119.31949,
+       34.426036
+      ],
+      [
+       -119.319426,
+       34.426037
+      ],
+      [
+       -119.319362,
+       34.426038
+      ],
+      [
+       -119.319361,
+       34.425993
+      ],
+      [
+       -119.319361,
+       34.425948
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "pid": "howard",
+    "lid": null,
+    "apn": "032-0-010-090",
+    "kind": "RESOURCE PROD",
+    "use": "ORANGES",
+    "heightFt": 17,
+    "baseM": 201.54,
+    "year": null,
+    "sqft": null,
+    "sqft2": null,
+    "address": "1320 BALDWIN RD"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 264208,
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -119.155647,
+       34.432773
+      ],
+      [
+       -119.155576,
+       34.432766
+      ],
+      [
+       -119.155584,
+       34.432707
+      ],
+      [
+       -119.155655,
+       34.432714
+      ],
+      [
+       -119.155647,
+       34.432773
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "pid": "sulphur-mountain",
+    "lid": null,
+    "apn": "037-0-012-125",
+    "kind": "RESOURCE PROD",
+    "use": "FIELD AND SEED CROPS",
+    "heightFt": 17,
+    "baseM": 421.12,
+    "year": null,
+    "sqft": null,
+    "sqft2": null,
+    "address": "11962 SULPHUR MOUNTAIN RD"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 264209,
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -119.155732,
+       34.433202
+      ],
+      [
+       -119.155671,
+       34.433202
+      ],
+      [
+       -119.155671,
+       34.433142
+      ],
+      [
+       -119.155733,
+       34.433142
+      ],
+      [
+       -119.155732,
+       34.433202
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "pid": "sulphur-mountain",
+    "lid": null,
+    "apn": "037-0-012-125",
+    "kind": "RESOURCE PROD",
+    "use": "FIELD AND SEED CROPS",
+    "heightFt": 17,
+    "baseM": 423.16,
+    "year": null,
+    "sqft": null,
+    "sqft2": null,
+    "address": "11962 SULPHUR MOUNTAIN RD"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 13521,
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -119.155266,
+       34.433171
+      ],
+      [
+       -119.155268,
+       34.43312
+      ],
+      [
+       -119.155269,
+       34.43307
+      ],
+      [
+       -119.155291,
+       34.43307
+      ],
+      [
+       -119.155292,
+       34.433026
+      ],
+      [
+       -119.155353,
+       34.433027
+      ],
+      [
+       -119.155351,
+       34.433108
+      ],
+      [
+       -119.155379,
+       34.433109
+      ],
+      [
+       -119.155378,
+       34.433142
+      ],
+      [
+       -119.15535,
+       34.433142
+      ],
+      [
+       -119.155349,
+       34.433172
+      ],
+      [
+       -119.155289,
+       34.433171
+      ],
+      [
+       -119.155266,
+       34.433171
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "pid": "sulphur-mountain",
+    "lid": null,
+    "apn": "037-0-012-125",
+    "kind": "RESOURCE PROD",
+    "use": "FIELD AND SEED CROPS",
+    "heightFt": 17,
+    "baseM": 424.81,
+    "year": null,
+    "sqft": null,
+    "sqft2": null,
+    "address": "11962 SULPHUR MOUNTAIN RD"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 105,
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -119.331076,
+       34.433477
+      ],
+      [
+       -119.331143,
+       34.433432
+      ],
+      [
+       -119.331184,
+       34.433475
+      ],
+      [
+       -119.331226,
+       34.433518
+      ],
+      [
+       -119.331154,
+       34.433566
+      ],
+      [
+       -119.331115,
+       34.433521
+      ],
+      [
+       -119.331076,
+       34.433477
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "pid": "keris-property",
+    "lid": null,
+    "apn": "011-0-040-135",
+    "kind": "RESOURCE PROD",
+    "use": "PASTURE AND RANGE LAND",
+    "heightFt": 17,
+    "baseM": 236.5,
+    "year": null,
+    "sqft": null,
+    "sqft2": null,
+    "address": "14209 DE LA GARRIGUE RD"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 37518,
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -119.331193,
+       34.433104
+      ],
+      [
+       -119.331153,
+       34.433121
+      ],
+      [
+       -119.331109,
+       34.43305
+      ],
+      [
+       -119.331189,
+       34.433016
+      ],
+      [
+       -119.3312,
+       34.433034
+      ],
+      [
+       -119.331229,
+       34.433022
+      ],
+      [
+       -119.331215,
+       34.432999
+      ],
+      [
+       -119.33129,
+       34.432968
+      ],
+      [
+       -119.331327,
+       34.433028
+      ],
+      [
+       -119.331364,
+       34.433088
+      ],
+      [
+       -119.331292,
+       34.433118
+      ],
+      [
+       -119.33122,
+       34.433148
+      ],
+      [
+       -119.331193,
+       34.433104
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "pid": "keris-property",
+    "lid": null,
+    "apn": "011-0-040-135",
+    "kind": "RESOURCE PROD",
+    "use": "PASTURE AND RANGE LAND",
+    "heightFt": 17,
+    "baseM": 231.02,
+    "year": null,
+    "sqft": null,
+    "sqft2": null,
+    "address": "14209 DE LA GARRIGUE RD"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": 143017,
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -119.288713,
+       34.401905
+      ],
+      [
+       -119.288733,
+       34.401903
+      ],
+      [
+       -119.288731,
+       34.401887
+      ],
+      [
+       -119.288787,
+       34.401882
+      ],
+      [
+       -119.288788,
+       34.401892
+      ],
+      [
+       -119.288846,
+       34.401886
+      ],
+      [
+       -119.288852,
+       34.401931
+      ],
+      [
+       -119.288858,
+       34.401976
+      ],
+      [
+       -119.288942,
+       34.401968
+      ],
+      [
+       -119.288953,
+       34.402047
+      ],
+      [
+       -119.288869,
+       34.402056
+      ],
+      [
+       -119.288871,
+       34.402073
+      ],
+      [
+       -119.288805,
+       34.40208
+      ],
+      [
+       -119.288739,
+       34.402086
+      ],
+      [
+       -119.28873,
+       34.402026
+      ],
+      [
+       -119.288722,
+       34.401965
+      ],
+      [
+       -119.288713,
+       34.401905
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "pid": "chers-property",
+    "lid": null,
+    "apn": "034-0-220-135",
+    "kind": "RESIDENTIAL/OCCUPIED",
+    "use": "CUSTOM SINGLE FAMILY DWELLING; SINGLE FAMILY DWELLING WITH A GUEST HOUSE, GARAGE APARTMENT OR SLEEPING RM",
+    "heightFt": 20,
+    "baseM": 196.96,
+    "year": "1983",
+    "sqft": 2792,
+    "sqft2": null,
+    "address": "10622 ENCINO DR"
+   }
+  }
+ ]
+}

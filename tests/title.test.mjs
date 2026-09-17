@@ -86,7 +86,7 @@ check('compose: provider rows sit right after the owner block', withEntity.slice
   const OTHER = { id: 'x', addressLine1: '11900 Sulphur Mountain Rd', assessorID: '037-0-012-120', owner: { names: ['SOMEONE ELSE'] } };
   globalThis.fetch = async (url, init) => { calls++; rcUrl = String(url); rcHeaders = (init && init.headers) || {}; return { ok: true, json: async () => [OTHER, REC] }; };
   const rc = await rentcastTitle({ apn: '037-0-012-125', apn10: '0370012125', lat: 34.4326, lon: -119.1564, situs: '11962 SULPHUR MOUNTAIN RD' });
-  check('rentcast: a circle search on the parcel centre with the X-Api-Key header', /^https:\/\/api\.rentcast\.io\/v1\/properties\?latitude=34\.4326&longitude=-119\.1564&radius=0\.08&limit=25$/.test(rcUrl) && rcHeaders['X-Api-Key'] === 'rc-test', { rcUrl, rcHeaders });
+  check('rentcast: a circle search on the parcel centre with the X-Api-Key header', /^https:\/\/api\.rentcast\.io\/v1\/properties\?latitude=34\.4326&longitude=-119\.1564&radius=0\.6&limit=50$/.test(rcUrl) && rcHeaders['X-Api-Key'] === 'rc-test', { rcUrl, rcHeaders });
   check('rentcast: the record is matched by assessor id, never by proximity alone', rc && rc.matched && rc.provider === 'RentCast' && /^11962 Sulphur Mountain LLC · organization · not owner-occupied$/.test(String(rc.rows[0][1])) && !JSON.stringify(rc.rows).includes('Someone Else'), rc && rc.rows[0]);
   check('rentcast: owner, mailing, sale history, assessment and the provenance note, in the provider key order', rc.rows.map(r => r[2]).join() === 'owner_provider,owner_mailing_provider,sale_provider,value_provider,provider_note' && /28175 S Anchovy Ave, San Pedro, CA 90732/.test(rc.rows[1][1]) && /^\$1,650,000 on July 29, 2024 · 2 recorded events: sale July 29, 2024 \$1,650,000; sale December 18, 2018 \$800,000$/.test(rc.rows[2][1]) && /^\$1,078,140 total \(2024\) · land \$900,000 · improvements \$178,140 · tax \$11,902 \(2024\) · 2 assessment years on file$/.test(rc.rows[3][1]) && /assessor id 037-0-012-125 · PAR 2 PM 14-15 · zoning OS-160 · 412,513 sq ft lot · built 1962 · single family — matched by assessor id/.test(rc.rows[4][1]), rc.rows.map(r => r[1]));
   const again = await rentcastTitle({ apn10: '0370012125', lat: 34.4326, lon: -119.1564 });
@@ -98,7 +98,7 @@ check('compose: provider rows sit right after the owner block', withEntity.slice
   rentcastCacheClear();
   globalThis.fetch = async () => ({ ok: true, json: async () => [OTHER] });
   const miss = await rentcastTitle({ apn10: '0370012125', lat: 34.4326, lon: -119.1564, situs: '11962 SULPHUR MOUNTAIN RD' });
-  check('rentcast: no match is a positive miss naming how many records sat nearby', !miss.matched && /No RentCast property record matches this parcel within 130 m of its centre \(1 record nearby\)/.test(miss.rows[0][1]), miss.rows[0]);
+  check('rentcast: no match is a positive miss naming how many records sat nearby', !miss.matched && /None of the 1 RentCast record within a kilometre of this parcel is this parcel/.test(miss.rows[0][1]), miss.rows[0]);
   const both = await providerTitle({ apn: '037-0-012-125', apn10: '0370012125', fips: '06111', state: 'CA', lat: 34.4326, lon: -119.1564, situs: '11962 SULPHUR MOUNTAIN RD' });
   check('providers: the fan-out runs only the providers whose key is set', both && both.providers.join() === 'RentCast' && both.rows.length === 1, both);
   rentcastCacheClear();

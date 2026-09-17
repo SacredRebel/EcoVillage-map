@@ -3,6 +3,7 @@ import './style.css';
 import { Engine } from './engine/map';
 import { PropertyLayer } from './data/properties';
 import { ModelLayer } from './data/models';
+import { Walk } from './engine/walk';
 import { Hud } from './ui/hud';
 import { DEFAULT_STATE, readHash, writeHash, type AppState } from './engine/state';
 import { FLIGHTS, OVERLAYS, GROUPS, histYear, overlayById } from './layers/registry';
@@ -34,8 +35,9 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 }
 const props = new PropertyLayer(eng);
 const models = new ModelLayer(eng);   // the Vision half: proposed structures, sites and models
+const walk = new Walk(eng);           // the camera on the ground rather than over it
 let mode = state.mode;
-const hud = new Hud(app, { eng, props, models, mode, onMode: m => { mode = m; props.applyMode(m); models.applyMode(m); persist(); } });
+const hud = new Hud(app, { eng, props, models, walk, mode, onMode: m => { mode = m; props.applyMode(m); models.applyMode(m); persist(); } });
 // remembered render quality (low / medium / high) - applied before the first real frame
 try { const q = localStorage.getItem('atlasQuality'); if (q === 'low' || q === 'medium' || q === 'high') { eng.setQuality(q); const sel = document.getElementById('ctl-quality') as HTMLSelectElement | null; if (sel) sel.value = q; } } catch { /* private mode */ }
 
@@ -62,6 +64,7 @@ async function boot() {
     await props.load();
     props.build();
     props.applyMode(mode);
+    void eng.loadHiTerrain();   // the 1 m surface where it has been baked
     await models.load();
     models.build();
     models.applyMode(mode);
@@ -79,9 +82,9 @@ async function boot() {
 if (eng.map.loaded()) boot(); else eng.map.once('load', boot);
 
 // test hooks
-declare global { interface Window { atlas: { eng: Engine; props: PropertyLayer; models: ModelLayer; hud: Hud; ready?: boolean; catalog: () => unknown; state: () => unknown }; } }
+declare global { interface Window { atlas: { eng: Engine; props: PropertyLayer; models: ModelLayer; walk: Walk; hud: Hud; ready?: boolean; catalog: () => unknown; state: () => unknown }; } }
 window.atlas = {
-  eng, props, models, hud,
+  eng, props, models, walk, hud,
   catalog: () => ({ groups: GROUPS.length, overlays: OVERLAYS.map(o => ({ id: o.id, group: o.group, kind: o.kind || 'export', z: o.z, parts: (o.parts || []).length })), flights: FLIGHTS.length }),
   state: () => ({ base: eng.base, overlays: [...eng.active], histYear, terrain: eng.terrain, mode, zoom: eng.map.getZoom(), pitch: eng.map.getPitch(), layers: eng.map.getStyle().layers.map(l => l.id) })
 };

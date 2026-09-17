@@ -42,9 +42,12 @@ const keyFails = [];
 // one snapshot per step, not two: every page.evaluate is a round trip into a renderer that is
 // busy drawing the map in software, and the pair-per-key version spent minutes doing nothing
 let prev = null;
+// a camera key starts an eased move; under software GL, and on a loaded machine, that move can
+// take longer than any fixed pause. Wait for the camera to stop rather than for a clock.
+const settled = () => pg.waitForFunction(() => !window.atlas.eng.map.isMoving(), { timeout: 9000 }).catch(() => {});
 const hotkey = async (press, label, changed, settle = 420) => {
   const a = prev || (prev = await snap());
-  await pg.keyboard.press(press); await wait(settle);
+  await pg.keyboard.press(press); await wait(settle); await settled();
   const b = prev = await snap();
   if (!changed(a, b)) keyFails.push(label + ' ' + JSON.stringify({ a, b }).slice(0, 200));
 };
@@ -112,7 +115,7 @@ const hitTest = (sel) => ev((s) => {
 const clickCtl = async (sel, label, changed, settle = 420) => {
   const a = prev || (prev = await snap());
   const hit = await hitTest(sel);
-  await wait(settle);
+  await wait(settle); await settled();
   const b = prev = await snap();
   if (hit !== 'ok') ctlFails.push(label + ' — ' + hit);
   else if (changed && !changed(a, b)) ctlFails.push(label + ' — no effect ' + JSON.stringify({ a, b }).slice(0, 160));
@@ -140,6 +143,16 @@ if (hT !== 'ok') ctlFails.push('the terrain button — ' + hT);
 prev = null;
 const spy = await ev(() => { const e = window.atlas.eng; e.set3D = e.__set3D; e.setTerrain = e.__setTerrain; delete e.__set3D; delete e.__setTerrain; return window.__spy; });
 if (!(spy.length === 2 && spy[0].startsWith('3d:') && spy[1].startsWith('terrain:'))) ctlFails.push('the 3D / terrain buttons — not wired to the engine: ' + JSON.stringify(spy));
+// the walk button, with the baked areas taken away: it must refuse rather than drop the camera
+// through the ground, and it must say why
+await ev(() => { window.__hi = window.atlas.eng.hiAreas; window.atlas.eng.hiAreas = []; });
+const hW = await hitTest('#ctl-walk'); await wait(400);
+if (hW !== 'ok') ctlFails.push('the walk button — ' + hW);
+const walked = await ev(() => { window.atlas.eng.hiAreas = window.__hi; delete window.__hi;
+  return { on: window.atlas.walk.on, toast: (document.getElementById('toast').textContent || '').slice(0, 24) }; });
+if (walked.on) ctlFails.push('the walk button — walked onto ground that has not been baked');
+if (!/Walk mode wants/.test(walked.toast)) ctlFails.push('the walk button — refused without saying why: ' + JSON.stringify(walked.toast));
+prev = null;
 await ev(() => window.atlas.eng.map.jumpTo({ bearing: 40 })); await wait(200); prev = null;
 await clickCtl('#ctl-north', 'the compass faces north', (_a, b) => b.bearing === 0, 900);
 await clickCtl('#mode-pill', 'the mode pill flips', (a, b) => b.mode !== a.mode, 600);

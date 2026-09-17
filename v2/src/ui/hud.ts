@@ -9,8 +9,10 @@ import { GROUPS, OVERLAYS, FLIGHTS, HIST_YEARS, HIST_NOTES, overlayById, histYea
 import { legendFor } from '../layers/legend';
 import type { PropertyLayer, Property, Zone, LotPick, StructurePick } from '../data/properties';
 import type { ModelLayer, Structure } from '../data/models';
+import type { Walk } from '../engine/walk';
 import { galleryFor, galleryHTML, wireGallery, isOpen as lightboxOpen, invalidate as invalidateGallery } from './gallery';
 import { Editor } from './editor';
+import { Placer } from './place';
 import { RecordStore, renderRecord, research, compareHTML, type Target, type RecordData, type ResearchItem, type CompareCol, cloud, storedPin, askPin, syncResearch, pushResearch } from './record';
 
 interface RichProperty extends Property { panel?: { title: string; html: string }; visionPanel?: { title: string; html: string }; cta?: { heading?: string; paragraph?: string; contacts?: { name: string; email: string }[]; buttons?: { label: string; url: string }[] }; }
@@ -29,7 +31,7 @@ function lotBoundsCenter(rings: [number, number][][]): [number, number] { let la
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
 const el = (html: string) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild as HTMLElement; };
 
-export interface HudOpts { eng: Engine; props: PropertyLayer; mode: 'today' | 'vision'; onMode: (m: 'today' | 'vision') => void;  models: ModelLayer;}
+export interface HudOpts { eng: Engine; props: PropertyLayer; mode: 'today' | 'vision'; onMode: (m: 'today' | 'vision') => void;  models: ModelLayer; walk: Walk;}
 
 export class Hud {
   root: HTMLElement;
@@ -41,6 +43,7 @@ export class Hud {
   private legendSig = '';
   private selected: { kind: 'property' | 'zone' | 'lot' | 'ground' | 'search' | 'structure' | 'designed'; payload: unknown } | null = null;
   private models!: ModelLayer;
+  private walk!: Walk;
   private groundPopup: maplibregl.Popup | null = null;
   private dockOpen = window.innerWidth > 760;
   private inspectorOpen = window.innerWidth > 1100;
@@ -48,6 +51,7 @@ export class Hud {
   private recordToken: { cancel: () => void } | null = null;
   private compareRecs = new Map<string, RecordData | null>();
   editor!: Editor;
+  placer!: Placer;
   private lowFps = 0;
   private galleryToken = 0;
 
@@ -64,14 +68,16 @@ export class Hud {
   private get editing() { return Hud.editorEnabled(); }
 
   constructor(container: HTMLElement, o: HudOpts) {
-    this.eng = o.eng; this.props = o.props; this.models = o.models; this.mode = o.mode; this.onMode = o.onMode;
+    this.eng = o.eng; this.props = o.props; this.models = o.models; this.walk = o.walk; this.mode = o.mode; this.onMode = o.onMode;
     this.root = el('<div class="hud"></div>');
     container.appendChild(this.root);
     this.root.append(this.buildTop(), this.buildDock(), this.buildInspector(), this.buildTimeline(), this.buildControls(), this.buildIntro(), el('<div class="toast" id="toast" hidden></div>'));
     this.editor = new Editor(this.root, this.eng, this.props, m => this.say(m));
+    this.placer = new Placer(this.root, this.eng, this.models, this.props, m => this.say(m));
     this.wire();
+    this.wireWalk();
     this.syncAll();
-    if (!this.editing) this.q('#ctl-edit').hidden = true;
+    if (!this.editing) { this.q('#ctl-edit').hidden = true; this.q('#ctl-place').hidden = true; }
     syncResearch().then(r => { if (r.added) this.say(r.added + ' shared parcel' + (r.added > 1 ? 's' : '') + ' joined your research list.'); if (!this.q('#insp-research').hidden) this.renderResearch(); });
   }
 
@@ -144,9 +150,11 @@ export class Hud {
       <button class="ctl" id="ctl-north" title="reset north (N)"><span class="compass" id="compass">▲</span></button>
       <button class="ctl" id="ctl-3d" title="tilt 2D / 3D (T)">3D</button>
       <button class="ctl on" id="ctl-terrain" title="terrain on/off (X)">⛰</button>
+      <button class="ctl" id="ctl-walk" title="walk the land at eye height (V)">🚶</button>
       <button class="ctl" id="ctl-layers" title="layers (L)">☰</button>
       <button class="ctl" id="ctl-insp" title="inspector (I)">ⓘ</button>
       <button class="ctl" id="ctl-edit" title="position editor (P)">⚙</button>
+      <button class="ctl" id="ctl-place" title="placement studio — put a designed building on the ground (B)">🏗</button>
       <select class="ctl sel" id="ctl-quality" title="render quality"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
       <span class="fps" id="fps" title="frames per second · tiles still loading">— fps</span>
       <span class="busy" id="busy" title="tiles loading"></span>
@@ -203,9 +211,11 @@ export class Hud {
     this.q('#ctl-north').addEventListener('click', () => map.easeTo({ bearing: 0, pitch: map.getPitch() > 0 && map.getPitch() < 5 ? 0 : map.getPitch(), duration: 600 }));
     this.q('#ctl-3d').addEventListener('click', () => eng.set3D(map.getPitch() < 5));
     this.q('#ctl-terrain').addEventListener('click', () => eng.setTerrain(!eng.terrain));
+    this.q('#ctl-walk').addEventListener('click', () => this.toggleWalk());
     this.q('#ctl-layers').addEventListener('click', () => { this.dockOpen = !this.dockOpen; this.lastPanel = 'dock'; this.syncPanels(); });
     this.q('#ctl-insp').addEventListener('click', () => { this.inspectorOpen = !this.inspectorOpen; this.lastPanel = 'insp'; this.syncPanels(); });
     this.q('#ctl-edit').addEventListener('click', () => this.editor.toggle());
+    this.q('#ctl-place').addEventListener('click', () => this.placer.toggle());
     this.q<HTMLSelectElement>('#ctl-quality').addEventListener('change', e => eng.setQuality((e.target as HTMLSelectElement).value as 'low' | 'medium' | 'high'));
     this.q('#mode-pill').addEventListener('click', () => { this.mode = this.mode === 'today' ? 'vision' : 'today'; this.onMode(this.mode); this.syncAll(); });
     this.q('#btn-help').addEventListener('click', () => this.help());
@@ -237,10 +247,10 @@ export class Hud {
       else this.lowFps = 0;
     });
     // selection from the map
-    this.models.onSelect = s => { this.selected = { kind: 'designed', payload: s }; this.inspectorOpen = true; this.lastPanel = 'insp'; this.setTab('parcel'); this.renderParcel(); this.syncPanels(); };
+    this.models.onSelect = s => { if (this.placer.open) { this.placer.select(s.id); return; } this.selected = { kind: 'designed', payload: s }; this.inspectorOpen = true; this.lastPanel = 'insp'; this.setTab('parcel'); this.renderParcel(); this.syncPanels(); };
     this.props.onSelect = (kind, payload) => { if (kind !== 'lot') this.props.selectLot(null); this.groundPopup?.remove(); this.selected = { kind, payload }; this.inspectorOpen = true; this.lastPanel = 'insp'; this.setTab('parcel'); this.renderParcel(); this.syncPanels(); };
     // click on open ground: the readout (coordinates, elevation, dossier for whatever parcel is there)
-    map.on('click', e => { if (this.editor.open || this.props.hitsOwn(e.point)) return; this.ground(e.lngLat); });
+    map.on('click', e => { if (this.editor.open || this.placer.open || this.props.hitsOwn(e.point)) return; this.ground(e.lngLat); });
     // hotkeys
     window.addEventListener('keydown', e => this.key(e));
   }
@@ -249,6 +259,7 @@ export class Hud {
     const tgt = e.target as HTMLElement;
     if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.tagName === 'SELECT')) return;
     if (lightboxOpen()) return;
+    if (this.walk?.on) return;   // walking: the keys belong to the walker, not the map
     if (this.introOpen) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.closeIntro(); } return; }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const map = this.eng.map, step = 120;
@@ -264,10 +275,12 @@ export class Hud {
       case 't': this.eng.set3D(map.getPitch() < 5); break;
       case 'n': map.easeTo({ bearing: 0, duration: 500 }); break;
       case 'x': this.eng.setTerrain(!this.eng.terrain); break;
+      case 'v': this.toggleWalk(); break;
       case 'l': this.dockOpen = !this.dockOpen; this.lastPanel = 'dock'; this.syncPanels(); break;
       case 'i': this.inspectorOpen = !this.inspectorOpen; this.lastPanel = 'insp'; this.syncPanels(); break;
       case 'h': this.eng.toggleOverlay('histtopo'); break;
       case 'p': if (this.editing) this.editor.toggle(); break;
+      case 'b': if (this.editing) this.placer.toggle(); break;
       case 'g': { const c = map.getCenter(); window.open(`https://earth.google.com/web/@${c.lat},${c.lng},0a,${Math.round(40075016 / Math.pow(2, map.getZoom()) * 0.6)}d,35y,${Math.round(map.getBearing())}h,${Math.round(map.getPitch())}t,0r`, '_blank'); break; }
       case '?': this.help(); break;
       case ' ': e.preventDefault(); this.mode = this.mode === 'today' ? 'vision' : 'today'; this.onMode(this.mode); this.syncAll(); break;
@@ -340,9 +353,31 @@ export class Hud {
     if (key === 'vision') { this.mode = this.mode === 'vision' ? 'today' : 'vision'; this.onMode(this.mode); this.syncAll(); this.say(this.mode === 'vision' ? 'VISION — every property now shows what is proposed for it.' : 'TODAY — every property now shows what stands there.'); }
   }
 
+  /** walk mode: the camera stands on the ground. Panels get out of the way; Esc comes back. */
+  toggleWalk() {
+    if (this.walk.on) { this.walk.exit(); return; }
+    const c = this.eng.map.getCenter();
+    if (!this.eng.overHiArea(c.lng, c.lat)) {
+      this.say('Walk mode wants the metre-accurate ground, which is baked over the properties \u2014 fly to one first.');
+      return;
+    }
+    this.dockOpen = false; this.inspectorOpen = false; this.syncPanels();
+    this.walk.enter({ lng: c.lng, lat: c.lat });
+  }
+  private wireWalk() {
+    const hint = el('<div class="walk-hint" id="walk-hint" hidden><b>Walking</b><span>W A S D move \u00b7 Shift run \u00b7 Q E turn \u00b7 click to look around \u00b7 Esc to stand back up</span></div>');
+    this.root.appendChild(hint);
+    this.eng.map.getCanvas().addEventListener('click', () => { if (this.walk.on) this.walk.grabMouse(); });
+    this.walk.onChange = st => {
+      hint.hidden = !st.on;
+      this.q('#ctl-walk').classList.toggle('on', st.on);
+      this.root.classList.toggle('walking', st.on);
+      if (st.on) this.say('Standing on the ground. Click to look around, Esc to stand back up.');
+    };
+  }
   help() {
     const t = this.q('#toast');
-    t.innerHTML = `<b>Hotkeys</b> — W A S D pan · Q E rotate · R F tilt · + − zoom · T 2D/3D · X terrain · N north · L layers · I inspector · P position editor · 1–7 open a layer group · [ ] step the aerial year · H historic topo · Space Today/Vision · G open in Google Earth · Esc close. <br>Mouse: drag to pan, right-drag / Ctrl-drag / <b>middle-drag</b> to orbit (drag right = turn right), wheel to zoom, click open ground for elevation + the county record of any parcel; type an APN or coordinates in the top bar to pull any parcel in the US. Touch: two fingers to rotate and tilt.`;
+    t.innerHTML = `<b>Hotkeys</b> — W A S D pan · Q E rotate · R F tilt · + − zoom · T 2D/3D · X terrain · N north · L layers · I inspector · P position editor · B placement studio · 1–7 open a layer group · [ ] step the aerial year · H historic topo · Space Today/Vision · V walk the land · G open in Google Earth · Esc close. <br>Mouse: drag to pan, right-drag / Ctrl-drag / <b>middle-drag</b> to orbit (drag right = turn right), wheel to zoom, click open ground for elevation + the county record of any parcel; type an APN or coordinates in the top bar to pull any parcel in the US. Touch: two fingers to rotate and tilt.`;
     t.hidden = false; window.clearTimeout((t as unknown as { _t: number })._t); (t as unknown as { _t: number })._t = window.setTimeout(() => { t.hidden = true; }, 9000);
   }
 

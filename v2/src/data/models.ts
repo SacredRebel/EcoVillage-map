@@ -12,7 +12,7 @@
 //   model is actually placed, so a map with no models pays nothing for the capability.
 import maplibregl from 'maplibre-gl';
 import type { Engine } from '../engine/map';
-import { PROP_ANCHOR } from '../engine/map';
+import { PROP_ANCHOR, TERRAIN_EXAG } from '../engine/map';
 
 export interface Structure {
   id: string; pid: string; zid?: string | null;
@@ -27,6 +27,12 @@ export interface Structure {
   model?: string | null;
   /** model only: where its origin sits, and how it is turned and sized */
   position?: [number, number] | null;
+  /**
+   * model only: metres ABOVE THE GROUND at its position, not above sea level. The ground is
+   * sampled from the terrain and multiplied by the exaggeration the whole map is drawn at, so a
+   * model with 0 here rests on the hillside wherever it is dragged; a negative value sinks it
+   * into a cut, a positive one lifts it onto a plinth.
+   */
   altitudeM?: number | null;
   rotationDeg?: number;
   scale?: number;
@@ -71,6 +77,42 @@ export class ModelLayer {
     return out;
   }
 
+  /** the rendered height of the ground under a point: real metres times the map's exaggeration */
+  private groundZ(lng: number, lat: number): { z: number; known: boolean } {
+    const g = this.eng.groundElevation({ lng, lat });
+    return { z: (g ?? 0) * TERRAIN_EXAG, known: g != null };
+  }
+
+  // MapLibre's world is Mercator: one unit is the whole world, so a metre is tiny and
+  // latitude-dependent. A model is placed by its own matrix rather than by scene units.
+  /** re-derive a model's matrix inputs - after the editor moves it, or after terrain arrives */
+  updatePlacement(s: Structure) {
+    const o = this.scene?.children.find(c => ((c.userData || {}).structure as Structure | undefined)?.id === s.id);
+    if (!o || !s.position) return;
+    const g = this.groundZ(s.position[0], s.position[1]);
+    const mc = maplibregl.MercatorCoordinate.fromLngLat({ lng: s.position[0], lat: s.position[1] }, g.z + (s.altitudeM ?? 0));
+    o.userData.structure = s;
+    o.userData.grounded = g.known;
+    o.userData.place = { x: mc.x, y: mc.y, z: mc.z ?? 0, unit: mc.meterInMercatorCoordinateUnits() * (s.scale ?? 1), rot: ((s.rotationDeg ?? 0) * Math.PI) / 180 };
+    this.eng.map.triggerRepaint();
+  }
+
+  /** terrain tiles arrive late; anything placed before they did is re-seated once they have */
+  private reground() {
+    if (!this.scene) return;
+    for (const o of this.scene.children) {
+      const s = (o.userData || {}).structure as Structure | undefined;
+      if (s && s.position && !o.userData.grounded) this.updatePlacement(s);
+    }
+  }
+
+  /** the editor replaced or removed a structure: drop its model so the next pass reloads it */
+  forget(id: string) {
+    this.loaded.delete(id);
+    const o = this.scene?.children.find(c => ((c.userData || {}).structure as Structure | undefined)?.id === id);
+    if (o && this.scene) { this.scene.remove(o); this.eng.map.triggerRepaint(); }
+  }
+
   build() {
     const m = this.eng.map;
     m.addSource('vis', { type: 'geojson', data: { type: 'FeatureCollection', features: this.planFeatures() } });
@@ -82,6 +124,7 @@ export class ModelLayer {
     m.addLayer({ id: 'vis-3d', type: 'fill-extrusion', source: 'vis', minzoom: 13.5, filter: ['==', ['get', 'status'], 'massing'],
       paint: { 'fill-extrusion-color': '#c9a2ff', 'fill-extrusion-height': ['get', 'heightM'], 'fill-extrusion-base': 0, 'fill-extrusion-opacity': 0.72, 'fill-extrusion-vertical-gradient': true } }, PROP_ANCHOR);
     for (const l of ['vis-site', 'vis-3d']) m.on('click', l, e => { const f = e.features?.[0]; if (!f) return; const s = this.structures.find(x => x.id === f.properties.sid); if (s) this.onSelect(s); });
+    m.on('idle', () => this.reground());
     this.applyMode(this.mode);
     void this.ensureModels();
   }
@@ -91,6 +134,7 @@ export class ModelLayer {
   refresh() {
     const src = this.eng.map.getSource('vis') as maplibregl.GeoJSONSource | undefined;
     if (src) src.setData({ type: 'FeatureCollection', features: this.planFeatures() });
+    for (const s of this.structures) if (s.status === 'model' && s.position) this.updatePlacement(s);
     void this.ensureModels();
   }
 
@@ -132,13 +176,9 @@ export class ModelLayer {
         const gltf = await loader.loadAsync(s.model!);
         const root = gltf.scene;
         root.userData.structure = s;
-        // MapLibre's world is Mercator: one unit is the whole world, so a metre is tiny and
-        // latitude-dependent. Place the model by its own matrix rather than by scene units.
-        const mc = maplibregl.MercatorCoordinate.fromLngLat({ lng: s.position![0], lat: s.position![1] }, s.altitudeM ?? 0);
-        const unit = mc.meterInMercatorCoordinateUnits() * (s.scale ?? 1);
-        root.userData.place = { x: mc.x, y: mc.y, z: mc.z ?? 0, unit, rot: ((s.rotationDeg ?? 0) * Math.PI) / 180 };
         root.visible = s.mode === 'both' || s.mode === (this.mode === 'today' ? 'current' : 'vision');
         this.scene!.add(root);
+        this.updatePlacement(s);
         this.addCustom();
         this.eng.map.triggerRepaint();
       } catch (e) { console.info('[atlas] model ' + s.id, e); }

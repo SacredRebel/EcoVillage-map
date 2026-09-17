@@ -30,6 +30,12 @@ export const BASE_LABELS: Record<string, { label: string; note: string }> = {
 };
 
 const DEM_TILES = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+// The same terrarium encoding, but ours: USGS 3DEP at 1 m, baked per property by
+// scripts/bake-terrain.py. The global set stops at zoom 14 (about 9 m here), which is fine from the
+// air and a staircase underfoot, so the engine swaps the terrain source to this one whenever the
+// camera is over a baked area. Outside those areas nothing changes.
+const DEM_HI_TILES = '/terrain/{z}/{x}/{y}.png';
+export interface HiArea { pid: string; bbox: [number, number, number, number]; }
 export const TERRAIN_EXAG = 1.5;
 // a starfield for the space around the globe: one 512-px tile drawn once, set as the container background
 function starfield(): string {
@@ -68,7 +74,8 @@ export class Engine {
       glyphs: location.origin + '/v2/fonts/{fontstack}/{range}.pbf',   // self-hosted, works from / and /v2/
       sources: {
         'base-esri': { type: 'raster', tileSize: 256, ...BASE_DIRECT.esri },
-        dem: { type: 'raster-dem', tiles: [DEM_TILES], tileSize: 256, encoding: 'terrarium', maxzoom: 14, attribution: 'Terrain: Mapzen / AWS' }
+        dem: { type: 'raster-dem', tiles: [DEM_TILES], tileSize: 256, encoding: 'terrarium', maxzoom: 14, attribution: 'Terrain: Mapzen / AWS' },
+        demhi: { type: 'raster-dem', tiles: [DEM_HI_TILES], tileSize: 256, encoding: 'terrarium', minzoom: 13, maxzoom: 17, attribution: 'Elevation: USGS 3DEP 1 m' }
       },
       layers: [
         { id: 'bg', type: 'background', paint: { 'background-color': '#04060a' } },
@@ -125,10 +132,36 @@ export class Engine {
   setTerrain(on: boolean, silent = false) {
     this.terrain = on;
     try {
-      this.map.setTerrain(on ? { source: 'dem', exaggeration: 1.5 } : null);
+      this.map.setTerrain(on ? { source: this.demSource, exaggeration: TERRAIN_EXAG } : null);
       this.map.setLayoutProperty('hillshade', 'visibility', on ? 'visible' : 'none');
     } catch { /* not loaded yet */ }
     if (!silent) this.events.emit('terrain', on);
+  }
+
+  // ---- the 1 m surface -----------------------------------------------------
+  hiAreas: HiArea[] = [];
+  demSource: 'dem' | 'demhi' = 'dem';
+  /** load the baked index once; a missing file just means nobody has baked anything yet */
+  async loadHiTerrain() {
+    try {
+      const r = await fetch('/terrain/index.json');
+      if (!r.ok) return;
+      const j = await r.json();
+      this.hiAreas = (j?.areas || []).filter((a: HiArea) => Array.isArray(a.bbox) && a.bbox.length === 4);
+      this.map.on('moveend', () => this.pickDem());
+      this.pickDem();
+    } catch { /* no baked surface */ }
+  }
+  overHiArea(lng = this.map.getCenter().lng, lat = this.map.getCenter().lat) {
+    return this.hiAreas.some(a => lng >= a.bbox[0] && lng <= a.bbox[2] && lat >= a.bbox[1] && lat <= a.bbox[3]);
+  }
+  /** close enough to feel the difference, and standing over baked ground -> the 1 m surface */
+  pickDem() {
+    const want: 'dem' | 'demhi' = this.map.getZoom() >= 13.5 && this.overHiArea() ? 'demhi' : 'dem';
+    if (want === this.demSource) return;
+    this.demSource = want;
+    if (this.terrain) { try { this.map.setTerrain({ source: want, exaggeration: TERRAIN_EXAG }); } catch { /* fine */ } }
+    this.events.emit('terrain', this.terrain);
   }
   set3D(on: boolean) {
     this.map.easeTo({ pitch: on ? 62 : 0, duration: 900 });

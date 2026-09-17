@@ -36,6 +36,10 @@ await pg.route('**/*', r => {
     if (/apn=999/.test(u)) return r.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'APN 999 is not in the Ventura County parcel layer' }) });
     return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ apn: '032-0-010-090', apn10: '0320010090', situs: '1320 BALDWIN RD', acreage: 43.92, center: [34.4243, -119.3196], bbox: { xmin: -119.3235, ymin: 34.4215, xmax: -119.3155, ymax: 34.4272 }, geometry: { rings: [[[-119.3235, 34.4215], [-119.3155, 34.4215], [-119.3155, 34.4272], [-119.3235, 34.4272], [-119.3235, 34.4215]]] }, county: { fips: '06111', name: 'Ventura County', state: 'CA', stateName: 'California', adapter: 'ventura' }, ms: 400 }) });
   }
+  // the 1 m surface (V0.42): a stub index over Sulphur and the flat 500 m terrarium tile, so the
+  // camera maths is checked against a ground whose height is known exactly, baked or not
+  if (/\/terrain\/index\.json$/.test(u)) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ areas: [{ pid: 'sulphur-mountain', bbox: [-119.2, 34.41, -119.12, 34.46], tiles: 4 }] }) });
+  if (/\/terrain\/\d+\/\d+\/\d+\.png$/.test(u)) return r.fulfill({ status: 200, contentType: 'image/png', body: DEM });
   if (EXT.test(u)) {
     const key = u.split('?')[0].replace(/\/\d+\/\d+\/\d+(\.png)?$/, '/{z}/{y}/{x}'); if (!seen[key]) seen[key] = u;
     if (/legend\?f=json/.test(u)) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ layers: [{ layerId: 0, layerName: 'Alpha', legend: [{ label: 'first thing', imageData: IMG64, contentType: 'image/png' }] }] }) });
@@ -81,7 +85,9 @@ await ev(() => window.atlas.eng.setHistYear(1903, true)); await wait(300);
 const hist = await ev(() => ({ y: window.atlas.state().histYear, big: document.getElementById('tl-hist-year').textContent, url: (() => { const s = window.atlas.eng.map.getSource('src-ov-histtopo~') || window.atlas.eng.map.getSource('src-ov-histtopo'); return s && decodeURIComponent(s.tiles[0]); })() }));
 check('historic topo: 1903 edition rebuilds the mosaic rule', hist.y === 1903 && hist.big === '1903' && /DateCurrent <= 1903/.test(hist.url || ''), hist);
 await ev(() => { window.atlas.eng.setOverlay('faults', false); window.atlas.eng.map.jumpTo({ zoom: 16 }); return true; }); await wait(200);
-await ev(() => window.atlas.eng.setOverlay('faults', true)); await wait(1600);
+await ev(() => window.atlas.eng.setOverlay('faults', true));
+// the fly-out is a 1.1 s eased camera move; wait for the camera to settle rather than for a clock
+await pg.waitForFunction(() => !window.atlas.eng.map.isMoving() && window.atlas.eng.map.getZoom() <= 12.6, { timeout: 8000 }).catch(() => {});
 const fo = await ev(() => ({ zoom: window.atlas.eng.map.getZoom(), srcMax: window.atlas.eng.map.getSource('src-ov-faults').maxzoom, tileSize: window.atlas.eng.map.getSource('src-ov-faults').tileSize }));
 check('scale-limited sheet: turning faults on at z16 flies out to its range (256-px source, maxzoom 12)', fo.zoom <= 12.6 && fo.srcMax === 12 && fo.tileSize === 256, fo);
 
@@ -400,6 +406,97 @@ const wellFormed = (m, path) =>
   m.url === 'https://eco-village-map.vercel.app' + path && m.canon === m.url;
 check('social card: both pages carry og:image, the twitter card, the size, the alt text and their own canonical URL',
   wellFormed(ogAtlas, '/') && wellFormed(ogClassic, '/classic'), { atlas: ogAtlas.url, classic: ogClassic.url, img: ogAtlas.img });
+// ---- V0.42: the 1 m surface and walking it -------------------------------------------------
+await ev(() => window.atlas.eng.map.jumpTo({ center: [-119.15615, 34.43273], zoom: 17, pitch: 0, bearing: 0 }));
+await wait(1400);
+const hi = await ev(() => ({ areas: window.atlas.eng.hiAreas.length, src: window.atlas.eng.demSource, over: window.atlas.eng.overHiArea(), terrain: !!window.atlas.eng.map.getTerrain() }));
+check('terrain: the baked index loads and the engine swaps to the 1 m surface over a property', hi.areas === 1 && hi.src === 'demhi' && hi.over === true, hi);
+await ev(() => window.atlas.eng.map.jumpTo({ center: [-118.2, 34.05] })); await wait(900);
+const off = await ev(() => ({ src: window.atlas.eng.demSource, over: window.atlas.eng.overHiArea() }));
+check('terrain: off the baked ground it falls back to the global set rather than showing holes', off.src === 'dem' && off.over === false, off);
+
+// walk mode refuses where there is no metre-accurate ground to stand on
+await pg.keyboard.press('v'); await wait(500);
+const refused = await ev(() => ({ on: window.atlas.walk.on, toast: (document.getElementById('toast').textContent || '').slice(0, 30) }));
+check('walk: it refuses to stand on ground that has not been baked, and says so', refused.on === false && /Walk mode wants/.test(refused.toast), refused);
+
+// the ground: queryTerrainElevation reads the DEM the engine decoded, and that decode does not
+// complete under software GL with stubbed tiles - so the reading itself is checked as a unit, and
+// the camera below is then checked against a ground of a known height rather than a guessed one.
+const GROUND = 500, EXAG = 1.5, EYE = 1.7;
+const gq = await ev(() => { const e = window.atlas.eng, m = e.map;
+  e.setTerrain(true);                                  // no terrain, no ground: the guard comes first
+  const orig = m.queryTerrainElevation.bind(m);
+  m.queryTerrainElevation = () => 500 * 1.5;          // what the engine sees: exaggerated metres
+  const v = e.groundElevation(m.getCenter());
+  m.queryTerrainElevation = orig;
+  return v; });
+check('terrain: the engine reads the ground in real metres, with the exaggeration divided back out', Math.abs(gq - GROUND) < 0.001, { ground: gq });
+
+await ev(() => { const e = window.atlas.eng; e.setTerrain(true); e.groundElevation = () => 500; e.map.jumpTo({ center: [-119.15615, 34.43273], zoom: 17, pitch: 0, bearing: 0 }); });
+await wait(800);
+await pg.keyboard.press('v'); await wait(1200);
+const w = await ev(() => { const m = window.atlas.eng.map, st = window.atlas.walk.state();
+  return { on: st.on, ground: st.groundM, alt: m.transform.getCameraAltitude(), pitch: m.getPitch(), maxPitch: m.getMaxPitch(),
+    walking: document.querySelector('.hud').classList.contains('walking'), hint: !document.getElementById('walk-hint').hidden, btn: document.getElementById('ctl-walk').classList.contains('on') }; });
+check('walk: the eye stands exactly 1.7 m above the ground, whatever the pitch or the viewport',
+  w.on === true && w.ground === GROUND && Math.abs(w.alt - (GROUND * EXAG + EYE)) < 0.1 && w.pitch > 80 && w.maxPitch === 89, { ...w, want: GROUND * EXAG + EYE });
+check('walk: the HUD gets out of the way — panels fade, the hint shows, the button lights', w.walking && w.hint && w.btn, { walking: w.walking, hint: w.hint, btn: w.btn });
+
+// the key wiring: a real key press has to reach the walker and move it. How far depends on how
+// fast this machine draws, so the step itself is measured separately, without the frame loop.
+const k0 = await ev(() => window.atlas.walk.state());
+await pg.keyboard.down('w'); await wait(1200); await pg.keyboard.up('w'); await wait(200);
+const k1 = await ev(() => window.atlas.walk.state());
+const kd = Math.hypot((k1.lat - k0.lat) * 111320, (k1.lng - k0.lng) * 111320 * Math.cos(k0.lat * Math.PI / 180));
+check('walk: a W keypress reaches the walker and moves it forward', kd > 0.05 && kd < 8, { moved: +kd.toFixed(2) });
+
+// the step itself: one second of walking, one second of running, both along the bearing
+const step = await ev(() => { const w = window.atlas.walk, m = window.atlas.eng.map;
+  m.jumpTo({ bearing: 0 }); w.setBearing?.(0);
+  const a = w.state();
+  w.keyFor('w', true); w.advance(1); w.keyFor('w', false);
+  const b = w.state();
+  w.keyFor('w', true); w.keyFor('shift', true); w.advance(1); w.keyFor('w', false); w.keyFor('shift', false);
+  const c = w.state();
+  const mN = (x, y) => (y.lat - x.lat) * 111320, mE = (x, y) => (y.lng - x.lng) * 111320 * Math.cos(x.lat * Math.PI / 180);
+  return { bearing: a.bearing, walkN: mN(a, b), walkE: mE(a, b), runN: mN(b, c), runE: mE(b, c) }; });
+check('walk: one second of W covers 1.5 m, one second of Shift-W covers 5 m, both along the bearing',
+  Math.abs(step.walkN - 1.5) < 0.05 && Math.abs(step.walkE) < 0.05 && Math.abs(step.runN - 5) < 0.1 && Math.abs(step.runE) < 0.05,
+  { walk: +step.walkN.toFixed(2), run: +step.runN.toFixed(2), drift: +step.walkE.toFixed(3), bearing: step.bearing });
+
+const alt1 = await ev(() => window.atlas.eng.map.transform.getCameraAltitude());
+check('walk: the eye stays at eye height as you move — the walker follows the ground, not a plane', Math.abs(alt1 - (GROUND * EXAG + EYE)) < 0.1, { alt: +alt1.toFixed(2) });
+
+await pg.keyboard.press('Escape'); await wait(900);
+const ex = await ev(() => { const m = window.atlas.eng.map; return { on: window.atlas.walk.on, maxPitch: m.getMaxPitch(), maxZoom: m.getMaxZoom(), zoom: m.getZoom(), pitch: m.getPitch(), walking: document.querySelector('.hud').classList.contains('walking'), hint: document.getElementById('walk-hint').hidden }; });
+check('walk: Esc stands back up — the view, the pitch and zoom ceilings and the HUD all come back',
+  ex.on === false && ex.maxPitch === 80 && ex.maxZoom === 21 && Math.abs(ex.zoom - 17) < 0.02 && ex.pitch < 1 && !ex.walking && ex.hint, ex);
+
+// the routes themselves, straight from the server rather than through the page's stubs
+const tIdxRes = await fetch(BASE + '/terrain/index.json');
+const tIdx = await tIdxRes.json();
+const baked = tIdxRes.status === 200 && Array.isArray(tIdx.areas) && tIdx.areas.length > 0;
+check('terrain route: the index is served where tiles are baked, and an empty index where they are not',
+  (baked && tIdx.areas.every(a => a.pid && Array.isArray(a.bbox) && a.bbox.length === 4)) || (tIdxRes.status === 404 && Array.isArray(tIdx.areas) && tIdx.areas.length === 0),
+  { status: tIdxRes.status, areas: (tIdx.areas || []).length });
+const badZ = await fetch(BASE + '/terrain/abc/1/1.png');
+const miss = await fetch(BASE + '/terrain/15/1/1.png');
+check('terrain route: a malformed tile path is rejected and an unbaked tile is a cached 404, never an error',
+  badZ.status === 400 && miss.status === 404 && /max-age=600/.test(miss.headers.get('cache-control') || ''),
+  { badZ: badZ.status, miss: miss.status, cache: miss.headers.get('cache-control') });
+if (baked) {
+  const a = tIdx.areas[0], z = 15;
+  const lng = (a.bbox[0] + a.bbox[2]) / 2, lat = (a.bbox[1] + a.bbox[3]) / 2, n = Math.pow(2, z);
+  const tx = Math.floor((lng + 180) / 360 * n);
+  const ty = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n);
+  const tRes = await fetch(`${BASE}/terrain/${z}/${tx}/${ty}.png`);
+  const tBuf = Buffer.from(await tRes.arrayBuffer());
+  check('terrain route: a baked tile is a real PNG under the property, cached for good',
+    tRes.status === 200 && /image\/png/.test(tRes.headers.get('content-type') || '') && tBuf.length > 2000 && tBuf[1] === 0x50 && /immutable/.test(tRes.headers.get('cache-control') || ''),
+    { pid: a.pid, tile: `${z}/${tx}/${ty}`, bytes: tBuf.length, cache: tRes.headers.get('cache-control') });
+} else console.log('SKIP  terrain route: no tiles baked in this checkout — bake with scripts/bake-terrain.py');
+
 const ogRes = await fetch(BASE + '/og.jpg');
 const ogBuf = Buffer.from(await ogRes.arrayBuffer());
 // JPEG: walk the markers to the SOF frame header — height then width, big-endian, at +5 and +7

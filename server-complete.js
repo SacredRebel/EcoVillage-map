@@ -6,7 +6,7 @@ import compression from 'compression';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { IMAGE_URLS } from './image-urls.js';
 import { resolveCore, resolveDeep, resolveParcel, mergeRecord, readFrom, COUNTY_ADAPTERS, evidencePath, loadEvidence } from './lib/dossier.js';
 import { WATCH_PATH, EMPTY_WATCH } from './lib/watch.js';
@@ -8628,6 +8628,56 @@ app.use('/v2', express.static(join(__dirname, 'public', 'v2'), { maxAge: 0, etag
 // record; heightFt is the county's CLASS DEFAULT for the building type, never a measured roofline
 // - the atlas draws massing and the card says exactly that. A few dozen polygons, so it ships as a
 // file rather than a live query: the map has buildings before the first network round trip.
+// The 1 m elevation surface (V0.42): USGS 3DEP baked to terrarium tiles by scripts/bake-terrain.py,
+// one small pyramid per property under public/terrain/<pid>/{z}/{x}/{y}.png. The URL is flat because
+// MapLibre wants one tile template per source, and tile coordinates are globally unique, so the
+// route simply asks each baked area in turn. Anything not baked 404s and the engine falls back to
+// the global terrarium set, which is why a miss here is silent rather than an error.
+let TERRAIN_AREAS = null;
+function terrainAreas() {
+  if (TERRAIN_AREAS) return TERRAIN_AREAS;
+  try { TERRAIN_AREAS = (JSON.parse(readFileSync(join(__dirname, 'public', 'terrain', 'index.json'), 'utf8')).areas || []).map((a) => a.pid); }
+  catch (e) { TERRAIN_AREAS = []; }
+  return TERRAIN_AREAS;
+}
+// Designed assets (V0.43): the .glb files a designer hands over live in public/models and are
+// served straight from disk, and /api/models lists them so the placement studio can offer them in
+// a dropdown. Dropping a file into that folder is the whole import step - no code change, no build.
+app.use('/models', express.static(join(__dirname, 'public', 'models'), { maxAge: '30d', etag: true, index: false, dotfiles: 'ignore' }));
+app.get('/api/models', (req, res) => {
+  try {
+    const dir = join(__dirname, 'public', 'models');
+    if (!existsSync(dir)) return res.json({ models: [] });
+    const models = readdirSync(dir)
+      .filter((f) => /^[A-Za-z0-9][A-Za-z0-9._-]*\.(glb|gltf)$/.test(f))
+      .map((f) => { const st = statSync(join(dir, f)); return { path: '/models/' + f, name: f, bytes: st.size, modified: st.mtime.toISOString() }; })
+      .sort((a, b) => a.name.localeCompare(b.name));
+    res.set('Cache-Control', 'no-store');
+    res.json({ models });
+  } catch (e) { res.json({ models: [] }); }
+});
+
+app.get('/terrain/index.json', (req, res) => {
+  try {
+    const body = readFileSync(join(__dirname, 'public', 'terrain', 'index.json'), 'utf8');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.type('application/json').send(body);
+  } catch (e) { res.status(404).json({ areas: [] }); }
+});
+app.get('/terrain/:z/:x/:y.png', (req, res) => {
+  const { z, x, y } = req.params;
+  if (!/^\d{1,2}$/.test(z) || !/^\d{1,7}$/.test(x) || !/^\d{1,7}$/.test(y)) return res.status(400).end();
+  for (const pid of terrainAreas()) {
+    const fp = join(__dirname, 'public', 'terrain', pid, z, x, y + '.png');
+    if (existsSync(fp)) {
+      res.set('Cache-Control', 'public, max-age=31536000, immutable');
+      return res.type('image/png').send(readFileSync(fp));
+    }
+  }
+  res.set('Cache-Control', 'public, max-age=600');
+  res.status(404).end();
+});
+
 app.get('/api/footprints', (req, res) => {
   try {
     const doc = JSON.parse(readFileSync(join(__dirname, 'data', 'footprints.json'), 'utf8'));
@@ -8928,6 +8978,99 @@ app.post('/api/save-positions', async (req, res) => {
     }
     const result = await putResp.json();
     res.json({ ok: true, commit: result.commit && result.commit.sha });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'server_error', message: String(e && e.message) });
+  }
+});
+
+// Designed structures (V0.43): the placement studio posts the whole registry back after a building
+// has been dragged onto the ground. The same PIN and the same GitHub commit as the layout editor,
+// and the same rule: nothing arrives here unchecked. Ids are slugs, the property must be one we
+// know, a model path may only point at our own /models folder (never a remote host), and every
+// coordinate has to land inside Ventura County - so a hostile or fat-fingered payload cannot move
+// a building to the other side of the world, or turn the registry into a link farm.
+const STRUCT_BOX = { west: -119.75, south: 33.85, east: -118.55, north: 34.95 };
+const inBox = (lng, lat) => isFinite(lng) && isFinite(lat) && lng >= STRUCT_BOX.west && lng <= STRUCT_BOX.east && lat >= STRUCT_BOX.south && lat <= STRUCT_BOX.north;
+const clampNum = (v, lo, hi, dflt) => { const n = Number(v); return isFinite(n) ? Math.min(hi, Math.max(lo, n)) : dflt; };
+const round6 = (n) => Math.round(n * 1e6) / 1e6;
+
+function cleanStructures(list) {
+  if (!Array.isArray(list)) return { error: 'structures must be a list' };
+  if (list.length > 200) return { error: 'too many structures (200 max)' };
+  const pids = new Set(PROPERTIES.map((p) => p.id));
+  const seen = new Set();
+  const out = [];
+  for (const raw of list) {
+    if (!raw || typeof raw !== 'object') return { error: 'every entry must be an object' };
+    const id = String(raw.id || '');
+    if (!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id)) return { error: 'bad id: ' + id.slice(0, 40) };
+    if (seen.has(id)) return { error: 'duplicate id: ' + id };
+    seen.add(id);
+    if (!pids.has(String(raw.pid))) return { error: id + ': unknown property ' + String(raw.pid).slice(0, 40) };
+    const mode = String(raw.mode || 'vision');
+    if (!['vision', 'current', 'both'].includes(mode)) return { error: id + ': bad mode' };
+    const status = String(raw.status || 'site');
+    if (!['site', 'massing', 'model'].includes(status)) return { error: id + ': bad status' };
+    const s = { id, pid: String(raw.pid), mode, name: String(raw.name || id).slice(0, 120), status };
+    if (raw.zid) s.zid = String(raw.zid).slice(0, 64);
+    if (raw.note) s.note = String(raw.note).slice(0, 600);
+    if (raw.outline != null) {
+      if (!Array.isArray(raw.outline) || raw.outline.length < 3 || raw.outline.length > 2000) return { error: id + ': an outline wants 3 to 2000 points' };
+      const ring = [];
+      for (const pt of raw.outline) {
+        if (!Array.isArray(pt) || pt.length !== 2 || !inBox(Number(pt[0]), Number(pt[1]))) return { error: id + ': an outline point is off the map' };
+        ring.push([round6(Number(pt[0])), round6(Number(pt[1]))]);
+      }
+      s.outline = ring;
+    }
+    if (status === 'massing') s.heightFt = clampNum(raw.heightFt, 1, 300, 20);
+    if (status === 'model') {
+      const model = raw.model == null ? null : String(raw.model);
+      if (model !== null && !/^\/models\/[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.(glb|gltf)$/.test(model)) return { error: id + ': a model must be a .glb in /models' };
+      s.model = model;
+      if (!Array.isArray(raw.position) || !inBox(Number(raw.position[0]), Number(raw.position[1]))) return { error: id + ': a model needs a position inside the county' };
+      s.position = [round6(Number(raw.position[0])), round6(Number(raw.position[1]))];
+      s.altitudeM = clampNum(raw.altitudeM, -200, 200, 0);
+      s.rotationDeg = Math.round(clampNum(raw.rotationDeg, -360, 360, 0));
+      s.scale = clampNum(raw.scale, 0.01, 100, 1);
+    }
+    if (status !== 'model' && (!s.outline || s.outline.length < 3)) return { error: id + ': a site or a massing block needs an outline' };
+    out.push(s);
+  }
+  return { structures: out };
+}
+
+app.post('/api/save-structures', async (req, res) => {
+  try {
+    const { pin, structures } = req.body || {};
+    const EDIT_PIN = process.env.EDIT_PIN;
+    const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+    const GITHUB_REPO = process.env.GITHUB_REPO || 'SacredRebel/EcoVillage-map';
+    if (!EDIT_PIN || !GITHUB_TOKEN) return res.status(501).json({ ok: false, error: 'not_configured' });
+    if (!pin || String(pin) !== String(EDIT_PIN)) return res.status(401).json({ ok: false, error: 'bad_pin' });
+    const clean = cleanStructures(structures);
+    if (clean.error) return res.status(400).json({ ok: false, error: 'bad_body', detail: clean.error });
+
+    const doc = { note: 'Designed structures — the Vision half of the map. Edited in the placement studio (B) and committed from there; a .glb lives in public/models and is referenced by path.', structures: clean.structures };
+    const filePath = 'data/structures.json';
+    const apiBase = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + filePath;
+    const ghHeaders = { 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github+json', 'User-Agent': 'ojai-map-server', 'X-GitHub-Api-Version': '2022-11-28' };
+    let sha;
+    const getResp = await fetch(apiBase + '?ref=main', { headers: ghHeaders });
+    if (getResp.ok) { const info = await getResp.json(); sha = info.sha; }
+    const content = Buffer.from(JSON.stringify(doc, null, 2) + '\n').toString('base64');
+    const putResp = await fetch(apiBase, {
+      method: 'PUT',
+      headers: { ...ghHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: '🏗 Place ' + clean.structures.length + ' designed structure' + (clean.structures.length === 1 ? '' : 's') + ' from the placement studio', content, sha, branch: 'main' })
+    });
+    if (!putResp.ok) {
+      const detail = await putResp.text();
+      return res.status(502).json({ ok: false, error: 'github_error', status: putResp.status, detail: String(detail).slice(0, 300) });
+    }
+    const result = await putResp.json();
+    try { STRUCTURES_CACHE = null; } catch (e) { /* no cache to clear */ }
+    res.json({ ok: true, count: clean.structures.length, commit: result.commit && result.commit.sha });
   } catch (e) {
     res.status(500).json({ ok: false, error: 'server_error', message: String(e && e.message) });
   }

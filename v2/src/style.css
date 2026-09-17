@@ -173,20 +173,85 @@ button { font: inherit; color: inherit; }
 .toast { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); max-width: min(92vw, 720px); padding: 12px 16px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); font-size: 12px; line-height: 1.55; color: var(--ink-2); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55); }
 .toast b { color: var(--ink); }
 
+/* ---- the first visit: a tour whose rows are the tool ---- */
+.intro { position: absolute; inset: 0; z-index: 3000; display: grid; place-items: center; padding: 16px;
+  background: rgba(3, 5, 9, 0.62); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); animation: intro-in 0.28s ease both; }
+.intro[hidden] { display: none; }
+@keyframes intro-in { from { opacity: 0; } to { opacity: 1; } }
+.intro-card { width: min(680px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background: var(--panel); border: 1px solid rgba(150, 200, 130, 0.3); border-radius: 18px; box-shadow: 0 30px 90px rgba(0, 0, 0, 0.7);
+  animation: intro-rise 0.32s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes intro-rise { from { transform: translateY(14px) scale(0.985); } to { transform: none; } }
+.intro-head { display: flex; align-items: flex-start; gap: 13px; padding: 20px 18px 14px 20px; border-bottom: 1px solid var(--line); }
+.intro-mark { flex: 0 0 auto; font-size: 26px; color: var(--gold); line-height: 1; margin-top: 1px; }
+.intro-head > .intro-copy { flex: 1; min-width: 0; }
+.intro-head b { display: block; font-size: 19px; font-weight: 900; letter-spacing: 0.2px; }
+.intro-head span { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
+.intro-rows { padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.intro-row { display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left; padding: 11px 12px; border-radius: 12px;
+  border: 1px solid transparent; background: transparent; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.intro-row:hover, .intro-row:focus-visible { background: rgba(255, 255, 255, 0.055); border-color: var(--line); outline: none; }
+.intro-ico { flex: 0 0 26px; font-size: 19px; line-height: 1.25; text-align: center; }
+.intro-txt { flex: 1; min-width: 0; }
+.intro-txt b { display: block; font-size: 13px; font-weight: 800; letter-spacing: 0.2px; }
+.intro-txt span { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.5; color: var(--ink-2); }
+.intro-go { flex: 0 0 auto; color: var(--ink-3); font-size: 15px; align-self: center; transition: transform 0.15s, color 0.15s; }
+.intro-row:hover .intro-go { color: var(--green); transform: translateX(3px); }
+.intro-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 13px 18px 16px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--ink-3); }
+.intro-acts { display: flex; gap: 8px; }
+.intro-foot .btn { padding: 8px 15px; border-radius: 10px; font-size: 12px; font-weight: 800; letter-spacing: 0.3px; cursor: pointer; border: 1px solid var(--line); }
+.intro-foot .btn.ghost { background: rgba(255, 255, 255, 0.06); color: var(--ink-2); }
+.intro-foot .btn.ghost:hover { background: rgba(255, 255, 255, 0.12); color: var(--ink); }
+.intro-foot .btn.go { background: var(--green); border-color: var(--green); color: #14200e; }
+.intro-foot .btn.go:hover { filter: brightness(1.08); }
+.brand { cursor: pointer; }
+.timeline.flash { animation: tl-flash 0.7s ease 3; }
+@keyframes tl-flash { 0%, 100% { box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55); } 50% { box-shadow: 0 0 0 2px var(--gold), 0 20px 60px rgba(0, 0, 0, 0.55); } }
+@media (prefers-reduced-motion: reduce) { .intro, .intro-card { animation: none; } .timeline.flash { animation: none; box-shadow: 0 0 0 2px var(--gold); } }
+
 @media (max-width: 900px) {
   :root { --dock-w: min(88vw, 336px); --insp-w: min(88vw, 360px); }
   .crumb, .brand-sub { display: none; }
+  .top-right { margin-left: auto; }   /* the crumb was the spacer; without it, hug the right edge */
   .tl-row { grid-template-columns: 110px 48px 1fr; }
   .tl-note { display: none; }
   .timeline { bottom: 8px; width: calc(100vw - 72px); left: 8px; transform: none; }
   .dock, .inspector { bottom: 118px; }
   .hud.insp-open .controls { right: 12px; }
-  #app.dock-open .maplibregl-ctrl-bottom-left { left: 0; }
+  #app.dock-open .maplibregl-ctrl-bottom-left { left: auto; right: 4px; }   /* the gutter beside the dock — the folded ⓘ fits there */
 }
 @media (max-width: 760px) {
   .hud.insp-open .controls, .hud.dock-open .controls { display: none; }   /* the panel's own ✕ closes it */
   #year-small { display: none; }
   .year-pill { padding: 6px 10px; }
+  .intro { padding: 10px; }
+  .intro-head { padding: 16px 14px 12px 15px; gap: 10px; }
+  .intro-head b { font-size: 17px; }
+  .intro-row { padding: 10px 9px; gap: 10px; }
+  .intro-foot { padding: 12px 14px 14px; }
+  .intro-foot > span:first-child { display: none; }
+  .intro-acts { width: 100%; }
+  .intro-foot .btn { flex: 1; }
+}
+
+/* a real phone: everything in the top bar has to fit between the two edges */
+@media (max-width: 480px) {
+  .hud-top { gap: 7px; padding: 0 9px 0 10px; }
+  .brand-name { display: none; }
+  .brand-mark { font-size: 20px; }
+  .apn-search input { width: 88px; }
+  .apn-search input:focus { width: 132px; }
+  .year-pill { padding: 5px 9px; }
+  .year-pill b { font-size: 14px; }
+  /* only the mode you are in — tapping still flips it, and the row stops overflowing */
+  .mode-pill span { display: none; padding: 4px 9px; font-size: 9.5px; letter-spacing: 0.7px; }
+  .mode-pill[data-mode="today"] .mode-today, .mode-pill[data-mode="vision"] .mode-vision { display: block; }
+  .top-right { gap: 7px; }
+  .apn-search { min-width: 0; }
+  .apn-search input { width: 80px; min-width: 0; }
+  .apn-search input:focus { width: 126px; }
+  .icon-btn { width: 27px; height: 27px; }
 }
 
 /* ---- cards: strip, gallery, classic panel html, cta ---- */

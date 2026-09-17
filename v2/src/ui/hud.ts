@@ -65,7 +65,7 @@ export class Hud {
     this.eng = o.eng; this.props = o.props; this.mode = o.mode; this.onMode = o.onMode;
     this.root = el('<div class="hud"></div>');
     container.appendChild(this.root);
-    this.root.append(this.buildTop(), this.buildDock(), this.buildInspector(), this.buildTimeline(), this.buildControls(), el('<div class="toast" id="toast" hidden></div>'));
+    this.root.append(this.buildTop(), this.buildDock(), this.buildInspector(), this.buildTimeline(), this.buildControls(), this.buildIntro(), el('<div class="toast" id="toast" hidden></div>'));
     this.editor = new Editor(this.root, this.eng, this.props, m => this.say(m));
     this.wire();
     this.syncAll();
@@ -81,7 +81,7 @@ export class Hud {
       <form class="apn-search" id="apn-form" autocomplete="off"><input id="apn-in" type="search" placeholder="APN or lat, lng — any parcel" title="type an assessor parcel number (Ventura or Los Angeles County) or coordinates anywhere in the US, then Enter" spellcheck="false"><button type="submit" class="icon-btn" title="look up the county record">⌕</button></form>
       <div class="top-right">
         <div class="year-pill" id="year-pill" title="base imagery"><b id="year-big">today</b><span id="year-small">Esri satellite</span></div>
-        <button class="mode-pill" id="mode-pill" data-mode="${this.mode}"><span class="mode-today">TODAY</span><span class="mode-vision">VISION</span></button>
+        <button class="mode-pill" id="mode-pill" data-mode="${this.mode}" title="switch between Today — what stands there now — and Vision — what is proposed (Space)"><span class="mode-today">TODAY</span><span class="mode-vision">VISION</span></button>
         <button class="icon-btn" id="btn-help" title="hotkeys (?)">?</button>
       </div>
     </header>`);
@@ -207,6 +207,13 @@ export class Hud {
     this.q<HTMLSelectElement>('#ctl-quality').addEventListener('change', e => eng.setQuality((e.target as HTMLSelectElement).value as 'low' | 'medium' | 'high'));
     this.q('#mode-pill').addEventListener('click', () => { this.mode = this.mode === 'today' ? 'vision' : 'today'; this.onMode(this.mode); this.syncAll(); });
     this.q('#btn-help').addEventListener('click', () => this.help());
+    // the first-visit overlay
+    this.q('#intro-x').addEventListener('click', () => this.closeIntro());
+    this.q('#intro-go').addEventListener('click', () => this.closeIntro());
+    this.q('#intro-keys').addEventListener('click', () => { this.closeIntro(); this.help(); });
+    this.q('#intro').addEventListener('click', e => { if (e.target === this.q('#intro')) this.closeIntro(); });
+    for (const b of this.root.querySelectorAll<HTMLElement>('[data-intro]')) b.addEventListener('click', () => this.introDo(b.dataset.intro!));
+    this.q('.brand').addEventListener('click', () => this.showIntro());   // the tour is always one click away
     // engine events
     eng.events.on('base', () => this.syncAll());
     eng.events.on('overlays', () => this.syncAll());
@@ -239,6 +246,7 @@ export class Hud {
     const tgt = e.target as HTMLElement;
     if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.tagName === 'SELECT')) return;
     if (lightboxOpen()) return;
+    if (this.introOpen) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.closeIntro(); } return; }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const map = this.eng.map, step = 120;
     const k = e.key.toLowerCase();
@@ -278,6 +286,57 @@ export class Hud {
     this.say(`🌀 Entering the Vision — ${p.shortLabel || p.name}`);
     this.props.dive(p, () => { this.selected = { kind: 'property', payload: p }; this.inspectorOpen = true; this.lastPanel = 'insp'; this.setTab('parcel'); this.renderParcel(); this.syncPanels(); });
   }
+  // ---- the first visit -------------------------------------------------------
+  //   Everything here is a door someone would otherwise have to find: the timeline at the
+  //   bottom, the layer library behind L, the county record behind a click on open ground,
+  //   and the Today/Vision pill. Each row DOES the thing, so the tour is the tool. Shown once
+  //   (localStorage), skipped entirely for anyone who arrived with intent — a shared link that
+  //   already carries a view, a property, an APN, or the editor flag.
+  private buildIntro() {
+    const row = (ico: string, key: string, head: string, body: string) =>
+      `<button class="intro-row" data-intro="${key}"><span class="intro-ico">${ico}</span><span class="intro-txt"><b>${head}</b><span>${body}</span></span><span class="intro-go">→</span></button>`;
+    return el(`<div class="intro" id="intro" hidden role="dialog" aria-modal="true" aria-label="Welcome to the Ojai Atlas">
+      <div class="intro-card">
+        <div class="intro-head">
+          <div class="intro-mark">◈</div>
+          <div class="intro-copy"><b>Ojai Atlas</b><span>Six properties on one map engine — the land, its record, and what is proposed for it.</span></div>
+          <button class="icon-btn" id="intro-x" title="close (Esc)">✕</button>
+        </div>
+        <div class="intro-rows">
+          ${row('🛩️', 'years', 'Eighty years of the same ground', 'County aerial flights from 1945 to 2025, and historic topographic sheets back to 1903. Drag the year on the timeline.')}
+          ${row('🗺️', 'layers', 'Thirty-six live map layers', 'Geology, faults, landslides, soils, flood, fire, water and the ownership grid — read from each agency’s own server the moment you switch one on.')}
+          ${row('🗂️', 'record', 'The county record for any parcel', 'Click open ground, or type an APN in the top bar: ownership and title, taxes, hazards, slope and a scored read, resolved on the spot.')}
+          ${row('🌀', 'vision', 'Today ⇄ Vision', 'Every property carries both — what stands there now, and what is proposed for it. The pill at the top right flips between them.')}
+        </div>
+        <div class="intro-foot">
+          <span>Press <kbd>?</kbd> at any time for the hotkeys.</span>
+          <span class="intro-acts"><button class="btn ghost" id="intro-keys">Hotkeys</button><button class="btn go" id="intro-go">Start exploring</button></span>
+        </div>
+      </div>
+    </div>`);
+  }
+  private get introOpen() { return !this.q('#intro').hidden; }
+  private closeIntro(remember = true) {
+    this.q('#intro').hidden = true;
+    if (remember) { try { localStorage.setItem('atlasIntro', '1'); } catch { /* private mode */ } }
+  }
+  showIntro() { this.q('#intro').hidden = false; (this.q('#intro-go') as HTMLButtonElement).focus(); }
+  /** Shown once, and never to someone who arrived with a view, a property, an APN or the editor flag. */
+  maybeIntro() {
+    const qs = new URLSearchParams(location.search);
+    if (location.hash || qs.has('p') || qs.has('apn') || qs.has('edit')) return;
+    let seen = true;
+    try { seen = localStorage.getItem('atlasIntro') === '1'; } catch { seen = false; }
+    if (!seen) this.showIntro();
+  }
+  private introDo(key: string) {
+    this.closeIntro();
+    if (key === 'years') { this.q('#timeline').classList.add('flash'); window.setTimeout(() => this.q('#timeline').classList.remove('flash'), 2400); this.say('The timeline is at the bottom — drag the year, or step it with [ and ].'); }
+    if (key === 'layers') { this.dockOpen = true; this.lastPanel = 'dock'; this.syncPanels(); }
+    if (key === 'record') { this.say('Click anywhere on open ground for the elevation and the county record of whatever parcel is under the point — or type an APN in the top bar.'); }
+    if (key === 'vision') { this.mode = this.mode === 'vision' ? 'today' : 'vision'; this.onMode(this.mode); this.syncAll(); this.say(this.mode === 'vision' ? 'VISION — every property now shows what is proposed for it.' : 'TODAY — every property now shows what stands there.'); }
+  }
+
   help() {
     const t = this.q('#toast');
     t.innerHTML = `<b>Hotkeys</b> — W A S D pan · Q E rotate · R F tilt · + − zoom · T 2D/3D · X terrain · N north · L layers · I inspector · P position editor · 1–7 open a layer group · [ ] step the aerial year · H historic topo · Space Today/Vision · G open in Google Earth · Esc close. <br>Mouse: drag to pan, right-drag / Ctrl-drag / <b>middle-drag</b> to orbit (drag right = turn right), wheel to zoom, click open ground for elevation + the county record of any parcel; type an APN or coordinates in the top bar to pull any parcel in the US. Touch: two fingers to rotate and tilt.`;

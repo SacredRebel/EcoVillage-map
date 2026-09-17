@@ -88,6 +88,19 @@ export class Engine {
       canvasContextAttributes: { antialias: false, powerPreference: 'high-performance' } as never
     } as never);
     this.map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
+    // MapLibre's compact attribution opens itself, which on a phone is a 145 px bar that ends up
+    // under the layer dock. Fold it back to its own ⓘ on a narrow screen (the library's own
+    // pattern — one tap still shows every credit); anyone who opens it keeps it open until a resize.
+    const foldAttrib = () => {
+      if (window.innerWidth > 560) return;
+      const a = container.querySelector('.maplibregl-ctrl-attrib');
+      if (!a) return;
+      if (a.tagName === 'DETAILS') a.removeAttribute('open');
+      a.classList.remove('maplibregl-compact-show', 'mapboxgl-compact-show');
+    };
+    this.map.on('load', foldAttrib);
+    window.addEventListener('resize', foldAttrib);
+    setTimeout(foldAttrib, 0);
     try { container.style.background = `#02030a url(${starfield()}) repeat`; } catch { /* no canvas */ }
     this.enableOrbit(container);
     this.map.on('load', () => this.onLoad());

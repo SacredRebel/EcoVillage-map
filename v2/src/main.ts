@@ -67,6 +67,7 @@ async function boot() {
     if (p) setTimeout(() => props.flyTo(p), 400);
     const apn = new URLSearchParams(location.search).get('apn');   // ?apn=037-0-012-125 -> straight to that parcel's county record
     if (apn && !p) setTimeout(() => hud.lookup(apn), 600);
+    hud.maybeIntro();      // the first visit gets the tour; a shared link never does
     window.atlas.ready = true;
   } catch (e) { console.error('properties', e); }
 }

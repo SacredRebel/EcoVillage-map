@@ -214,6 +214,25 @@ await pg.setViewportSize({ width: 400, height: 820 }); await wait(800);
 await ev(() => { const p = window.atlas.props.props.find(x => x.id === 'sulphur-mountain'); window.atlas.props.onSelect('property', p); return true; }); await wait(900);
 const mob = await ev(() => { const r = el => { const b = document.querySelector(el)?.getBoundingClientRect(); return b ? [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)] : null; }; return { vw: innerWidth, insp: r('#inspector'), top: r('#topbar'), overflowX: document.documentElement.scrollWidth > innerWidth, inspOpen: document.getElementById('inspector').classList.contains('open') }; });
 check('phone: no horizontal overflow, the inspector fits the width', !mob.overflowX && mob.inspOpen && mob.insp && mob.insp[2] <= 400 && mob.insp[0] >= 0, mob);
+// every control in the top bar has to sit between the two edges of a 400 px phone (V0.39)
+const bar = await ev(() => {
+  const vw = innerWidth;
+  const kids = [...document.querySelectorAll('.hud-top > *, .hud-top .top-right > *')].filter(e => e.offsetParent !== null);
+  const out = kids.map(e => ({ cls: e.className.split(' ')[0] || e.tagName.toLowerCase(), l: Math.round(e.getBoundingClientRect().left), r: Math.round(e.getBoundingClientRect().right) }));
+  return { vw, out, over: out.filter(k => k.r > vw + 0.5 || k.l < -0.5) };
+});
+check('phone: nothing in the top bar runs off the edge — the mode pill and ? both fit', bar.over.length === 0, { vw: bar.vw, over: bar.over, right: bar.out[bar.out.length - 1] });
+// the map attribution has to stay visible, not hide behind an open dock
+await ev(() => { document.getElementById('ctl-layers').click(); }); await wait(500);
+const att = await ev(() => {
+  const a = document.querySelector('.maplibregl-ctrl-bottom-left'), d = document.getElementById('dock');
+  if (!a || !d) return null;
+  const A = a.getBoundingClientRect(), D = d.getBoundingClientRect();
+  const hit = !(A.right <= D.left || A.left >= D.right || A.bottom <= D.top || A.top >= D.bottom);
+  return { dockOpen: d.classList.contains('open'), behindDock: hit, onScreen: A.left >= 0 && A.right <= innerWidth + 0.5, w: Math.round(A.width) };
+});
+check('phone: the map attribution stays clear of the open dock and on screen', att && att.dockOpen && !att.behindDock && att.onScreen, att);
+await ev(() => { document.getElementById('ctl-layers').click(); }); await wait(400);
 await pg.screenshot({ path: join(OUT, 'v2-phone.png') });
 
 // ---- the editor, behind ?edit=1 ----
@@ -243,6 +262,40 @@ check('editor: P opens it, Start shows 18 draggable badges and hides that proper
 await pg.goto(BASE + '/?edit=0', { waitUntil: 'domcontentloaded', timeout: 30000 });
 await pg.waitForFunction(() => window.atlas && window.atlas.ready, { timeout: 40000 });
 check('editor gate: ?edit=0 turns it off again', (await ev(() => localStorage.getItem('atlasEditor'))) === null);
+await pg.waitForFunction(() => window.atlas.eng.map.areTilesLoaded(), { timeout: 20000 }).catch(() => {}); await wait(900);   // let this page finish before the next goto, or its glyph fetch is aborted
+
+// ---- the first visit: the tour, once, and only for someone who arrived without intent (V0.39) ----
+await ev(() => { try { localStorage.removeItem('atlasIntro'); } catch {} });
+await pg.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+await pg.waitForFunction(() => window.atlas && window.atlas.ready && window.atlas.eng.map.areTilesLoaded(), { timeout: 40000 }); await wait(900);
+const intro1 = await ev(() => ({
+  open: !document.getElementById('intro').hidden,
+  rows: document.querySelectorAll('.intro-row').length,
+  head: document.querySelector('.intro-head b')?.textContent,
+  keys: Object.values(document.querySelectorAll('[data-intro]')).map(b => b.dataset.intro).join()
+}));
+check('intro: a first visit with no view in the URL opens the tour, four doors', intro1.open && intro1.rows === 4 && intro1.head === 'Ojai Atlas' && intro1.keys === 'years,layers,record,vision', intro1);
+// a row does the thing it describes
+await pg.click('[data-intro="layers"]'); await wait(400);
+const intro2 = await ev(() => ({ open: !document.getElementById('intro').hidden, dock: document.getElementById('dock').classList.contains('open'), ls: localStorage.getItem('atlasIntro') }));
+check('intro: a row closes the tour and does what it says (layers opens the dock), and the visit is remembered', !intro2.open && intro2.dock && intro2.ls === '1', intro2);
+await pg.waitForFunction(() => window.atlas.eng.map.areTilesLoaded(), { timeout: 20000 }).catch(() => {}); await wait(400);
+// hotkeys are inert behind it, and it never comes back on its own
+await pg.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+await pg.waitForFunction(() => window.atlas && window.atlas.ready && window.atlas.eng.map.areTilesLoaded(), { timeout: 40000 }); await wait(900);
+const intro3 = await ev(() => !document.getElementById('intro').hidden);
+await ev(() => window.atlas.hud.showIntro());
+const z0 = await ev(() => window.atlas.eng.map.getZoom());
+await pg.keyboard.press('KeyW'); await wait(250);
+const intro4 = await ev(() => ({ open: !document.getElementById('intro').hidden, zoom: window.atlas.eng.map.getZoom() }));
+await pg.keyboard.press('Escape'); await wait(300);
+const intro5 = await ev(() => !document.getElementById('intro').hidden);
+check('intro: never shown twice, reopened from the brand, hotkeys inert behind it, Esc closes it', intro3 === false && intro4.open && Math.abs(intro4.zoom - z0) < 0.001 && intro5 === false, { intro3, intro4, z0, intro5 });
+// a shared link that already carries a view skips it entirely
+await ev(() => { try { localStorage.removeItem('atlasIntro'); } catch {} });
+await pg.goto(BASE + '/#34.4326/-119.1564/14/0/0?3d=0', { waitUntil: 'domcontentloaded', timeout: 30000 });
+await pg.waitForFunction(() => window.atlas && window.atlas.ready && window.atlas.eng.map.areTilesLoaded(), { timeout: 40000 }); await wait(900);
+check('intro: a shared link with a view in it never shows the tour', (await ev(() => document.getElementById('intro').hidden)) === true);
 
 // ---- the real API behind the stubs ----
 const health = await (await fetch(BASE + '/api/health')).json();

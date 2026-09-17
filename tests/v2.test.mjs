@@ -480,6 +480,16 @@ const baked = tIdxRes.status === 200 && Array.isArray(tIdx.areas) && tIdx.areas.
 check('terrain route: the index is served where tiles are baked, and an empty index where they are not',
   (baked && tIdx.areas.every(a => a.pid && Array.isArray(a.bbox) && a.bbox.length === 4)) || (tIdxRes.status === 404 && Array.isArray(tIdx.areas) && tIdx.areas.length === 0),
   { status: tIdxRes.status, areas: (tIdx.areas || []).length });
+// The walkable world (SacredRebel/spatial-map) is a separate app on a separate host and reads its
+// ground and its buildings from here rather than carrying a copy. The server has allowed any origin
+// since it was written (app.use(cors())); this pins that, because the day it silently stops, the
+// world stops loading its terrain and the failure looks like a bug in the world rather than here.
+const corsIdx = await fetch(BASE + '/terrain/index.json', { headers: { Origin: 'https://spatial-map.example' } });
+const corsStruct = await fetch(BASE + '/api/structures', { headers: { Origin: 'https://spatial-map.example' } });
+check('cross-origin: another host can read the baked ground and the designed structures',
+  corsIdx.headers.get('access-control-allow-origin') === '*' && corsStruct.headers.get('access-control-allow-origin') === '*',
+  { terrain: corsIdx.headers.get('access-control-allow-origin'), structures: corsStruct.headers.get('access-control-allow-origin') });
+
 const badZ = await fetch(BASE + '/terrain/abc/1/1.png');
 const miss = await fetch(BASE + '/terrain/15/1/1.png');
 check('terrain route: a malformed tile path is rejected and an unbaked tile is a cached 404, never an error',

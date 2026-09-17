@@ -1,0 +1,22 @@
+# What Vercel does NOT need to deploy.
+#
+#   The repository carries 158 MB of property photographs, plus source, docs and test material.
+#   None of it is read by the running server: the images are served to the browser by a 302 in
+#   vercel.json that points at raw.githubusercontent.com, the v2 source is already built into
+#   public/v2, and the tests never run in production. Vercel stores every deployment it has ever
+#   made, so anything listed here is a few hundred megabytes NOT kept for each one.
+#
+#   Keep in mind when adding a line: server-complete.js reads public/ and data/ at runtime and
+#   imports lib/, properties/ and image-urls.js, so none of those may be excluded.
+
+images/
+attached_assets/
+docs/
+tests/
+v2/
+bmr/
+brochures/
+*.py
+*.md
+!README.md
+.github/

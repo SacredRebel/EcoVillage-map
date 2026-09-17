@@ -1,5 +1,10 @@
 {
   "schema": 1,
   "note": "request counts per provider per month — no names, no addresses, no parcels",
-  "months": {}
+  "months": {
+    "2026-09": {
+      "rentcast": 1
+    }
+  },
+  "updatedAt": "2026-09-17T03:57:29.396Z"
 }

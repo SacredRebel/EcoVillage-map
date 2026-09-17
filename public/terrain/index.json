@@ -1,0 +1,52 @@
+{
+ "schema": 1,
+ "note": "USGS 3DEP 1 m elevation, terrarium-encoded, per property. The engine switches the terrain source to these tiles when the camera is over one of the boxes below.",
+ "source": "USGS 3DEP ImageServer (exportImage, F32 GeoTIFF)",
+ "encoding": "terrarium",
+ "tileSize": 256,
+ "generated": "2026-09-17",
+ "minzoom": 13,
+ "maxzoom": 17,
+ "areas": [
+  {
+   "pid": "howard",
+   "bbox": [
+    -119.323266,
+    34.419415,
+    -119.316216,
+    34.42895
+   ],
+   "tiles": 35
+  },
+  {
+   "pid": "sulphur-mountain",
+   "bbox": [
+    -119.158603,
+    34.431343,
+    -119.154087,
+    34.434007
+   ],
+   "tiles": 13
+  },
+  {
+   "pid": "keris-property",
+   "bbox": [
+    -119.334907,
+    34.429372,
+    -119.327821,
+    34.436973
+   ],
+   "tiles": 38
+  },
+  {
+   "pid": "chers-property",
+   "bbox": [
+    -119.290037,
+    34.401333,
+    -119.287704,
+    34.402677
+   ],
+   "tiles": 13
+  }
+ ]
+}

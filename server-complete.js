@@ -1,11 +1,17 @@
-// EcoVillageBuilder - Complete Working Implementation
+// Howard Property Interactive Map — 1320 Baldwin Rd, Ojai, CA (APN 032-0-010-090)
+// Built on the EcoVillageBuilder V1 single-file stack (SacredRebel/EcoVillage-map)
 import 'dotenv/config';
 import express from 'express';
 import compression from 'compression';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFileSync, existsSync } from 'fs';
 import { IMAGE_URLS } from './image-urls.js';
+import { resolveCore, resolveDeep, resolveParcel, mergeRecord, readFrom, COUNTY_ADAPTERS, evidencePath, loadEvidence } from './lib/dossier.js';
+import { WATCH_PATH, EMPTY_WATCH } from './lib/watch.js';
+import { parsePdf } from './lib/title-report.js';
+import { configured as storeConfigured, pinOk, readJson, updateJson, commitFiles, cached as storeCached, remember, RESEARCH_PATH, UPLOADS_PATH, slug } from './lib/store.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,1721 +25,54 @@ app.use(cors()); // Enable CORS for all routes
 app.use(express.json({ limit: '10mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Parse URL-encoded bodies
 
-// Supabase configuration - Load from .env file
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
-const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'eco-village-images';
-
-// Log Supabase config status (for debugging)
-if (process.env.VERCEL !== '1') {
-  if (SUPABASE_URL === 'https://your-project.supabase.co') {
-    console.log('⚠️  WARNING: Supabase URL not configured! Images will not load.');
-    console.log('💡 Run: .\\setup-supabase-quick.ps1 to configure Supabase');
-  } else {
-    console.log('✅ Supabase configured:', SUPABASE_URL.substring(0, 30) + '...');
-  }
-}
-
 // Only log startup message when running locally
 if (process.env.VERCEL !== '1') {
-  console.log('🚀 Starting EcoVillageBuilder Interactive Map...');
+  console.log('🚀 Starting Howard Property Interactive Map...');
 }
 
-// Comprehensive Project Zones Data - 16 Zones Total ($7.75M Investment)
-const PROJECT_ZONES = [
-  {
-    id: "agricultural-hub",
-    name: "Agricultural Hub", 
-    emoji: "🌾",
-    position: [34.433478, -119.155982],
-    polygon: [[34.4325, -119.1560], [34.4330, -119.1560], [34.4330, -119.1550], [34.4325, -119.1550]],
-    type: "agriculture",
-    budget: "$35,000 - $40,000",
-    timeline: "Phase 1-3",
-    monthlyRevenue: "Phase 2: $500+ | Phase 3: $2,000+",
-    roi: "64% annual ROI",
-    description: "Fruit tree propagation, extensive gardens, educational components, and organic nursery products.",
-    features: [
-      "Planning on planting 500+ fruit trees on the property - next 1-2 years",
-      "Regenerative vegetable gardens (3+ acres)",
-      "Herb gardens and medicinal plants",
-      "Educational workshops and farm tours",
-      "Compost, mycelium, mineral, wormfarm operations",
-      "On-site nursery for plant propagation",
-      "Gravity-fed irrigation systems"
-    ],
-    revenueStreams: [
-      "Nursery products sale - online/offline: $500-$1,000/month",
-      "Community Supported Agriculture program and products: $500-$1,500+/month",
-      "Educational workshops: $1,500/month", 
-      "Farm-to-table events: $3,000/month"
-    ],
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 1-3)",
-        deliverables: "Move and set up garden and agriculture space with fencing, proper garden beds, and all mentioned features and infrastructure. Setting up sales channels - online/offline collaborations.",
-        investment: "$10,000-$15,000",
-        status: "Foundation and setup"
-      },
-      {
-        phase: "Phase 2 (Months 4-6)",
-        deliverables: "Start planting and growing food, compost operations. Starting first sales online/offline - nursery products.",
-        investment: "~$5,000/month for expanding infrastructure",
-        monthlyRevenue: "$500+",
-        status: "Initial growth and sales"
-      },
-      {
-        phase: "Phase 3 (Month 7+)",
-        deliverables: "Harvesting products, systemized operations for products, maintaining whole agriculture infrastructure and products. Reinvesting part of profits for maintenance and improvements.",
-        monthlyRevenue: "$2,000+/month",
-        status: "Full production and maintenance"
-      }
-    ],
-    regenerativeFeatures: [
-      "Permaculture design principles",
-      "Soil regeneration through composting",
-      "Mycelium network enhancement",
-      "Mineral supplementation programs",
-      "Wormfarm composting systems",
-      "Water conservation and rainwater harvesting",
-      "Biodiversity enhancement"
-    ]
-  },
-  {
-    id: "main-residence",
-    name: "Main Residence Compound",
-    emoji: "🏠", 
-    position: [34.433118, -119.155333],
-    polygon: [[34.4330, -119.1555], [34.4335, -119.1555], [34.4335, -119.1545], [34.4330, -119.1545]],
-    type: "residential",
-    budget: "$420,000 - $700,000",
-    timeline: "Phase 1-3 (16 months)",
-    monthlyRevenue: "$25K-$30K (post-construction)",
-    roi: "43-68% annual + ~$7.7M property increase",
-    description: "4,000-5,000 sq ft modern eco-retreat center with bio-architecture, curved designs, and regenerative building materials - the operational hub of the EcoVillage.",
-    features: [
-      "4,000-5,000 sq ft modern retreat center with bio-architecture design",
-      "5-6 bedrooms (3 main suites, 2 guest rooms), 6 bathrooms",
-      "Main kitchen and spacious living areas",
-      "High ceilings with open floor plan and ceremonial fire space",
-      "Retreat amenities: infinity pool, hot tub, sauna",
-      "Outdoor BBQ areas, entertainment decks, and green lawn",
-      "Sacred geometry gardens and water features",
-      "Panoramic mountain views throughout property",
-      "Operational hub for EcoVillage management",
-      "Executive hosting and high-end event capabilities"
-    ],
-    
-    regenerativeFeatures: [
-      "Bio-mimic architecture with curved and rounded structures",
-      "Steel frame construction with fireproof materials",
-      "Large glass windows for natural light optimization",
-      "Earth cob styling and natural insulation",
-      "Sustainable regenerative building materials",
-      "Rainwater harvesting and greywater systems",
-      "Solar energy integration with battery storage",
-      "Green roofs and living walls",
-      "Sacred geometrical positioning and design principles",
-      "Elemental design with round shapes",
-      "Energy-efficient passive cooling and heating systems",
-      "Native landscaping practices"
-    ],
-    
-    propertyValue: {
-      current: "$1,500,000",
-      appraisedPrefab: "$6,900,000",
-      projectedCustom: "~$10,000,000",
-      increase: "~$8,500,000",
-      note: "Current value reflects land with existing structure to be demolished. Official appraisal for 4,000-5,000 sq ft prefab home with standard design. Projected custom eco-retreat with curved bio-architecture, steel frame, and regenerative systems commands premium market value."
-    },
-    
-    revenueStreams: [
-      "Retreats, Events & Private Gatherings: $5,000-$15,000+/month (post-construction)",
-      "EcoVillage Operations Hub: Included in management"
-    ],
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0-6): Demolition, Design & Permits",
-        deliverables: "Demolish existing 1,400 sq ft structure and remove all debris. Complete architectural design for 4,000-5,000 sq ft eco-retreat with bio-architecture and curved steel frame. Secure all building permits and approvals. Clear and grade building site, establish construction access, and install temporary utilities for construction phase.",
-        investment: "$75,000 (Demolition & Site Clearance), $45,000 (Architecture & Permits)",
-        monthlyRevenue: "$0",
-        status: "Currently underway"
-      },
-      {
-        phase: "Phase 2 (Months 7-12): Foundation & Infrastructure",
-        deliverables: "Install drainage systems and upgrade utilities infrastructure to support main residence. Pour foundation and structural supports per approved bio-architecture plans. Complete site readiness for main construction phase including staging areas and material delivery access.",
-        investment: "$80,000",
-        monthlyRevenue: "$0",
-        status: "Begins after Phase 1 completion"
-      },
-      {
-        phase: "Phase 3 (Months 13-24): Main Residence Construction",
-        deliverables: "Build and expand main residence to 4,000-5,000 sq ft with steel frame, bio-architecture, and eco-design throughout. Modern sustainable construction using premium materials. Full build executed per approved architectural plans. Construction partner contributes materials and labor for proportional equity stake in property.",
-        investment: "$1,300,000 (Partner equity contribution: materials + labor)",
-        monthlyRevenue: "$5,000-$15,000+ (post-completion)",
-        status: "Pending Phases 1 & 2"
-      }
-    ],
-    
-    projectedValue: {
-      totalDevelopment: "~$1,500,000",
-      postBuildValue: "$7,000,000-$10,000,000+",
-      valueIncrease: "400-500%+ ROI",
-      note: "Total investment: $120,000 (Phase 1) + $80,000 (Phase 2) + $1,300,000 (Phase 3 partner contribution). Comparable 5,000 sq ft prefab homes appraised at $6.9M+. Bio-architecture steel frame eco-design on 9.47 acres commands premium valuation. Subject to professional appraisal post-construction."
-    }
-  },
-  {
-    id: "community-hub",
-    name: "Community Hub",
-    emoji: "🏛️",
-    position: [34.432771, -119.155387],
-    polygon: [[34.4320, -119.1555], [34.4325, -119.1555], [34.4325, -119.1545], [34.4320, -119.1545]],
-    type: "community", 
-    budget: "$20,000 - $30,000",
-    timeline: "Phase 1-2 (3+ months)",
-    monthlyRevenue: "$7K-$10K+",
-    roi: "214-336% annual ROI",
-    description: "Outdoor community hub centered around a restored 100+ year old fireplace kitchen, natural gathering spaces, and creek-side seating. Serves as the heart of community life with farm-to-table events, shared meal preparation, and amenities for residents, retreat guests, and visitors. Features outdoor kitchen facilities, community fridges, showers, and bathrooms integrated into the natural landscape.",
-    features: [
-      "Outdoor community kitchen with restored 100+ year old fireplace",
-      "Historic BBQ station (repurposed firepit monument)",
-      "Outdoor pizza oven and wood-fired cooking areas",
-      "Open-air prep tables and cooking surfaces",
-      "Natural seating areas around creek and oak trees",
-      "Community showers and bathroom facilities",
-      "Outdoor nature hangout spot with community library",
-      "Children's play area and nursery space",
-      "Community refrigerators and food storage",
-      "Farm-to-table event preparation spaces",
-      "Creek-side gathering and dining areas",
-      "Fire pit and communal eating zones",
-      "Shared cooking equipment and utensils",
-      "Integration with on-site gardens and livestock"
-    ],
-    
-    farmToTableProgramming: [
-      "Farm-to-table cooking events with on-site produce and livestock",
-      "Community meal preparation and shared dining experiences",
-      "Membership-based meal programs and cooking workshops",
-      "Guest kitchen access for Airbnb and retreat visitors",
-      "Event and ceremony meal preparation headquarters",
-      "Community fridges with designated storage for members"
-    ],
-    
-    revenueStreams: [
-      "Event hosting: $7,000/month",
-      "Community meal memberships: $3,000/month",
-      "Workshop facilitation: $2,000/month"
-    ],
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0-3)",
-        deliverables: "Restore and integrate 100+ year old fireplace into outdoor kitchen structure, build basic outdoor kitchen framework with cooking surfaces, install basic community seating around kitchen area, set up temporary/basic toilet and shower facilities, create initial pathways and gathering spaces, test kitchen functionality with small community events",
-        investment: "$10,000-$15,000",
-        monthlyRevenue: "$0",
-        status: "Foundation and basic amenities"
-      },
-      {
-        phase: "Phase 2 (Months 3+)",
-        deliverables: "Beautify kitchen area with permanent structures and finishes, build long-term shower and bathroom facilities, expand creek-side seating and nature hangout areas, install community fridges and food storage, complete children's play area and outdoor library setup, ongoing improvements and aesthetic enhancements, launch full event and membership programs",
-        investment: "$10,000-$15,000",
-        monthlyRevenue: "$7,000-$10,000+",
-        status: "Operational with continuous improvement"
-      }
-    ]
-  },
-  {
-    id: "retreat-village", 
-    name: "Retreat Village",
-    emoji: "🏡",
-    position: [34.432173, -119.155628],
-    polygon: [[34.4335, -119.1560], [34.4340, -119.1560], [34.4340, -119.1550], [34.4335, -119.1550]],
-    type: "hospitality",
-    budget: "P1: $70K-$80K | P2: $20K+ (flexible)",
-    timeline: "Phase 1-3 (12-18 months)", 
-    monthlyRevenue: "$24K-$35K (fully operational)",
-    roi: "187-273% annual ROI",
-    description: "Luxury eco-cabin retreat village nestled on the hillside with 8-10 individually designed cabins (150-300 sq ft each). A mix of 5 high-end retreat cabins and 5 residential cabins for land stewards and community members.\n\nEach cabin features cob construction with steel frame fireproof materials, individual bathhouses with spa amenities, meditation decks, and sacred hillside views. Self-sustainable systems power each cabin—rainwater collection, individual water tanks, solar power, and personal garden beds.\n\nHealing gardens, sacred paths, and quiet zones create a regenerative living community. Built as a proof-of-concept for eco-luxury cob housing and self-regenerative living, demonstrating a new model of sustainable retreat and residential integration.\n\nDesigned for both high-end retreat bookings and long-term residential stewardship, with flexible contractor partnership models allowing builders to showcase cabin designs and share revenue through guest bookings.",
-    features: [
-      "8-10 luxury eco-cabins (150-300 sq ft each)",
-      "Individual bathhouses with spa amenities (hot tubs, ice baths)",
-      "Meditation decks and quiet zones per cabin",
-      "Sacred paths and hillside views",
-      "Healing gardens with individual garden beds",
-      "Self-sustainable utilities (solar, water tanks, rainwater collection)",
-      "Cob construction with steel frame fireproof materials",
-      "High ceilings and large windows with organic design",
-      "Stonework masonry and creative handwork",
-      "Integration with ceremonial spaces and sacred forest circles"
-    ],
-    
-    regenerativeDesign: [
-      "Regenerative design philosophy: proof-of-concept for self-regenerative living",
-      "Eco-cob natural wall construction with stone masonry",
-      "Steel frame fireproof materials ensuring safety and durability",
-      "Self-sustainable utility systems: solar power, rainwater collection, water tanks",
-      "Individual garden beds and permaculture systems per cabin",
-      "Organic materials and organic design flow throughout",
-      "High ceilings and large windows creating light and connection to nature",
-      "Handmade, artisanal construction showcasing creative craftsmanship"
-    ],
-    
-    marketContext: "The global retreat and wellness industry is experiencing rapid growth, with increasing demand for authentic eco-retreats and regenerative living communities. Communal living models and co-ownership opportunities are trending among conscious travelers and land stewards seeking meaningful community connection. Eco-luxury cob housing and self-sustainable cabin villages represent the future of retreat accommodations.",
-    
-    revenueStreams: [
-      "High-End Retreat Cabins (5 units):",
-      "  • Retreat bookings: $12,000-$15,000/month",
-      "  • Wellness retreat packages: $4,000-$6,000/month",
-      "  • Wedding and ceremony events: $2,000-$3,000/month",
-      "Residential Cabins (5 units):",
-      "  • Private cabin rentals: $3,000-$5,000/month",
-      "  • Land steward memberships: $1,000-$2,000/month",
-      "Contractor Partnership Model:",
-      "  • Contractor revenue-share (Airbnb/bookings): $2,000-$4,000/month",
-      "  • Contractors supply materials and labor; we revenue-share guest bookings",
-      "  • Flexible partnership deals with builders and designers",
-      "Total Monthly Revenue: $24,000-$35,000"
-    ],
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0-6)",
-        deliverables: "Land Work: Create main hillside road and 10-12 cabin flat spots ($50K). Utilities: Extend water system and electrical distribution to hillside ($15K-$20K). Sacred Spaces: Establish distributed meditation areas and forest circles ($5K-$10K). Complete permitting and site planning.",
-        investment: "$70,000-$80,000",
-        status: "Hillside infrastructure ready for cabin development"
-      },
-      {
-        phase: "Phase 2 (Months 6-12+)",
-        deliverables: "Invite contractor partners with revenue-share agreements. Contractors build showcase cabins (materials + labor supplied by contractors). Property members/stewards build residential cabins. Establish revenue-share model through Airbnb/booking platforms. Complete first 3-5 cabins. Begin wellness amenities (spa, meditation decks).",
-        investment: "$20,000+ (flexible, contractor-supplied)",
-        status: "Cabins under construction, partnerships active"
-      },
-      {
-        phase: "Phase 3 (Months 12+)",
-        deliverables: "Complete remaining cabins as contractors finish. Launch full retreat booking operations. Begin weekend rental and event hosting. Establish wellness programs and ceremonies. Activate healing gardens and sacred paths. Full integration with McQueen's Garage events and Ceremonial Infrastructure.",
-        investment: "Ongoing as cabins complete (contractor-funded)",
-        status: "Full retreat village operational and revenue-generating"
-      }
-    ]
-  },
-  {
-    id: "infrastructure",
-    name: "Infrastructure & Utilities",
-    emoji: "⚡",
-    position: [34.432386, -119.155966],
-    polygon: [[34.4315, -119.1560], [34.4320, -119.1560], [34.4320, -119.1550], [34.4315, -119.1550]],
-    type: "infrastructure",
-    budget: "P1: $62K-$77K | P2: $40K-$60K | P3: $40K-$50K",
-    timeline: "Phase 1-3 (18 months)", 
-    monthlyRevenue: "Enables $75K-$92.5K monthly revenue",
-    roi: "5.3:1 to 6.5:1 revenue-to-cost ratio",
-    description: "Strategic infrastructure and utilities foundation enabling all village development. Phased water system upgrades (maintenance, creek extension, hillside expansion), electric reactivation with solar integration, hillside road development, and distributed composting toilet network.\n\nEach utility system is strategically phased to support specific projects—water extends to glamping and community hub, electric powers event venues and community spaces, roads enable hillside village construction, and sewage systems serve each phase.\n\nThis infrastructure-first approach ensures reliable utilities while minimizing costs through strategic phasing and natural material solutions.",
-    features: [
-      "Solar array and battery storage systems (phased expansion)",
-      "Well water system with filtration and upgrades",
-      "Water distribution to creek-side glamping sites",
-      "Water extension to hillside for retreat village",
-      "Composting toilet network (5 distributed units, Phase 1)",
-      "Greywater treatment and recycling systems",
-      "Hillside road network with 10+ cabin flat spots",
-      "Main residence landscaping and access roads",
-      "Electric reactivation and distribution system",
-      "Solar panel integration with battery backup",
-      "Septic and sewage systems for hillside village",
-      "Pathways and utility corridors throughout property"
-    ],
-    
-    utilitySystemsBreakdown: [
-      {
-        system: "Water System",
-        phase1: "Current maintenance and upgrade: $5,000",
-        phase1b: "Creek-side extension for glamping: $10,000-$15,000",
-        phase2: "Hillside extension for retreat village: $15,000-$20,000",
-        total: "$30,000-$40,000"
-      },
-      {
-        system: "Electric System",
-        phase1: "Reactivation and maintenance: $2,000 + $500/month",
-        phase2: "Solar integration with battery storage: $5,000-$10,000",
-        phase3: "Full hillside power system: $40,000-$50,000",
-        total: "$47,000-$62,000"
-      },
-      {
-        system: "Road Infrastructure",
-        phase1: "Hillside road and land work (10+ cabin spots): $50,000",
-        total: "$50,000"
-      },
-      {
-        system: "Sewage System",
-        phase1: "Composting toilet network (5 units): $5,000-$10,000",
-        phase2: "Hillside septic and plumbing: $20,000-$30,000",
-        total: "$25,000-$40,000"
-      }
-    ],
-    
-    marketContext: "Independent and solar-powered infrastructure systems are increasingly essential for rural properties and eco-tourism destinations. Solar integration with battery storage reduces long-term operational costs while supporting the growing demand for sustainable, off-grid capable retreats and events. Composting toilet systems and water recycling align with modern sustainability expectations, reducing environmental impact while lowering infrastructure maintenance costs.",
-    
-    revenueStreams: [
-      "Infrastructure enables all property revenue streams",
-      "Solar excess energy potential grid-tie revenue ($500-$1,000/month future)",
-      "Water system supports glamping ($240K-$360K annual)",
-      "Water system supports community hub ($84K-$120K annual)",
-      "Electric system enables event venue ($180K-$300K annual)",
-      "Roads enable retreat village ($222K-$330K annual)",
-      "Sewage systems enable all guest accommodations",
-      "Note: Infrastructure is cost center enabling $900K-$1.1M annual revenue"
-    ],
-    
-    infrastructureEssentials: [
-      "Phased utility expansion tied to project development timelines",
-      "Natural material construction (cob composting toilets) for cost savings",
-      "Solar and battery systems reducing grid dependency and long-term costs",
-      "Water recycling and greywater treatment for sustainability",
-      "Distributed sanitation network avoiding centralized sewage costs",
-      "Strategic road development enabling cabin and village expansion",
-      "Maintenance-first approach with $500-$1,000/month operational budget"
-    ],
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0-6)",
-        deliverables: "Water: Current system maintenance and upgrade ($5K), creek-side extension for glamping ($10K-$15K). Electric: Reactivation ($2K), ongoing maintenance ($500/month). Roads: Hillside development with 10+ cabin flat spots ($50K). Sewage: Build 5 distributed composting toilets ($5K-$10K).",
-        investment: "$62,000-$77,000",
-        status: "Foundation utilities and hillside access"
-      },
-      {
-        phase: "Phase 2 (Months 6-12)",
-        deliverables: "Water: Extend to hillside for retreat village ($15K-$20K). Electric: Install solar panels with battery storage ($5K-$10K). Sewage: Develop hillside septic and plumbing infrastructure ($20K-$30K).",
-        investment: "$40,000-$60,000",
-        status: "Expansion utilities for village development"
-      },
-      {
-        phase: "Phase 3 (Months 12-18)",
-        deliverables: "Electric: Create comprehensive power system for hillside village, event venue, music studio, and ceremonial infrastructure ($40K-$50K). All systems fully operational and integrated.",
-        investment: "$40,000-$50,000",
-        status: "Full property electrification and operational"
-      }
-    ]
-  },
-  {
-    id: "mcqueens-garage",
-    name: "McQueen's Garage & Creative",
-    emoji: "🎭",
-    position: [34.432549, -119.155279],
-    polygon: [[34.4340, -119.1555], [34.4345, -119.1555], [34.4345, -119.1545], [34.4340, -119.1545]],
-    type: "creative",
-    budget: "$150,000 - $300,000",
-    timeline: "Phase 1-3 (18 months)",
-    monthlyRevenue: "$15K-$25K+",
-    roi: "87-97% annual ROI",
-    description: "Premium music recording studio and live event venue featuring a professional stage, outdoor ceremony space, and state-of-the-art recording facilities. The warehouse transformation includes performance areas for live music festivals, kirtans, and high-end retreats, with VIP back-end rooms, recording booths, and overnight accommodations for visiting artists and retreat guests. Positioned as Ojai's destination for intimate concerts, ceremony gatherings, and live music recordings.",
-    features: [
-      "Professional music recording studio with isolation booths",
-      "Live performance stage with professional sound and lighting",
-      "Outdoor ceremony space for festivals and gatherings",
-      "VIP back-end rooms for artists and retreat facilitators",
-      "Multiple recording booths and production spaces",
-      "Event venue for 50-150 person capacity gatherings",
-      "Gallery-style performance area for intimate concerts",
-      "Green rooms and artist preparation spaces",
-      "Overnight accommodations for visiting musicians and guests",
-      "Full warehouse transformation with acoustic treatment",
-      "Equipment storage and production management areas",
-      "Integration with glamping village for high-ticket retreats"
-    ],
-    
-    venueTransformation: [
-      "Solar energy integration for sustainable venue operations",
-      "Rainwater harvesting for landscape and facility use",
-      "Full warehouse insulation and climate control systems",
-      "Sustainable building materials with high energy efficiency",
-      "Professional stage with modular design for multiple event types",
-      "VIP rooms and green rooms for artists and facilitators",
-      "Recording booths with acoustic isolation and treatment",
-      "Overnight guest accommodations for visiting musicians and retreat leaders"
-    ],
-    
-    marketContext: "Ojai has established itself as a cultural and spiritual hub with a thriving festival scene including the renowned Ojai Music Festival, cacao ceremonies, kirtan gatherings, and wellness retreats. The demand for intimate concert venues, ceremony spaces, and retreat facilities continues to grow as Ojai attracts artists, spiritual practitioners, and conscious event organizers seeking authentic gathering spaces. McQueen's Garage fills a unique niche as a professional recording venue with live event capabilities, serving both the local community and visiting musicians drawn to Ojai's creative energy.",
-    
-    revenueStreams: [
-      "Live Events & Performances:",
-      "  • Music festivals and concerts: $5,000-$8,000/month",
-      "  • Kirtans and spiritual ceremonies: $2,000-$3,000/month",
-      "  • High-end retreat venue rental: $3,000-$5,000/month",
-      "  • Weddings and private ceremonies: $2,000-$4,000/month",
-      "Studio & Recording Services:",
-      "  • Music recording studio sessions: $2,500-$4,000/month",
-      "  • Live recording packages: $1,500-$2,500/month",
-      "  • Production space rentals: $1,000-$2,000/month",
-      "Overnight & VIP Services:",
-      "  • Artist overnight accommodations: $800-$1,200/month",
-      "  • VIP retreat packages: $1,500-$2,500/month"
-    ],
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0-6)",
-        deliverables: "Use warehouse for equipment and material storage, workshop space for ongoing construction projects, minimal investment in basic organization and shelving, assess structural integrity and remodel requirements, begin conceptual design for venue transformation",
-        investment: "$5,000-$10,000",
-        monthlyRevenue: "$0",
-        status: "Storage and workshop facility"
-      },
-      {
-        phase: "Phase 2 (Months 6-12)",
-        deliverables: "Hire architect for warehouse-to-venue conversion, design recording studio layout and acoustic treatment, create stage and ceremony space plans, submit permits for commercial event venue use, engineering for electrical/HVAC/soundproofing, finalize VIP rooms and recording booth layouts, secure necessary event venue licenses",
-        investment: "$25,000-$50,000",
-        monthlyRevenue: "$0",
-        status: "Permitting and design development"
-      },
-      {
-        phase: "Phase 3 (Months 12-18)",
-        deliverables: "Complete insulation and climate control, build professional recording studio and isolation booths, install performance stage with sound/lighting, create outdoor ceremony space with landscaping, construct VIP rooms and green rooms, acoustic treatment and soundproofing, install recording and performance equipment, furnish artist accommodations, final inspections and licensing, launch with inaugural festival event",
-        investment: "$120,000-$240,000",
-        monthlyRevenue: "$15,000-$25,000+",
-        status: "Operational high-end event and recording venue"
-      }
-    ]
-  },
-  {
-    id: "ceremonial-infrastructure",
-    name: "Ceremonial Infrastructure", 
-    emoji: "🔮",
-    position: [34.432501, -119.155582],
-    polygon: [[34.4325, -119.1565], [34.4330, -119.1565], [34.4330, -119.1555], [34.4325, -119.1555]],
-    type: "ceremonial",
-    budget: "$55,000 - $120,000",
-    timeline: "Phase 1-3 (24 months)",
-    monthlyRevenue: "Integrated with McQueen's Garage ($15K-$25K+)",
-    roi: "Integrated with warehouse (87-97% annual)",
-    description: "Main ceremonial infrastructure featuring a natural stone and earthen kiva with sacred fire circle, positioned directly in front of McQueen's Garage to integrate with live events, ceremonies, and retreat programming. The heart of all ceremonial activities including fire circles, drum circles, spiritual retreats, and community gatherings. Additionally, multiple sacred spaces and meditation areas are distributed throughout the property—forest circles, quiet reflection spots, crystal grids, and nature connection zones—creating a network of ceremonial infrastructure that supports ongoing spiritual practices without disrupting future construction phases.",
-    features: [
-      "Natural stone and earthen kiva with sacred fire circle and seating",
-      "Main ceremonial space positioned in front of McQueen's Garage",
-      "Prayer gardens and meditation spaces throughout property",
-      "Sweat lodge facilities for purification ceremonies",
-      "Ice bath stations for cold immersion and purification",
-      "Multiple sacred fire circles distributed across land",
-      "Meditation spaces and quiet reflection areas in nature",
-      "Labyrinth and walking meditation paths",
-      "Crystal gardens and energy grids",
-      "Forest ceremony circles for intimate gatherings",
-      "Drum circle and community gathering areas",
-      "Integration with event venue for large ceremonies and retreats"
-    ],
-    
-    sacredSpaceElements: [
-      "Sacred fire circles with elemental design and ancestral honoring",
-      "Crystal grids and energy pathways woven through forest trails",
-      "Kiva construction using traditional earthen and stone techniques",
-      "Sacred forest circles integrated with native oak groves",
-      "Yoga decks and movement spaces positioned at natural vortex points",
-      "Nature meditation alcoves with natural stone seating",
-      "Ceremonial pathways connecting all sacred spaces across property"
-    ],
-    
-    marketContext: "The ceremonial infrastructure works in tandem with McQueen's Garage event venue to create Ojai's premier destination for spiritual gatherings, retreat programming, and conscious celebrations. The combination of indoor performance space and outdoor sacred kiva allows for seamless ceremony-to-concert experiences, multi-day retreat programming, and festival-style gatherings. This integrated model meets the growing demand for authentic ceremonial venues that blend traditional sacred practices with modern event production capabilities.",
-    
-    revenueStreams: [
-      "Integrated with McQueen's Garage event venue revenue",
-      "Ceremonies and retreats use both warehouse and ceremonial spaces",
-      "Fire circles and drum circles included in event packages",
-      "Kiva ceremonies complement indoor performances",
-      "Ice baths and sweat lodges enhance retreat offerings",
-      "Combined venue capacity increases event value and pricing",
-      "Note: Revenue reflected in McQueen's Garage projections ($15K-$25K+/month)"
-    ],
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0+)",
-        deliverables: "Create forest ceremony circles in undeveloped areas, establish meditation spaces and quiet reflection areas, install small fire circles and gathering spots, set up sweat lodge and ice bath facilities, plant crystal grids and sacred paths, build prayer gardens and nature altars, develop walking meditation paths away from construction zones, all spaces positioned strategically to avoid disruption",
-        investment: "$5,000-$20,000+",
-        monthlyRevenue: "Integrated with retreat operations",
-        status: "Ongoing creation of distributed sacred network"
-      },
-      {
-        phase: "Phase 2 (Months 6-18)",
-        deliverables: "Design natural stone and earthen kiva layout, plan integration with McQueen's Garage outdoor space, assess sacred fire circle and seating requirements, coordinate with warehouse completion timeline, prepare materials and traditional building methods, continue maintaining and expanding Phase 1 spaces",
-        investment: "Included in planning/coordination",
-        monthlyRevenue: "Phase 1 spaces operational",
-        status: "Design and coordination phase"
-      },
-      {
-        phase: "Phase 3 (Months 18-24)",
-        deliverables: "Construct natural stone and earthen kiva, install sacred fire circle with permanent seating, create main drum circle and gathering area, integrate with McQueen's Garage outdoor ceremony space, professional landscaping connecting warehouse to kiva, complete labyrinth and crystal gardens, final touches on all distributed sacred spaces, grand opening ceremony with first major retreat",
-        investment: "$50,000-$100,000",
-        monthlyRevenue: "Fully operational, enhancing warehouse event revenue",
-        status: "Primary ceremonial infrastructure complete"
-      }
-    ]
-  },
-  {
-    id: "wellness-facilities",
-    name: "Wellness & Spa Facilities",
-    emoji: "🧘",
-    position: [34.432930, -119.155062],
-    polygon: [[34.4330, -119.1565], [34.4335, -119.1565], [34.4335, -119.1555], [34.4330, -119.1555]],
-    type: "wellness", 
-    budget: "$65,000 - $100,000",
-    timeline: "Phase 1-3 (12+ months)",
-    monthlyRevenue: "$10K-$15K (post-launch)",
-    roi: "87-131% annual ROI",
-    description: "800 sq ft integrated wellness center and spa facility connecting three existing structures across multiple levels into one unified ADU. Features dedicated yoga studio, fitness center, healing modalities rooms, and oak tree deck for outdoor wellness practices. Serves retreat guests, community members, and monthly wellness memberships through workshops, healing sessions, and regenerative wellness programming.",
-    features: [
-      "800 sq ft connected ADU spanning 3 levels",
-      "Dedicated yoga and movement studio",
-      "Fitness center with workout equipment area",
-      "Oak tree deck for outdoor yoga and creative movement",
-      "Stone sauna with infrared and traditional heat",
-      "Cold plunge pools for contrast therapy",
-      "Red light therapy and crystal healing rooms",
-      "Private massage and bodywork suites",
-      "Sound healing and meditation rooms",
-      "Wellness consultation spaces",
-      "Integration with retreat and event programming"
-    ],
-    
-    wellnessAmenities: [
-      "Yoga studio with natural light and mountain views",
-      "Workout area with functional fitness equipment",
-      "Stone sauna (traditional and infrared options)",
-      "Cold plunge pools for contrast therapy and recovery",
-      "Red light therapy rooms for cellular rejuvenation",
-      "Crystal healing rooms with sacred geometry",
-      "Private massage and bodywork treatment suites",
-      "Sound healing rooms with acoustic optimization",
-      "Meditation spaces and quiet zones",
-      "Herbal tea lounge and wellness consultation area",
-      "Outdoor calisthenics and movement area",
-      "Workshop and group healing spaces",
-      "Collaborator treatment rooms for visiting healers",
-      "Integration with on-site gardens for herbal wellness"
-    ],
-    
-    membershipTiers: [
-      {
-        name: "Basic Wellness",
-        price: "$20-$30/month",
-        benefits: "Access to yoga studio and gym space, community yoga classes (weekly), open hours use of fitness equipment"
-      },
-      {
-        name: "Enhanced Wellness",
-        price: "$50/month",
-        benefits: "Everything in Basic + 1 sauna session per week, 1 cold plunge session per week, discounted workshop rates"
-      },
-      {
-        name: "Premium Wellness",
-        price: "$100/month",
-        benefits: "Everything in Enhanced + unlimited sauna & cold plunge access, 1 red light therapy session per month, priority workshop booking, 10% discount on healing treatments"
-      },
-      {
-        name: "EcoVillage All-Access",
-        price: "$150/month",
-        benefits: "Everything in Premium Wellness + access to all property events, event discounts, retreat package discounts"
-      }
-    ],
-    
-    revenueModel: {
-      membershipRevenue: "$3,000/month (Year 1+)",
-      workshopRevenue: "$2,700/month (4-6 workshops/month)",
-      collaboratorRevenue: "$1,680/month (healer partnerships at 30-40% revenue share)",
-      spaServices: "$900/month (private sessions)",
-      retreatAddOns: "$1,500-$2,500/month (guest amenities)",
-      totalYear1: "$9,780-$11,780/month",
-      projectedYear2_3: "$12,000-$18,000/month (50-100 members, increased programming)",
-      note: "Membership growth expected 1+ years after structure remodeling and launch"
-    },
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0-6)",
-        deliverables: "Clean up existing 3 structures for temporary storage use, survey and assess structural integrity, hire architect for 800 sq ft ADU design connecting structures, obtain permits for ADU conversion and multi-level connection, finalize plans for deck on top of A-frame structure, engineering assessments for connecting structures, design oak tree deck integration",
-        investment: "$5,000-$10,000",
-        monthlyRevenue: "$0",
-        status: "Planning, permitting & storage phase"
-      },
-      {
-        phase: "Phase 2 (Months 6-12)",
-        deliverables: "Foundation work and structural reinforcement, connect all 3 structures into unified 800 sq ft space, renovate into envisioned wellness center layout, install walls/insulation/main structural elements, build oak tree deck on top of lower A-frame structure, rough plumbing and electrical for sauna/cold plunge, install windows/doors/weatherproofing, create multi-level access between structures",
-        investment: "$50,000-$70,000",
-        monthlyRevenue: "$0",
-        status: "Active construction & renovation (side project)"
-      },
-      {
-        phase: "Phase 3 (Months 12+)",
-        deliverables: "Interior finishes and wellness amenity installation, sauna/cold plunge/red light therapy setup, yoga studio flooring/mirrors/equipment, fitness equipment installation, soundproofing for healing rooms, launch membership programs and workshop schedule, partner with healers and wellness practitioners, market to retreat guests and community, full operational wellness center and ADU",
-        investment: "$10,000-$20,000",
-        monthlyRevenue: "$10,000-$15,000",
-        status: "Operational wellness center with memberships & workshops"
-      }
-    ]
-  },
-  {
-    id: "mushroom-cultivation",
-    name: "Mushroom Cultivation",
-    emoji: "🍄",
-    position: [34.433474, -119.156218],
-    polygon: [[34.4335, -119.1565], [34.4340, -119.1565], [34.4340, -119.1555], [34.4335, -119.1555]],
-    type: "agriculture",
-    budget: "$2,000-$6,000 (Phase 1-2 launch)", 
-    timeline: "Phases 1-3 (Months 0-6+ ramp)",
-    monthlyRevenue: "$29,700 per flush (4-week cycles)",
-    roi: "288% annual ROI",
-    description: "Commercial mushroom production facility that can operate as an on-site vehicle, mobile commercial unit, or local regenerative supply hub. Multiple growing environments support fresh culinary mushrooms, medicinal extracts, and value-added products for farm-to-table partners, wellness clients, and in-house use across the EcoVillage.",
-    features: [
-      "Climate-controlled growing rooms",
-      "Substrate preparation and composting area", 
-      "Multiple mushroom varieties (shiitake, oyster, lion's mane)",
-      "Value-added processing kitchen",
-      "Packaging and distribution center",
-      "Educational tours and workshops",
-      "Research and development lab"
-    ],
-    revenueStreams: [
-      "Revenue per flush: $29,700 (4-week cycles)",
-      "Annual production: 1,980 lbs/flush × 13 flushes = 25,740 lbs/year",
-      "Market price: $15/lb",
-      "Annual gross revenue: $386,100",
-      "Annual net profit: $300,150 (after operational costs)",
-      "ROI: 288% annually"
-    ],
-    smartCultivationSystems: [
-      "Solar-backed microgrid with battery storage powering sealed grow environments",
-      "Automated HVAC, humidity, and CO₂ monitoring for precision harvest cycles",
-      "Rain and greywater harvesting loops for substrate hydration and sanitation",
-      "Modular trellis racks and mobile grow pods enabling rapid expansion",
-      "Chef and reseller collaboration program minimizing waste and driving product development"
-    ],
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 1-2)",
-        deliverables: "Site prep and deal negotiations happen in parallel: Clear and grade site, improve access, prep utility tie-ins, ready pads for trailer delivery, while simultaneously finalizing collaborator agreements.",
-        investment: "$1,000-$2,000",
-        status: "Site prepared and partnerships secured"
-      },
-      {
-        phase: "Phase 2 (Month 3)",
-        deliverables: "Container delivery and setup: Schedule trailer drop-off, connect power/water, stage substrate systems, and train core team. Setup takes 1-2 weeks.",
-        investment: "$1,000-$4,000",
-        status: "Infrastructure installed and ready for production"
-      },
-      {
-        phase: "Phase 3 (Months 4-6+)",
-        deliverables: "Install $149K turnkey system (2 production units), launch cultivation cycles, begin fresh mushroom deliveries at 1,980 lbs/flush, produce tinctures and dried blends, expand wholesale and farm-to-table partnerships.",
-        investment: "$149,000 (turnkey system) + operational capital",
-        status: "Active cultivation with $29,700 revenue per flush (4-week cycles), $386,100 annual gross"
-      }
-    ],
-    marketAnalysis: "Functional and culinary mushrooms continue to surge in demand for immunity, cognition, gut health, and culinary innovation. Supplying local restaurants, wellness practitioners, and farm-to-table markets with fresh lion's mane, shiitake, and oyster mushrooms creates premium, regenerative revenue while value-added tinctures and powders unlock e-commerce channels. Educational workshops deepen community wellness and establish loyal customers, while onsite production recycles agricultural byproducts and reinforces EcoVillage food security."
-  },
-  {
-    id: "beekeeping-program",
-    name: "Beekeeping & Honey Production",
-    emoji: "🐝",
-    position: [34.433477, -119.155820],
-    polygon: [[34.4320, -119.1565], [34.4325, -119.1565], [34.4325, -119.1555], [34.4320, -119.1555]],
-    type: "beekeeping",
-    budget: "$5,000 - $10,000",
-    timeline: "Phase 1 (0-3 months)",
-    monthlyRevenue: "$500+",
-    roi: "Starting phase",
-    description: "Collaborative beekeeping initiative with local beekeepers for honey production, bee products, and pollination services through partnership model.",
-    features: [
-      "Partnership with local beekeepers",
-      "10-20 hives with scaling potential", 
-      "Dedicated processing shed and secure fencing",
-      "Honey extraction and processing facility",
-      "Value-added products: wax, skincare, soaps, tinctures",
-      "Online and farmers market sales",
-      "Pollination services for regenerative agriculture",
-      "Educational beekeeping experiences"
-    ],
-    revenueStreams: [
-      "Honey and bee products sharing: $800/month",
-      "Value-added wax products: $200/month",
-      "Revenue starts within 3 months"
-    ]
-  },
-  {
-    id: "events-gatherings-hub",
-    name: "Events & Gatherings Hub",
-    emoji: "🎪",
-    position: [34.433394, -119.155065],
-    polygon: [[34.4335, -119.1548], [34.4340, -119.1548], [34.4340, -119.1543], [34.4335, -119.1543]],
-    type: "events",
-    budget: "$20,000 - $30,000",
-    timeline: "Phase 1-3 (12+ months)",
-    monthlyRevenue: "$4.5K-$9K (P1) → $11K-$22K (P2) → $27K-$41K (P3)",
-    roi: "680% annual ROI",
-    description: "Strategic events and gatherings infrastructure designed as a major revenue hub for retreats, ceremonies, festivals, workshops, and collaborative gatherings—central to community ethos and diversified income streams.",
-    
-    venues: [
-      {
-        name: "McQueen's Garage - Hybrid Event Venue",
-        size: "3,200 sq. ft. steel-frame warehouse",
-        location: "Right Hillside Section, end of property",
-        uses: "Retreats, sound journeys, ceremonies, music performances, private dinners, seasonal festivals",
-        features: "Hybrid indoor-outdoor flow, creekside communal kitchen access, ceremonial area proximity",
-        revenue: "$8,000/month (from Month 14)"
-      },
-      {
-        name: "Main Residence Compound",
-        size: "5,000–7,200 sq. ft. + green lawn/open yard",
-        location: "Central property hub",
-        uses: "Executive hosting, retreat operations, immersive experiences, VIP residencies",
-        features: "Vintage pool structure, spacious grounds for communal gatherings",
-        revenue: "Included in retreat packages"
-      },
-      {
-        name: "Sacred Ceremonial Zones",
-        location: "Throughout property under mature oak trees",
-        uses: "Purification, healing, bonding, sound healing, breathwork, movement, sacred circles",
-        features: "Full-scale ceremonial kiva, sweat lodges, sacred fire circles, ritual zones",
-        revenue: "$4,000/month (from Month 20)"
-      },
-      {
-        name: "Community Zones",
-        location: "Creekside and shaded areas",
-        uses: "Communal meals, culinary workshops, spontaneous interaction, play",
-        features: "Shaded communal kitchen, creekside dining with long tables and benches",
-        revenue: "Supports overall event revenue"
-      }
-    ],
-    
-    eventTypes: [
-      {
-        format: "Weekend Retreats",
-        capacity: "15-40 people",
-        frequency: "Monthly",
-        revenue: "Ticketed with lodging packages",
-        phase: "Phase 2+"
-      },
-      {
-        format: "Ceremonies (Cacao, Full Moon)",
-        capacity: "10-30 people",
-        frequency: "Bi-weekly",
-        revenue: "Pay-per-ceremony",
-        phase: "Phase 1+"
-      },
-      {
-        format: "Festivals",
-        capacity: "50-150 attendees",
-        frequency: "Quarterly",
-        revenue: "Entry fee + vendor fees",
-        phase: "Phase 2+"
-      },
-      {
-        format: "Workshops & Classes",
-        capacity: "15-30 attendees",
-        frequency: "Weekly/Regular",
-        revenue: "Ticketed sessions (yoga, breathwork, permaculture, natural building, sacred art, dance)",
-        phase: "Phase 1 (from Month 6)"
-      },
-      {
-        format: "Farm-to-Table Dinners",
-        capacity: "Varies",
-        frequency: "Regular",
-        revenue: "Ticketed dinners with farm produce",
-        phase: "Phase 2 (from Month 16)"
-      },
-      {
-        format: "Private Event Rentals",
-        capacity: "Varies",
-        frequency: "Ad hoc",
-        revenue: "Site fees (weddings, private functions)",
-        phase: "Phase 2+"
-      }
-    ],
-    
-    features: [
-      "Multiple dedicated event venues across property",
-      "Sacred ceremonial zones with kivas and fire circles",
-      "Community kitchen and creekside dining areas",
-      "Capacity for 50-500+ attendees depending on event type",
-      "Weekly ceremonies, bi-weekly workshops, quarterly festivals",
-      "Weekly workshops in yoga, breathwork, permaculture, art",
-      "Farm-to-table dinner series with on-site produce",
-      "Private event rental opportunities (weddings, gatherings)",
-      "Educational partnerships and workshop monetization",
-      "Virtual events via 3D digital twin platform (Coming Soon)",
-      "Experiential onboarding for community members",
-      "Event collaboration with wellness operators"
-    ],
-    
-    regenerativeFeatures: [
-      "Organic Composting Programs - All event waste composted on-site, participants learn composting practices",
-      "Regenerative Building Workshops - Natural building techniques integrated into event programming (cob, earthbag, timber framing)",
-      "Land Stewardship Events - Work-exchange events where participants help with property regeneration",
-      "Farm-to-Table Integration - Events showcase produce from on-site agriculture, teaching food sovereignty",
-      "Community Gift Economy - Pay-what-you-can events and skill-share workshops",
-      "Sacred Earth Connection - Ceremonies honoring the land, seasonal celebrations, nature immersion practices"
-    ],
-    
-    revenueStreams: [
-      "Phase 1 Events (2-4/month): $4,500-$9,000/month (50-70 people @ $25-$50/ticket)",
-      "Phase 2 Events (4-7/month): $11,000-$22,000/month",
-      "Phase 3 Events (8-10/month): $27,000-$41,000/month (MAX capacity)",
-      "Premium Festival Packages: $250-$1,000/ticket (glamping, food, premium services)",
-      "Membership Programs (Phase 3): $5,000-$7,000/month",
-      "Educational Partnerships: $500-$1,000/month"
-    ],
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0-3)",
-        deliverables: "Clear and prepare primary event area, build main shaded gathering space with stage, set up seating and basic amenities, create ceremony circles and fire pit areas, install basic sound system, prepare parking and access roads, set up portable restroom facilities",
-        investment: "$10,000-$15,000",
-        monthlyRevenue: "$4,500-$9,000",
-        status: "Foundation building & initial events (2-4 events/month @ 50-70 people)"
-      },
-      {
-        phase: "Phase 2 (Months 3-12)",
-        deliverables: "Reinvest event revenue into infrastructure, expand event spaces around property, build additional ceremony zones, improve guest accommodation areas (camping, basic lodging), enhance community kitchen facilities, create multiple smaller event venues, improve landscaping and pathways, add permanent covered structures",
-        investment: "$10,000-$15,000 (additional + reinvested revenue)",
-        monthlyRevenue: "$11,000-$22,000",
-        status: "Consistent events & infrastructure expansion (4-7 events/month + quarterly festivals)"
-      },
-      {
-        phase: "Phase 3 (Months 12+)",
-        deliverables: "Full retreat packages and ceremonial programs, lodging units for overnight guests, large-scale quarterly and monthly festivals (250-500 people), advanced event infrastructure, professional event production capabilities, multiple simultaneous event spaces",
-        investment: "Reinvested profits for maintenance and improvements",
-        monthlyRevenue: "$27,000-$41,000",
-        status: "Full-scale event operations at MAX capacity (8-10 events/month + festivals + memberships)"
-      }
-    ],
-    
-    communityEngagement: [
-      "Experiential onboarding through workshops and retreats",
-      "Entry point for land experience and compatibility assessment",
-      "Event collaboration partnerships with wellness operators",
-      "Job Board task roles for event organization (micro-jobs)",
-      "Event participation path (exchange hours for rewards/tokens)",
-      "Public website /events page for RSVP and listings",
-      "Member dashboard with Upcoming Events widget",
-      "Virtual events via interactive 3D digital twin",
-      "Global access bridged with on-site experiences"
-    ]
-  },
-  {
-    id: "livestock-dairy",
-    name: "Livestock & Dairy Program",
-    emoji: "🐄",
-    position: [34.432797, -119.156143],
-    polygon: [[34.4340, -119.1565], [34.4345, -119.1565], [34.4345, -119.1555], [34.4340, -119.1555]],
-    type: "agriculture",
-    budget: "P1: $20K-$25K | P2: $5K/month",
-    timeline: "Phase 1-3 (8+ months)",
-    monthlyRevenue: "$10,500-$15,000 (Phase 3+)",
-    roi: "300%+ annual ROI",
-    description: "Regenerative livestock and dairy farm producing organic dairy, grass-fed meat, fiber products, and eggs. The farm operates on rotational grazing principles for land regeneration, featuring goats, sheep, alpacas, horses, and chickens.\n\nBeyond production, the farm offers diverse revenue streams: on-site dairy and meat processing, fiber and textile products, educational farm tours and workshops, animal therapies including horse therapy, and creative services like goat rentals for land clearing.\n\nProducts are sold through multiple channels: farmers markets, online shop, farmstead membership programs, and direct visitor exchanges. The farm serves as both a production operation and an educational destination, demonstrating regenerative agriculture practices while building community connections and supporting local food systems.",
-    features: [
-      "Rotational grazing system for land regeneration",
-      "Small dairy herd (goats and sheep)",
-      "Fiber animals (alpacas, sheep) for textiles",
-      "Egg production and poultry management",
-      "Mobile shelters and water systems",
-      "On-site processing and value-added products",
-      "Grass-fed meat production",
-      "Horse therapies and animal-assisted wellness programs",
-      "Educational farm tours and workshops",
-      "Composting system for manure regeneration"
-    ],
-    
-    regenerativePractices: [
-      "Rotational grazing system regenerating soil health and biodiversity",
-      "Composting of animal manures creating nutrient-rich soil amendments",
-      "Rainwater harvesting system supporting livestock water needs",
-      "On-site processing reducing transportation and packaging waste",
-      "Closed-loop farm system: animals support land, land supports animals",
-      "Educational model demonstrating regenerative agriculture to community"
-    ],
-    
-    marketContext: "The market for organic, locally-produced dairy, meat, and fiber products continues to grow as consumers prioritize food quality, transparency, and environmental impact. Direct-to-consumer sales through farmers markets, online platforms, and membership programs provide premium pricing opportunities. Regenerative agriculture practices and animal-assisted wellness therapies align with consumer values around health, sustainability, and community connection. Farmstead experiences and educational workshops create additional revenue while building customer loyalty and brand community.",
-    
-    revenueStreams: [
-      "Farm Products: $6,500-$7,000/month (dairy, meat, eggs, fiber)",
-      "Services & Experiences: $2,000-$4,000/month (therapies, tours, grazing)",
-      "Multi-Channel Sales: $2,500-$4,000/month (farmers markets, online, memberships)",
-      "Total Monthly Revenue (Phase 3+): $10,500-$15,000"
-    ],
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0-3+)",
-        deliverables: "Farm Preparation: Redo and prepare property for horses and animals. Create shelters for chickens, horses, and livestock. Install mobile shelters and water systems. Set up initial composting system. Begin rotational grazing setup. Start with initial livestock (goats, sheep, chickens, horses). Establish basic on-site processing capability.",
-        investment: "$20,000-$25,000",
-        status: "Initial livestock setup and farm preparation"
-      },
-      {
-        phase: "Phase 2 (Months 4-8+)",
-        deliverables: "Scaling & Growth: Scale livestock numbers based on Phase 1 success. Develop on-site dairy and meat processing. Launch farmers market sales. Set up online shop and direct shipping. Begin animal therapy programs. Expand educational farm tours and workshops. Reinvest revenue into growth and improvements.",
-        investment: "$5,000/month (ongoing improvements)",
-        status: "Growing operations and expanding revenue streams"
-      },
-      {
-        phase: "Phase 3 (Months 8+)",
-        deliverables: "Full Operations: All product lines fully operational. Multiple sales channels active (farmers market, online, membership). Animal therapy programs established. Educational workshops and farm tours regular offering. Farmstead membership and visitor exchange program active. Optimized operations and profitability.",
-        investment: "Ongoing operational costs",
-        status: "Fully operational regenerative farm"
-      }
-    ]
-  },
-  {
-    id: "creative-workshop-center",
-    name: "Creative Workshop & Art Creation Center",
-    emoji: "🎨",
-    position: [34.433470, -119.156486],
-    type: "creative",
-    budget: "$30,000-$45,000 (initial build-out)",
-    timeline: "Phase 1 (Months 6-12 build-out)",
-    monthlyRevenue: "To be determined (post-launch programming)",
-    roi: "Dependent on program adoption and partnerships",
-    description: "Multi-use creative workshop serving as a multipurpose learning and creation space with woodwork, pottery, natural building workshops, and sacred art creation.",
-    features: [
-      "Woodworking & eco-building workshops ($100-$500 per weekend)",
-      "Pottery & art creation studios ($75-$300 per session)", 
-      "Natural building workshops & co-build events",
-      "Sacred art & altar creation spaces",
-      "Sound healing & instrument crafting areas",
-      "Tool & materials storage depot",
-      "Stacked shipping container studios and storage pods",
-      "Dedicated data/computing lab (future node?)",
-      "Creative residencies & retreat spaces",
-      "Permaculture workshop integration"
-    ],
-    revenueStreams: [
-      "Creative workshops: $1,500/month",
-      "Woodworking courses: $1,800/month",
-      "Pottery sessions: $900/month", 
-      "Art residencies: $600/month",
-      "Artist collaborations & revenue-share commissions (TBD)",
-      "Online classes and digital content releases (TBD)"
-    ],
-    regenerativeSystems: [
-      "Solar array with battery storage powering workshops and future data room",
-      "Rainwater harvesting with greywater reuse for clay work, cleaning stations, and landscape hydration",
-      "Reclaimed lumber and recycled materials embedded in fabrication projects",
-      "Shared resource loops with mushroom operations and farm stand product lines",
-      "Onsite fabrication reducing transport and logistics footprints",
-      "Artist and school collaborations reinforcing a circular creative economy"
-    ],
-    investmentBreakdown: [
-      { label: "Site clearing & grading", cost: "$300-$500" },
-      { label: "Container pads & foundations", cost: "$1,000-$2,000" },
-      { label: "3-4 shipping containers (delivered)", cost: "$10,000-$15,000" },
-      { label: "Container renovations & interior framing", cost: "$10,000-$15,000" },
-      { label: "Tools & equipment outfitting", cost: "$10,000-$15,000" }
-    ],
-    investmentNotes: "Initial build-out totals $30K-$45K with optional future upgrades for advanced tooling or expanded studios.",
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 6-12)",
-        deliverables: "Clear and prep site. Install container pads/foundations ($1K-$2K). Source and place 3-4 shipping containers ($10K-$15K). Begin container renovation ($10K-$15K). Relocate tools and storage from warehouse into new hub.",
-        investment: "$21,300-$32,500",
-        status: "Container campus established and core infrastructure placed"
-      },
-      {
-        phase: "Phase 2 (Month 12+)",
-        deliverables: "Complete interior build-outs for wood shop, pottery studio, art labs, storage depot, and tentative data/computing room ($10K-$15K). Install discipline-specific tool sets. Launch collaborative programs, residencies, instrument fabrication, online classes, and school partnerships.",
-        investment: "$10,000-$15,000",
-        status: "Operational programming and partnerships activated"
-      },
-      {
-        phase: "Ongoing (Post-launch)",
-        deliverables: "Host creative events, craft fairs, maker scholarships, youth programs, and eco-village fabrication support while expanding artist collaborations and digital offerings.",
-        investment: "Revenue-supported enhancements",
-        status: "Evolving creative campus and community hub"
-      }
-    ],
-    marketAnalysis: "Regenerative maker spaces that blend onsite production, educational tourism, and digital creation are surging in demand. This container campus positions the EcoVillage as a regional hub for Ojai artists, schools, and eco-tourism partners, diversifying income through workshops, residencies, artisan collaborations, online classes, and instrument/tool fabrication while supporting the mushroom unit, farm stand, and ceremonial zones with in-house fabrication."
-  },
-  {
-    id: "glamping-creek-village",
-    name: "Creek-Side Glamping & Lodging Village",
-    emoji: "🏕️",
-    position: [34.432479, -119.156540],
-    type: "hospitality",
-    budget: "$20,000 - $30,000",
-    timeline: "Phase 1-2 (4+ months)",
-    monthlyRevenue: "$8.75K-$10K (operational)",
-    roi: "259-605% annual ROI",
-    description: "Unique creek-side lodging village with 10-25+ glamping units including teepees, yurts, and safari tents along the seasonal creek corridor for nature immersion experiences. Starting with 5 tipis in Phase 1, with phased expansion driven by revenue reinvestment and market demand.",
-    features: [
-      "10-25+ unique glamping units along seasonal creek",
-      "Teepees, yurts, and safari tents for overnight experiences",
-      "Each tipi with dedicated solar power source",
-      "Individual water and toilet facilities per unit (where feasible)",
-      "Private wooden decks and hangout spaces with fire pits",
-      "Close infrastructure access (roads, electricity, water within 50ft)",
-      "Shared outdoor showers and compost toilet clusters",
-      "Creek-side pathways connecting to ceremony and garden zones",
-      "Propane lines for seasonal heating and cooking",
-      "Greywater filtration and modular septic systems",
-      "Stargazing areas and nature observation points",
-      "Event space for group gatherings and workshops"
-    ],
-    
-    regenerativePractices: [
-      "Each tipi equipped with dedicated solar power source",
-      "Individual water systems for each unit (where feasible)",
-      "Private compost toilet facilities per tent",
-      "Greywater filtration and natural drainage systems",
-      "Native plant landscaping and creek restoration",
-      "Each unit has private deck and outdoor hangout space",
-      "Propane heating from sustainable sources",
-      "Biodegradable and eco-friendly amenities",
-      "Seasonal creek protection and watershed management",
-      "Leave-no-trace guest education programs",
-      "Integration with permaculture gardens",
-      "Wildlife habitat preservation along creek corridor"
-    ],
-    
-    marketAnalysis: "Creek-side glamping village positioned in Ojai Valley's nature-based wellness tourism market. Starting with 5 tipis and expanding to 25+ units aligns with U.S. glamping industry growth (12.8% CAGR). Tipis and tents are the fastest-growing, most cost-efficient glamping accommodation, ideal for phased expansion and high ROI in eco-tourism destinations.",
-    
-    revenueStreams: [
-      "Nightly stays: $100/night per tipi (45% avg occupancy)",
-      "5 tipis operational: $6,750/month from stays",
-      "Events, workshops, retreats: $2,000-$3,000/month",
-      "Total Year 1: $8,750-$10,000/month",
-      "Year 2-3 expansion: $15,000-$22,000/month (10-15 units)"
-    ],
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0-4)",
-        deliverables: "Clean out creek-side spaces and prepare terrain, install infrastructure (roads, electricity lines, water access), set up 5 tipis with decks and hangout spaces, install solar power for each tipi, connect each tipi to nearby water and toilet facilities, create pathways and fire pit areas, ensure all tipis have close access to infrastructure, test systems and prepare for guests",
-        investment: "$10,000-$20,000",
-        monthlyRevenue: "$0",
-        status: "Infrastructure setup and tipi installation"
-      },
-      {
-        phase: "Phase 2 (Months 3+)",
-        deliverables: "Launch nightly stays with 5 tipis operational, start hosting events/workshops/retreats, market to retreat guests and eco-tourists, reinvest revenue into adding more units in phased development, add yurts and safari tents in Year 2-3, scale to 10-25+ units over 2-3 years",
-        investment: "$10,000+ (ongoing expansion from revenue reinvestment)",
-        monthlyRevenue: "$8,750-$10,000",
-        status: "Operational with phased expansion"
-      }
-    ]
-  },
-  {
-    id: "gatelodge-operations-hub",
-    name: "Sulphur Mountain Gatelodge (Operations ADU)",
-    emoji: "🏘️",
-    position: [34.433082, -119.156728],
-    type: "infrastructure",
-    budget: "$25,000-$40,000 (estimated)",
-    timeline: "Phase 1 (0-12 months)",
-    monthlyRevenue: "Operational support (not revenue-generating)",
-    roi: "Enables all property businesses to operate",
-    description: "Central operational hub and team housing ADU expanding from 360 sq ft to 800 sq ft two-story loft barn. Serves as the nerve center for property management, business operations, and coordination of all revenue-generating projects.\n\nThe facility features a full-service living and working space: downstairs living room and kitchen, upstairs loft bedroom and office system, integrated bathroom facilities, and dedicated workshop area with operational tools. A deck provides indoor/outdoor access for team coordination and oversight.\n\nAdjacent to the main structure is a closed-in garden system featuring vertical growing towers and a propagation facility. This integrated garden produces vegetables, fruits, herbs, and propagates seeds and fruit trees for both property use and the agriculture hub's product lines.\n\nThis operational hub is strategically positioned as the coordination center for all property businesses, enabling efficient logistics, team management, and agricultural operations oversight.",
-    features: [
-      "Expansion from 360 to 800 sq ft (2-story loft barn)",
-      "Full integrated kitchen and bathroom systems",
-      "Loft bedroom upstairs with office system",
-      "Living room downstairs",
-      "Workshop area with operational tools",
-      "Deck for indoor/outdoor access",
-      "Dedicated business operations unit",
-      "Core operational team housing with on-site presence",
-      "Connected to active well (17 GPM water access)",
-      "One existing live power line with planned solar grid integration"
-    ],
-    
-    integratedGardenSystem: [
-      "Closed-in garden system with vertical growing towers",
-      "Propagation facility for seeds, seedlings, and fruit trees",
-      "Year-round vegetable, fruit, and herb production",
-      "Products for property use and agriculture hub sales",
-      "Strategic location enabling agriculture operations oversight",
-      "Connected to creative workshop and mushroom center for coordination"
-    ],
-    
-    operationalFunction: "This is an operational support unit that enables all property businesses to operate efficiently. It provides on-site team management and coordination, oversees agriculture operations and the propagation facility, coordinates logistics between the creative workshop, mushroom center, and agriculture hub, and manages property operations and maintenance. The integrated garden system supports the agriculture hub's revenue streams while reducing property operational costs.",
-    
-    regenerativeSystems: [
-      "Full solar roofing with battery storage for energy independence",
-      "Rainwater harvesting system supporting garden and property needs",
-      "Greywater recycling for garden irrigation and landscape watering",
-      "Integrated garden system reducing property food costs",
-      "On-site operational tools and workshop reducing logistics needs",
-      "Central location minimizing travel time for property coordination"
-    ],
-    
-    revenueStreams: [
-      "OPERATIONAL SUPPORT (Enables all property businesses):",
-      "  • On-site team management and coordination",
-      "  • Agriculture operations oversight",
-      "  • Logistics coordination between centers",
-      "  • Property operations and maintenance",
-      "INTEGRATED GARDEN PRODUCTS (Connected to Agriculture Hub):",
-      "  • Vegetables, fruits, herbs for property use",
-      "  • Propagated seeds and fruit trees for agriculture hub sales",
-      "  • Plant starts for creative workshop and projects",
-      "NOTE: This is an operational support unit, not a revenue-generating rental property."
-    ],
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0-12)",
-        deliverables: "Permitting: Apply for remodeled permits (3+ months approval). Construction: Build two-story loft with upstairs bedroom and office, install full kitchen and bathroom systems, create downstairs living room, build workshop area with operational tools, install deck for indoor/outdoor access. Garden System: Construct integrated garden with vertical growing towers, set up propagation facility. Systems: Install solar roofing and battery storage, implement rainwater harvesting and greywater recycling. Complete all interior finishes and systems integration.",
-        investment: "$25,000-$40,000 (estimated)",
-        status: "Fully operational team housing and business operations hub"
-      }
-    ]
-  },
-  {
-    id: "tropical-dome-greenhouse",
-    name: "Tropical Dome Greenhouse",
-    emoji: "🌴",
-    position: [34.432888, -119.156763],
-    type: "agriculture",
-    budget: "$30,000 (estimated with Phase 1 investment)",
-    timeline: "Phase 1 (6+ months to start)",
-    monthlyRevenue: "$4,200 (post-launch)",
-    roi: "168% annual ROI (Year 1)",
-    description: "Geodesic dome greenhouse for year-round tropical plant cultivation, propagation station, and seedling nursery - enabling exotic fruit production and plant starts in a controlled microclimate.",
-    
-    regenerativeSystems: [
-      "Solar integration for energy independence",
-      "Rainwater harvesting system supporting tropical irrigation",
-      "Integrated pond inside tropical garden for water storage and ecosystem",
-      "Pond water repurposing for irrigation and other property uses",
-      "Year-round tropical fruit trees and tropical plant production",
-      "Vertical growing systems maximizing tropical vegetable and herb yields"
-    ],
-    
-    marketContext: "The specialty plant nursery market is experiencing strong growth, particularly for tropical fruit trees and exotic propagated plants. California's growing interest in tropical and subtropical fruits (avocado, mango, citrus varieties) creates premium pricing opportunities. Medicinal herb starts and propagation supplies serve the expanding wellness and herbal medicine markets. Educational workshops on tropical plant propagation attract both home gardeners and commercial growers seeking sustainable propagation techniques.",
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Months 0-6+)",
-        deliverables: "Permitting and site preparation (0-6 months). Geodesic dome construction and systems installation (6-12 months). Solar integration and rainwater harvesting setup. Integrated pond construction inside tropical garden. Initial plant propagation and production setup. Begin propagation operations and revenue generation.",
-        investment: "$30,000 (estimated)",
-        status: "Dome construction, systems integration, initial propagation"
-      },
-      {
-        phase: "Phase 2 (Months 12+)",
-        deliverables: "Full propagation operations. Multiple revenue streams active (saplings, herbs, fresh produce, kits, workshops). Pond fully integrated for water management. Educational workshop program established. Scaling production based on demand.",
-        investment: "Reinvested revenue for expansion",
-        status: "Fully operational propagation facility and tropical production"
-      }
-    ],
-    
-    tropicalFruitTrees: [
-      {
-        name: "Banana & Plantain",
-        propagation: "Cloning via pup division",
-        products: "Pups for sale, fresh fruit"
-      },
-      {
-        name: "Mango",
-        propagation: "Grafting and air-layering",
-        products: "Grafted mango saplings, fresh fruit"
-      },
-      {
-        name: "Papaya",
-        propagation: "Seed propagation",
-        products: "Seedlings, fresh fruit"
-      }
-    ],
-    
-    productsOfferings: [
-      {
-        category: "Live Plants & Propagation",
-        items: [
-          "Tropical fruit saplings (mango, banana, papaya)",
-          "Culinary & medicinal herb starts (rosemary, lavender, mint, basil, sage)",
-          "Propagation kits with rooting supplies and instructions"
-        ]
-      },
-      {
-        category: "Fresh & Value-Added",
-        items: [
-          "Seasonal tropical fruits and fresh herbs",
-          "Dried herb bundles and herbal tea blends",
-          "Specialty plant collections and garden starter kits"
-        ]
-      }
-    ],
-    
-    features: [
-      "Geodesic dome structure for optimal growing conditions",
-      "Climate-controlled tropical microclimate year-round",
-      "Dedicated propagation station for cuttings and grafting",
-      "Seedling nursery with grow lights and heat mats",
-      "Misting system for tropical humidity control",
-      "Specialized growing benches and vertical growing systems",
-      "Tissue culture and cloning propagation area",
-      "Educational workshops on tropical plant care",
-      "Grafting and air-layering demonstration space",
-      "Temperature and humidity monitoring systems"
-    ],
-    
-    revenueStreams: [
-      "Tropical fruit tree saplings: $1,500/month",
-      "Herb and medicinal plant starts: $800/month",
-      "Fresh produce and herbs: $600/month",
-      "Propagation kits and supplies: $500/month",
-      "Educational workshops: $800/month"
-    ]
-  },
-  {
-    id: "sulphur-mountain-sanctuary",
-    name: "Sulphur Mountain Sanctuary: The Living Landscape",
-    emoji: "🌺",
-    position: [34.433038, -119.155827],
-    polygon: [[34.4320, -119.1570], [34.4330, -119.1570], [34.4330, -119.1560], [34.4320, -119.1560]],
-    type: "landscape",
-    budget: "",
-    timeline: "Ongoing (post-main residence construction)",
-    monthlyRevenue: "Year 3-5+ orchard harvest potential (TBD)",
-    roi: "Long-term property value appreciation",
-    description: "An immersive living environment where beauty and abundance intertwine, featuring regenerative food forests, sacred geometry gardens, and curated nature pathways that create seamless flow between gathering spaces and nature.",
-    features: [
-      "500+ fruit trees in extensive orchard system on gentle slope",
-      "3+ acres of rich topsoil for regenerative farming",
-      "Sacred geometry gardens with stone terraces and walls", 
-      "Flower gardens on right side of driveway slope",
-      "Curated nature trails weaving through sacred installations",
-      "Experiential pathways connecting all zones",
-      "Direct links from Main Residence to ceremonial zones",
-      "Sacred gathering groves and meditation clearings",
-      "Stone terraces, limestone retaining walls, and pathways",
-      "Crystal grids and energy-aligned installations",
-      "Gravity-fed water channels linking tree guilds",
-      "Contemplative rest zones throughout landscape",
-      "Elemental installations for nature immersion"
-    ],
-    regenerativePractices: [
-      "Propagating and planting fruit trees grown on-site to expand the orchard",
-      "Layered perennial guilds restoring soil health and biodiversity",
-      "Stonework, crystal grids, and sacred geometry layouts aligned with land energies",
-      "Gravity-fed water features and pools that cascade nourishment between plantings",
-      "Pollinator gardens and native understory plantings enhancing habitat",
-      "Living mulches and composting practices building long-term fertility"
-    ],
-    revenueStreams: [
-      "Future fruit harvests and nursery tree sales once orchards mature (Year 3-5+)",
-      "Seasonal blossoms, botanicals, and ceremonial materials supporting onsite experiences"
-    ],
-    marketAnalysis: "Mature fruit trees, sacred gardens, and perennial landscapes measurably increase property value while regenerating soils, supporting pollinators, and creating memorable visitor experiences that strengthen the estate's long-term desirability."
-  },
-  {
-    id: "farmstead-produce-stand",
-    name: "Farmstead Produce Stand & Online Hub",
-    emoji: "🛒",
-    position: [34.432483, -119.156935],
-    polygon: [[34.4334, -119.1560], [34.4336, -119.1560], [34.4336, -119.1558], [34.4334, -119.1558]],
-    type: "agriculture",
-    budget: "$7,000-$10,000 (estimated)",
-    timeline: "Phase 1 (Month 3+ launch)",
-    monthlyRevenue: "$6,400-$8,300 (Phase 1+)",
-    roi: "500%+ annual ROI (dependent on connected operations)",
-    description: "Central direct-to-consumer sales hub at the property entrance, serving as the primary sales channel for all regenerative farm products, livestock goods, and artisan creations. Combines physical roadside farm stand with robust e-commerce platform and online neighborhood delivery, creating dual-channel revenue streams that significantly expand market reach beyond walk-up retail.",
-    
-    regenerativeSystems: [
-      "Solar energy integration for operational independence",
-      "Rainwater harvesting system supporting water needs",
-      "Central hub connecting all property regenerative production",
-      "Direct-to-consumer sales eliminating middlemen margins",
-      "Online shop platform extending market reach to neighborhoods",
-      "Organic product focus supporting regenerative agriculture across property"
-    ],
-    
-    marketContext: "The direct-to-consumer farm market is experiencing explosive growth as consumers increasingly seek organic, locally-grown products with transparent sourcing. This farmstead hub serves as the central sales channel for all property regenerative production: organic vegetables and fruits from the agriculture hub, grass-fed meat and dairy from the livestock program, specialty mushrooms, tropical fruits, and artisan goods from the creative workshop. The dual-channel approach—physical roadside stand plus online e-commerce—captures both walk-up retail customers and neighborhood online shoppers. Online sales significantly expand market reach beyond foot traffic, enabling delivery to surrounding neighborhoods. With consistent supply from maintained agricultural operations, the online shop can command premium pricing for organic, regeneratively-grown products. Market projections show 25-40% annual growth in organic food e-commerce and direct-to-consumer sales.",
-    
-    features: [
-      "Physical roadside stand at main entrance/gate",
-      "Refrigerated display cases for fresh produce",
-      "E-commerce platform for online orders",
-      "CSA box subscription fulfillment center",
-      "Product shelving and display systems",
-      "POS system for walk-up transactions",
-      "Cold storage for dairy and meat products"
-    ],
-    
-    revenueStreams: [
-      "PHYSICAL FARM STAND SALES:",
-      "  • Fresh produce, herbs, and nursery starts: $2,000-$2,500/month",
-      "  • Eggs, honey, and pasture-raised meats: $2,000-$2,500/month",
-      "  • Value-added goods (tinctures, soaps, candles): $800-$1,000/month",
-      "ONLINE ORDERS & LOCAL DELIVERY:",
-      "  • Online produce boxes & CSA renewals: $1,000-$1,500/month",
-      "  • Neighborhood deliveries & subscriptions: $600-$800/month",
-      "CONNECTED PROPERTY PRODUCTION:",
-      "  • Agriculture hub products (vegetables, fruits, herbs)",
-      "  • Livestock hub products (dairy, meat, eggs, therapies)",
-      "  • Mushroom center products (specialty mushrooms)",
-      "  • Tropical dome products (tropical fruits, plant starts)",
-      "  • Creative workshop artisan goods (value-added products)",
-      "TOTAL MONTHLY REVENUE (Phase 1+): $6,400-$8,300/month"
-    ],
-    
-    developmentTimeline: [
-      {
-        phase: "Phase 1 (Month 3+)",
-        deliverables: "Farm Stand Setup: Design and build nice, fancy roadside stand ($2K-$5K). Install refrigerated display cases, shelving, POS system, and signage. Online Shop Development: Set up e-commerce platform ($5K). Develop website and branding. Integrate payment processing. Plan delivery logistics. Launch social media and marketing. Integration & Launch: Connect to agriculture hub production. Connect to livestock hub products. Set up CSA box fulfillment. Begin online orders and local delivery. Launch marketing campaign.",
-        investment: "$7,000-$10,000 (estimated)",
-        status: "Central sales hub operational with dual channels"
-      },
-      {
-        phase: "Phase 2 (Month 4+)",
-        deliverables: "Full Operations: Physical stand and online shop both active. Multiple revenue streams generating. Neighborhood delivery established. CSA subscriptions active. Marketing driving customer acquisition. Scaling: Expand product offerings as supply increases. Optimize online operations. Build customer loyalty programs. Integrate new products from connected operations.",
-        investment: "Reinvested revenue for expansion",
-        status: "Fully operational dual-channel sales hub"
-      }
-    ],
-    products: {
-      freshProduce: {
-        category: "🌱 Fresh Farm Produce",
-        description: "Seasonal regenerative produce from the 3-acre farm zone",
-        items: [
-          {
-            name: "Seasonal Fruits",
-            source: "500+ fruit trees (food forest)",
-            availability: "Seasonal rotation",
-            details: "Grown using regenerative practices and permaculture design"
-          },
-          {
-            name: "Organic Vegetables & Greens",
-            source: "3-acre farm zone, structured garden beds",
-            availability: "Year-round (seasonal varieties)",
-            details: "Fresh harvest available daily"
-          },
-          {
-            name: "Culinary & Medicinal Herbs",
-            source: "Dedicated herb gardens",
-            availability: "Fresh & dried options",
-            uses: "Cooking, teas, medicine-making, aromatherapy"
-          },
-          {
-            name: "Specialty Mushrooms",
-            source: "Trailer cultivation + log farming",
-            varieties: "Shiitake, Oyster, Lion's Mane, and more",
-            revenue: "$10,000-$20,000/month potential",
-            roi: "650% ROI on log-based cultivation"
-          },
-          {
-            name: "Nursery Plants & Seedlings",
-            source: "On-site propagation nursery",
-            types: "Seedlings, vegetable starts, fruit tree saplings, native plants"
-          }
-        ]
-      },
-      livestockProducts: {
-        category: "🐝 Livestock & Apiary Products",
-        description: "Regenerative animal products with $108,000 annual revenue projection",
-        annualRevenue: "$108,000",
-        roi: "227% ROI with 12-month payback",
-        items: [
-          {
-            category: "Honey & Beeswax",
-            products: ["Raw wildflower honey", "Beeswax blocks", "Propolis"],
-            revenue: "$12,000/year",
-            timeline: "Revenue starts within 3 months",
-            details: "Partnership with local beekeepers, 10-20 hives"
-          },
-          {
-            category: "Poultry & Eggs",
-            products: ["Fresh eggs (chicken & duck)", "Pasture-raised chicken meat"],
-            revenue: "$20,000/year",
-            details: "Free-range, rotational grazing, organic feed supplementation"
-          },
-          {
-            category: "Grass-Fed Beef",
-            products: ["Beef cuts (various)", "Optional: Raw milk, cheese"],
-            revenue: "$30,000/year",
-            details: "Rotational grazing for land regeneration, hormone-free"
-          },
-          {
-            category: "Goat Products",
-            products: ["Goat meat", "Optional: Goat milk, cheese"],
-            revenue: "$15,000/year",
-            details: "Brush management specialists, dual-purpose breeds"
-          },
-          {
-            category: "Lamb & Wool",
-            products: ["Lamb meat", "Optional: Raw wool, yarn"],
-            revenue: "$16,000/year",
-            details: "Grass maintenance, fiber arts potential"
-          },
-          {
-            category: "Pork",
-            products: ["Pork cuts", "Breeding stock"],
-            revenue: "$15,000/year",
-            details: "Forest foraging, land management through rooting"
-          }
-        ]
-      },
-      valueAdded: {
-        category: "✨ Artisan & Value-Added Creations",
-        description: "Creative goods leveraging farm materials and Creative Workshop output",
-        items: [
-          {
-            category: "Wellness Products",
-            products: ["Herbal tinctures", "Medicinal teas", "Herbal remedies", "Healing salves"],
-            ingredients: "Farm-grown herbs & botanicals",
-            createdIn: "Creative Workshop collaboration"
-          },
-          {
-            category: "Body Care",
-            products: ["Skincare creams & lotions", "Handmade soaps", "Beeswax lip balms", "Herbal bath products"],
-            ingredients: "Beeswax, farm herbs, essential oils",
-            createdIn: "Creative Workshop & Art Creation Center"
-          },
-          {
-            category: "Home & Altar Goods",
-            products: ["Beeswax candles", "Altar tools", "Artisan woodwork", "Sacred art pieces", "Incense blends"],
-            source: "Creative Workshop artist collaborations",
-            details: "Commission-based revenue sharing with creators"
-          },
-          {
-            category: "Farm Inputs & Amendments",
-            products: ["Organic compost (bagged)", "Mycelium spawn/products", "Worm castings"],
-            source: "Excess from on-site composting and mycelium operations",
-            details: "Soil remediation byproducts available for sale"
-          }
-        ]
-      }
-    },
-    salesChannels: {
-      physical: {
-        name: "Roadside Farm Stand",
-        location: "Property entrance on Sulphur Mountain Road",
-        hours: "Variable based on seasonal supply",
-        features: ["Walk-up retail", "Self-service honor system option", "Refrigerated displays"]
-      },
-      online: {
-        name: "E-Commerce Store",
-        platform: "Dedicated online marketplace",
-        features: ["Product catalog", "Pre-orders", "Delivery scheduling", "CSA subscriptions"],
-        reach: "Local Ojai + regional online customers"
-      },
-      csa: {
-        name: "Community Supported Agriculture",
-        model: "Weekly/bi-weekly subscription boxes",
-        price: "$35-$65 per box",
-        features: ["Seasonal produce variety", "Add-on products", "Pickup or delivery"]
-      },
-      wholesale: {
-        name: "B2B Sales",
-        partners: ["Local restaurants", "Hotels", "Cafes"],
-        focus: "Specialty mushrooms, fresh produce, honey",
-        details: "Farm-to-table partnerships with Ojai hospitality"
-      }
-    },
-    infrastructure: {
-      physical: [
-        "Refrigerated display units ($8,000)",
-        "Product shelving and fixtures ($3,500)",
-        "POS system and payment processing ($2,000)",
-        "Signage and branding ($4,000)",
-        "Cold storage expansion ($12,000)",
-        "Packaging supplies and materials ($2,500)"
-      ],
-      digital: [
-        "E-commerce platform development ($15,000)",
-        "Inventory management system ($5,000)",
-        "Photography and product imaging ($3,000)",
-        "Digital marketing setup ($4,000)"
-      ],
-      site: [
-        "Stand structure and roofing ($20,000)",
-        "Customer parking area ($6,000)"
-      ]
-    },
-    contributionPaths: [
-      {
-        type: "Investment",
-        focus: "Stand infrastructure and technology",
-        minimum: "$5,000",
-        rewardModel: "10% revenue share from product sales",
-        examples: ["Refrigeration units", "E-commerce platform", "Display fixtures"]
-      },
-      {
-        type: "Job - Sales & Fulfillment Steward",
-        responsibilities: ["Manage daily stand operations", "Customer service", "Inventory management", "Order fulfillment"],
-        compensation: "ECO tokens + housing credits or hourly rate"
-      },
-      {
-        type: "Job - E-Commerce Manager",
-        responsibilities: ["Online store management", "Digital marketing", "Order processing", "Customer communications"],
-        compensation: "Revenue share or token-based compensation"
-      },
-      {
-        type: "Creative Expansion",
-        focus: "Value-added product creation",
-        examples: ["Tinctures", "Soaps", "Candles", "Artisan goods"],
-        rewardModel: "40% creator / 60% village revenue split"
-      }
-    ],
-    financialProjection: {
-      phase1: {
-        timeline: "Month 5-12",
-        monthlyRevenue: "$3,000",
-        focus: "Nursery & agriculture products, initial CSA"
-      },
-      phase2: {
-        timeline: "Month 12-18",
-        monthlyRevenue: "$5,000",
-        focus: "Expanded CSA, livestock products, value-added goods"
-      },
-      phase3: {
-        timeline: "Month 18+",
-        monthlyRevenue: "$9,000+",
-        focus: "Full product range, wholesale partnerships, scaled livestock ($216k/year potential)"
-      },
-      totalProjection: {
-        year1: "$54,000",
-        year2: "$108,000",
-        year3: "$216,000 (with scaled livestock operations)"
-      }
-    },
-    valueProposition: {
-      financial: "Immediate cash flow from product sales; diversifies revenue beyond lodging/events; 12-month payback on livestock investment; high-margin value-added goods",
-      ecological: "Creates market demand for regenerative practices; incentivizes sustainable farming; completes the farm-to-consumer loop; reduces food miles",
-      community: "Public-facing brand ambassador; local employment opportunities; educational signage about regenerative practices; builds Ojai community relationships",
-      marketing: "Tangible proof of eco-village concept; attracts local support and visitors; farm-to-table experience for retreat guests; authentic regenerative brand story",
-      strategic: "Self-funding revenue engine for Phase 1 development; validates agriculture business model; scalable to $216k/year; creates recurring customer base"
-    }
-  }
-];
+// ── Multi-property registry ─────────────────────────────────────────────────
+// Each property lives in its own module under properties/. To add a new
+// property: create a module with the same shape (id, name, center, zoom,
+// panel, cta, footer info, boundary segments, zones) and add it here.
+import { HOWARD_PROPERTY } from './properties/howard.js';
+import { SULPHUR_PROPERTY } from './properties/sulphur-mountain.js';
+import { KERIS_PROPERTY } from './properties/keris-property.js';
+import { CHERS_PROPERTY } from './properties/chers-property.js';
+import { BMR_PROPERTY } from './properties/black-mountain-ranch.js';
+import { ROSE_VALLEY_PROPERTY } from './properties/rose-valley.js';
 
-// REAL Sulphur Mountain Property Boundary Lines - Traced from Aerial Photography
-const PERMANENT_PROPERTY_LINES = [
-  {
-    id: 'boundary_line_1',
-    coordinates: [[34.433576, -119.156878], [34.433578, -119.155856], [34.433580, -119.154834]],
-    thickness: 10,
-    gradientColors: ['#9C27B0', '#673AB7', '#3F51B5', '#2196F3'],
-    glowColor: '#9C27B0',
-    description: 'Eastern Boundary - Main Section',
-    name: 'Eastern Property Line',
-    length: '1,250 ft',
-    features: ['Panoramic mountain views', 'Mature oak trees', 'Natural elevation'],
-    permanent: true,
-    section: 'east'
-  },
-  {
-    id: 'boundary_line_2', 
-    coordinates: [[34.433585, -119.154840], [34.433215, -119.154843], [34.432846, -119.154845]],
-    thickness: 10,
-    gradientColors: ['#2196F3', '#03A9F4', '#00BCD4', '#26C6DA'],
-    glowColor: '#00BCD4',
-    description: 'Southern Boundary - Section 1',
-    name: 'South Property Line (East)',
-    length: '580 ft',
-    features: ['Gentle slope', 'Garden potential', 'Solar exposure'],
-    permanent: true,
-    section: 'south-east'
-  },
-  {
-    id: 'boundary_line_3',
-    coordinates: [[34.432855, -119.154845], [34.432857, -119.154885], [34.432859, -119.154925]],
-    thickness: 10,
-    gradientColors: ['#00BCD4', '#00ACC1', '#0097A7'],
-    glowColor: '#00BCD4',
-    description: 'Southern Corner Connection',
-    name: 'South Corner Transition',
-    length: '85 ft',
-    features: ['Corner landmark', 'Property marker'],
-    permanent: true,
-    section: 'south-corner'
-  },
-  {
-    id: 'boundary_line_4',
-    coordinates: [[34.432855, -119.154920], [34.432370, -119.154912], [34.432185, -119.154908], [34.431886, -119.154904]],
-    thickness: 10,
-    gradientColors: ['#00BCD4', '#4CAF50', '#66BB6A', '#81C784'],
-    glowColor: '#4CAF50',
-    description: 'Southern Boundary - Section 2',
-    name: 'South Property Line (West)',
-    length: '750 ft',
-    features: ['Flat terrain', 'Agricultural zone', 'Creek proximity'],
-    permanent: true,
-    section: 'south-west'
-  },
-  {
-    id: 'boundary_line_5',
-    coordinates: [[34.431886, -119.154893], [34.431890, -119.155854], [34.431894, -119.156814]], 
-    thickness: 10,
-    gradientColors: ['#4CAF50', '#8BC34A', '#CDDC39', '#D4E157'],
-    glowColor: '#8BC34A',
-    description: 'Western Boundary - Main Section',
-    name: 'West Property Line',
-    length: '1,420 ft',
-    features: ['Seasonal creek', 'Riparian corridor', 'Wildlife habitat'],
-    permanent: true,
-    section: 'west'
-  },
-  {
-    id: 'boundary_line_6',
-    coordinates: [[34.431899, -119.156808], [34.432000, -119.156816], [34.432102, -119.156824]],
-    thickness: 10,
-    gradientColors: ['#CDDC39', '#C0CA33', '#AFB42B'],
-    glowColor: '#CDDC39',
-    description: 'Western Corner Connection',
-    name: 'West Corner Transition',
-    length: '180 ft',
-    features: ['Creek crossing', 'Corner marker'],
-    permanent: true,
-    section: 'west-corner'
-  },
-  {
-    id: 'boundary_line_7', 
-    coordinates: [[34.432102, -119.156824], [34.432160, -119.157278], [34.432217, -119.157731]],
-    thickness: 10,
-    gradientColors: ['#CDDC39', '#FFEB3B', '#FDD835', '#FBC02D'],
-    glowColor: '#FDD835',
-    description: 'Northwestern Boundary - Section 1',
-    name: 'Northwest Property Line',
-    length: '680 ft',
-    features: ['Creek valley', 'Natural amphitheater', 'Oak woodland'],
-    permanent: true,
-    section: 'northwest'
-  },
-  {
-    id: 'boundary_line_8',
-    coordinates: [[34.432222, -119.157726], [34.432293, -119.157742], [34.432363, -119.157758]],
-    thickness: 10,
-    gradientColors: ['#FDD835', '#F9A825', '#F57F17'],
-    glowColor: '#FDD835',
-    description: 'Northwestern Corner Connection',
-    name: 'Northwest Corner Transition',
-    length: '125 ft',
-    features: ['Elevated viewpoint', 'Corner landmark'],
-    permanent: true,
-    section: 'northwest-corner'
-  },
-  {
-    id: 'boundary_line_9',
-    coordinates: [[34.432368, -119.157758], [34.432470, -119.157326], [34.432571, -119.156894]],
-    thickness: 10,
-    gradientColors: ['#FFC107', '#FFB300', '#FFA000', '#FF8F00'],
-    glowColor: '#FFC107',
-    description: 'Northern Boundary - Section 1',
-    name: 'North Property Line (West)',
-    length: '720 ft',
-    features: ['Upper plateau', 'Mountain views', 'Ceremony sites'],
-    permanent: true,
-    section: 'north-west'
-  },
-  {
-    id: 'boundary_line_10',
-    coordinates: [[34.432576, -119.156899], [34.433078, -119.156889], [34.433580, -119.156878]],
-    thickness: 10,
-    gradientColors: ['#FF8F00', '#FF6F00', '#E65100', '#9C27B0'],
-    glowColor: '#FF6F00',
-    description: 'Northern Boundary - Section 2',
-    name: 'North Property Line (East)',
-    length: '780 ft',
-    features: ['Ridge line', 'Sunset views', 'Highest elevation'],
-    permanent: true,
-    section: 'north-east'
+const PROPERTIES = [HOWARD_PROPERTY, SULPHUR_PROPERTY, KERIS_PROPERTY, CHERS_PROPERTY, BMR_PROPERTY, ROSE_VALLEY_PROPERTY];
+PROPERTIES.forEach(p => p.zones.forEach(z => { z.propertyId = p.id; }));
+
+// Aggregates used by the API endpoints
+const PROJECT_ZONES = PROPERTIES.flatMap(p => p.zones);
+const PERMANENT_PROPERTY_LINES = PROPERTIES.flatMap(p => p.boundary);
+
+// ── Saved layout (git-tracked) ──────────────────────────────────────────────
+// data/zone-positions.json is the live source of truth for icon positions.
+// The map editor's "Save Layout for Everyone" button commits new versions of
+// this file straight to GitHub (see POST /api/save-positions), so every layout
+// change is a git commit and Vercel redeploys with it baked in.
+try {
+  const savedLayout = JSON.parse(readFileSync(join(__dirname, 'data', 'zone-positions.json'), 'utf8'));
+  let appliedCount = 0;
+  for (const p of PROPERTIES) {
+    const zones = savedLayout[p.id];
+    if (!zones) continue;
+    for (const z of p.zones) {
+      const pos = zones[z.id];
+      if (Array.isArray(pos) && pos.length === 2 && isFinite(pos[0]) && isFinite(pos[1])) {
+        z.position = [pos[0], pos[1]];
+        appliedCount++;
+      }
+    }
   }
-];
+  if (process.env.VERCEL !== '1') {
+    console.log('📍 Applied saved layout from data/zone-positions.json (' + appliedCount + ' positions)');
+  }
+} catch (e) {
+  // No saved layout file — module defaults apply.
+}
 
 // Updated Zone color mapping with unique representative colors
 const zoneColors = {
@@ -1747,15 +86,41 @@ const zoneColors = {
   wellness: '#00838F'           // Teal - represents healing waters and tranquility
 };
 
-// Main route - serves the complete interactive map
-app.get('/', (req, res) => {
+// The single-engine atlas (V2, built from v2/ into public/v2) is the front door since V0.27.
+// The classic Leaflet page stays at /classic. Both read the same PROPERTIES and the same API.
+const V2_INDEX = join(__dirname, 'public', 'v2', 'index.html');
+const V2_SW = join(__dirname, 'public', 'v2', 'sw.js');
+function serveV2(req, res) {
+  if (!existsSync(V2_INDEX)) return serveClassic(req, res);
+  res.set('Cache-Control', 'no-cache');
+  res.sendFile(V2_INDEX);
+}
+app.get('/', serveV2);
+app.get('/sw.js', (req, res) => {
+  if (!existsSync(V2_SW)) return res.status(404).end();
+  res.set('Service-Worker-Allowed', '/');
+  res.set('Cache-Control', 'no-cache');
+  res.type('application/javascript');
+  res.sendFile(V2_SW);
+});
+
+// Classic route - serves the complete Leaflet map (moved from / to /classic in V0.27)
+app.get(['/classic', '/classic/'], serveClassic);
+function serveClassic(req, res) {
   try {
     const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>EcoVillageBuilder - Sulphur Mountain Interactive Map</title>
+  <title>Ojai Valley Properties — Interactive Development Map</title>
+  <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin>
+  <link rel="preconnect" href="https://s3.amazonaws.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
+  <link rel="preconnect" href="https://wsrv.nl" crossorigin>
+  <link rel="preconnect" href="https://maps.ventura.org" crossorigin>
+  <link rel="dns-prefetch" href="https://elevation.nationalmap.gov">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
@@ -3535,8 +1900,8 @@ app.get('/', (req, res) => {
     }
     
     .property-panel-content {
-      padding: 25px;
-      background: rgba(255, 255, 255, 0.95);
+      padding: 24px 24px 32px;
+      background: #f6f4ef;
       margin: 0;
       flex: 1;
       min-height: 0;
@@ -3545,10 +1910,16 @@ app.get('/', (req, res) => {
       overscroll-behavior-y: contain;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
+      /* Bigger, warmer, more readable base type for all proposal prose (V0.20) */
+      font-size: 16px;
+      line-height: 1.72;
+      color: #34343d;
+      -webkit-font-smoothing: antialiased;
       /* Smooth momentum scrolling on mobile */
       -webkit-transform: translateZ(0);
       transform: translateZ(0);
     }
+    .property-panel-content p { font-size: 15.5px; line-height: 1.72; }
 
     .property-panel-content::-webkit-scrollbar {
       width: 8px;
@@ -3563,83 +1934,96 @@ app.get('/', (req, res) => {
       border-radius: 4px;
     }
     
+    /* ---- V0.20 proposal card system: bigger type, soft cards, subtle rotating accents ---- */
     .property-info-section {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 22px 24px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-      border: 1px solid rgba(0,0,0,0.05);
+      box-shadow: 0 3px 16px rgba(31, 28, 46, 0.07);
+      border: 1px solid rgba(31, 28, 46, 0.06);
+      border-left: 4px solid #6b8f6b;   /* default accent; rotated below */
     }
-    
+    /* gentle 3-colour rotation so sections feel distinct but calm */
+    .property-info-section:nth-of-type(3n+1) { border-left-color: #6b8f6b; }   /* sage   */
+    .property-info-section:nth-of-type(3n+2) { border-left-color: #5f79c0; }   /* indigo */
+    .property-info-section:nth-of-type(3n+3) { border-left-color: #c1904a; }   /* amber  */
+
     .property-info-section h4 {
-      margin: 0 0 15px 0;
-      font-size: 16px;
-      font-weight: 600;
-      color: #667eea;
-      border-bottom: 2px solid #667eea;
-      padding-bottom: 8px;
+      margin: 0 0 14px 0;
+      font-size: 17.5px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      color: #2b2b34;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(31, 28, 46, 0.10);
     }
-    
+    .property-info-section .section-sub {
+      margin: -8px 0 14px; font-size: 13.5px; line-height: 1.5;
+      color: #7a7a86; font-weight: 500;
+    }
+
     .property-detail-row {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      padding: 12px 0;
-      border-bottom: 1px solid #f0f0f0;
+      gap: 5px;
+      padding: 13px 0;
+      border-bottom: 1px solid rgba(31, 28, 46, 0.07);
     }
-    
+
     .property-detail-row:last-child {
       border-bottom: none;
     }
-    
+
     .property-detail-label {
-      font-weight: 600;
-      color: #667eea;
-      font-size: 13px;
+      font-weight: 700;
+      color: #8a8a95;
+      font-size: 12px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.7px;
     }
-    
+
     .property-detail-value {
-      color: #333;
+      color: #2f2f38;
       font-weight: 500;
-      line-height: 1.6;
-      font-size: 15px;
+      line-height: 1.65;
+      font-size: 15.5px;
     }
-    
+
     .property-features-list {
       list-style: none;
       padding: 0;
-      margin: 12px 0 0 0;
+      margin: 14px 0 0 0;
     }
-    
+
     .property-features-list li {
-      padding: 12px 0 12px 30px;
+      padding: 13px 0 13px 32px;
       position: relative;
-      color: #444;
-      line-height: 1.7;
-      font-size: 14px;
-      border-bottom: 1px solid #f5f5f5;
+      color: #3a3a44;
+      line-height: 1.72;
+      font-size: 15px;
+      border-bottom: 1px solid rgba(31, 28, 46, 0.06);
     }
-    
+
     .property-features-list li:last-child {
       border-bottom: none;
     }
-    
+
     .property-features-list li:before {
-      content: "✨";
+      content: "✦";
       position: absolute;
-      left: 0;
-      font-size: 16px;
-      top: 12px;
+      left: 4px;
+      font-size: 15px;
+      top: 13px;
+      color: #b99a4a;
     }
-    
+
     .property-features-list li strong {
-      color: #667eea;
-      font-weight: 600;
+      color: #2b2b34;
+      font-weight: 700;
       display: block;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
+      font-size: 15.5px;
     }
     
     .boundary-gradient-preview {
@@ -3724,7 +2108,7 @@ app.get('/', (req, res) => {
       background: rgba(0,0,0,0.8);
       color: white;
       border-radius: 50%;
-      display: none !important; /* HIDDEN - Remove this line to show admin tools */
+      display: flex; /* VISIBLE — reposition mode enabled for proposal review */
       align-items: center;
       justify-content: center;
       cursor: pointer;
@@ -4177,6 +2561,487 @@ app.get('/', (req, res) => {
       font-size: 12px;
       line-height: 1.4;
     }
+    /* ── Multi-property overview mode ── */
+    .property-label-marker { display: none; }
+    .overview-mode .property-label-marker { display: block !important; }
+    .property-label-chip {
+      transform: translate(-50%, -50%);
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 9px 16px;
+      border-radius: 22px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      white-space: nowrap;
+      border: 2px solid rgba(255,255,255,0.55);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .property-label-chip:hover { transform: translate(-50%, -50%) scale(1.06); }
+    /* ── Position Editor ── */
+    .admin-popup { z-index: 2600; }
+    .editor-label { display: block; margin: 2px 0 8px 0; font-weight: 600; color: #333; font-size: 13.5px; }
+    .edit-property-buttons { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .edit-prop-btn {
+      flex: 1; min-width: 118px; padding: 10px 8px;
+      border: 2px solid #e0e0e0; border-radius: 8px; background: #fff;
+      font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s ease;
+    }
+    .edit-prop-btn:hover { border-color: #b3b9f0; }
+    .edit-prop-btn.active { border-color: #667eea; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+    #edit-toggle-btn { background: #4CAF50; color: #fff; margin-bottom: 12px; }
+    #edit-toggle-btn:disabled { background: #e0e0e0; color: #999; cursor: not-allowed; }
+    #edit-toggle-btn.editing { background: #FF9800; }
+    #reset-positions-btn { background: #607D8B; color: #fff; margin-bottom: 12px; }
+    .edit-hint {
+      font-size: 12.5px; color: #666; background: #FFF8E1;
+      border-left: 3px solid #FFC107; padding: 10px 12px;
+      border-radius: 6px; margin-bottom: 12px; line-height: 1.5;
+    }
+    .moved-list {
+      max-height: 150px; overflow-y: auto; background: #f8f9fa;
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 12.5px;
+    }
+    .moved-title { font-weight: 700; color: #4CAF50; margin-bottom: 6px; }
+    .moved-item { padding: 3px 0; color: #444; }
+    .moved-coords { color: #999; font-family: monospace; font-size: 11px; }
+
+    /* Editing glow on unlocked icons (box-shadow only — never fights the
+       zoom-scaling inline transform) */
+    @keyframes edit-pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.9), 0 0 18px 6px rgba(255, 152, 0, 0.45); }
+      50% { box-shadow: 0 0 0 7px rgba(255, 152, 0, 0.35), 0 0 26px 10px rgba(255, 152, 0, 0.25); }
+    }
+    .zone-marker.marker-editing > div {
+      animation: edit-pulse 1.5s ease-in-out infinite;
+      border-color: #FFB300 !important;
+      cursor: grab;
+    }
+    .zone-marker.marker-editing > div:active { cursor: grabbing; }
+    /* Icons being edited stay visible at any zoom */
+    .zone-marker.marker-editing { display: block !important; }
+
+    /* ---- Current / Vision mode toggle ---- */
+    #mode-toggle {
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+      z-index: 2600; display: flex; gap: 2px;
+      background: rgba(18, 18, 30, 0.82);
+      border: 1px solid rgba(255,255,255,0.25); border-radius: 999px;
+      padding: 4px; cursor: pointer; user-select: none;
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+      transition: box-shadow 0.4s ease, border-color 0.4s ease;
+    }
+    #mode-toggle .mt-opt {
+      padding: 7px 18px; border-radius: 999px; font-weight: 700;
+      font-size: 13px; letter-spacing: 0.4px; line-height: 1;
+      color: rgba(255,255,255,0.6); transition: all 0.3s ease;
+    }
+    #mode-toggle .mt-current { background: rgba(255,255,255,0.94); color: #1a1a2e; }
+    #mode-toggle.vision .mt-current { background: transparent; color: rgba(255,255,255,0.6); }
+    #mode-toggle.vision .mt-vision {
+      background: linear-gradient(135deg, #FFD700 0%, #FFB300 55%, #FF8F00 100%);
+      color: #2a1600; box-shadow: 0 0 18px rgba(255, 200, 60, 0.6);
+    }
+    #mode-toggle.vision { border-color: rgba(255, 215, 0, 0.55); box-shadow: 0 6px 24px rgba(255, 180, 40, 0.35); }
+    @media (max-width: 640px) {
+      #mode-toggle { top: 10px; }
+      #mode-toggle .mt-opt { padding: 6px 13px; font-size: 12px; }
+    }
+    /* Vision-mode ambience */
+    body.vision-mode .map-footer {
+      background: linear-gradient(90deg, #1a1030, #2d1b45, #1a1030);
+      color: #FFE9A8; border-top: 1px solid rgba(255, 215, 0, 0.35);
+    }
+    body.vision-mode .property-label-chip {
+      background: linear-gradient(135deg, #3b2160 0%, #6a3d9a 100%);
+      border-color: rgba(255, 215, 0, 0.75);
+      box-shadow: 0 4px 14px rgba(80, 40, 140, 0.55), 0 0 12px rgba(255, 215, 0, 0.25);
+    }
+
+    /* ---- 🗺️ V0.21 County GIS layers panel ---- */
+    #layers-toggle {
+      position: fixed; top: 96px; left: 50%; transform: translateX(-50%);
+      z-index: 1200;
+      background: linear-gradient(135deg, #2d4a23 0%, #5c8a4a 100%);
+      color: #fff; font-weight: 800; font-size: 12px; letter-spacing: 0.6px;
+      padding: 6px 16px; border-radius: 999px;
+      border: 1px solid rgba(190, 230, 160, 0.45);
+      cursor: pointer; user-select: none;
+      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.35);
+      transition: box-shadow 0.25s ease, transform 0.15s ease;
+    }
+    #layers-toggle:hover { box-shadow: 0 0 20px rgba(140, 220, 110, 0.55); transform: translateX(-50%) scale(1.05); }
+    #layers-toggle.active { background: linear-gradient(135deg, #3c6a2d 0%, #7cb35f 100%); }
+    #layers-toggle.busy { animation: lpBusy 1.1s ease-in-out infinite; }
+    @keyframes lpBusy {
+      0%, 100% { box-shadow: 0 5px 16px rgba(0,0,0,0.35); }
+      50% { box-shadow: 0 0 20px rgba(160, 235, 120, 0.85); }
+    }
+    #layers-panel {
+      position: fixed; top: 132px; left: 50%; transform: translateX(-50%);
+      z-index: 1250; display: none;
+      width: min(94vw, 340px); max-height: min(70vh, 560px); overflow-y: auto;
+      background: rgba(18, 22, 20, 0.97); color: #eef2ec;
+      border: 1px solid rgba(150, 200, 130, 0.35); border-radius: 18px;
+      padding: 16px 16px 14px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      -webkit-overflow-scrolling: touch;
+    }
+    #layers-panel.open { display: block; }
+    #layers-panel .lp-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin: 0 0 4px; font-size: 15px; font-weight: 800; letter-spacing: 0.3px;
+    }
+    #layers-panel .lp-close { cursor: pointer; opacity: 0.65; padding: 2px 6px; font-size: 15px; }
+    #layers-panel .lp-close:hover { opacity: 1; }
+    #layers-panel .lp-sub { margin: 0 0 14px; font-size: 11.5px; line-height: 1.5; color: rgba(238, 242, 236, 0.6); }
+    #layers-panel .lp-group {
+      margin: 0 0 8px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.11);
+      font-size: 10.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+      color: rgba(190, 220, 175, 0.9);
+    }
+    #layers-panel .lp-group:first-of-type { border-top: none; padding-top: 0; }
+    #layers-panel .lp-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 9px; margin-bottom: 3px; border-radius: 9px;
+      font-size: 13px; cursor: pointer; user-select: none;
+      transition: background 0.12s ease;
+    }
+    #layers-panel .lp-row:hover { background: rgba(255, 255, 255, 0.07); }
+    #layers-panel .lp-row.on { background: rgba(124, 179, 95, 0.18); }
+    #layers-panel .lp-dot {
+      width: 15px; height: 15px; flex: 0 0 15px; border-radius: 5px;
+      border: 1.5px solid rgba(255, 255, 255, 0.35); position: relative;
+    }
+    #layers-panel .lp-row.radio .lp-dot { border-radius: 50%; }
+    #layers-panel .lp-row.on .lp-dot { background: #7cb35f; border-color: #7cb35f; }
+    #layers-panel .lp-row.on .lp-dot:after {
+      content: ''; position: absolute; left: 4px; top: 1px;
+      width: 4px; height: 8px; border: solid #14200e;
+      border-width: 0 2px 2px 0; transform: rotate(45deg);
+    }
+    #layers-panel .lp-txt { flex: 1; min-width: 0; line-height: 1.35; }
+    #layers-panel .lp-note { display: block; font-size: 10.5px; color: rgba(238, 242, 236, 0.5); margin-top: 1px; }
+    #layers-panel .lp-op { display: flex; align-items: center; gap: 9px; padding: 9px 9px 2px; font-size: 11px; color: rgba(238, 242, 236, 0.65); }
+    #layers-panel .lp-op input { flex: 1; accent-color: #7cb35f; }
+    #layers-panel .lp-years { padding: 4px 10px 10px 30px; opacity: 0.55; transition: opacity 0.2s; }
+    #layers-panel .lp-years.live { opacity: 1; }
+    #layers-panel .lp-year-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+    #layers-panel .lp-year-head b { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #f3f6ee; font-variant-numeric: tabular-nums; }
+    #layers-panel .lp-year-head span { font-size: 11px; color: rgba(238, 242, 236, 0.7); }
+    #layers-panel .lp-years input[type=range] { width: 100%; accent-color: #e0b64a; cursor: ew-resize; }
+    #layers-panel .lp-year-ticks { display: flex; justify-content: space-between; font-size: 9.5px; color: rgba(238, 242, 236, 0.45); letter-spacing: 0.4px; margin-top: 1px; }
+    #layers-panel .lp-legend { padding: 2px 2px 6px; }
+    #layers-panel .lp-lg {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: 11.5px; line-height: 1.45; color: rgba(238, 242, 236, 0.72);
+      padding: 4px 7px;
+    }
+    #layers-panel .lp-lg i {
+      width: 11px; height: 11px; flex: 0 0 11px; margin-top: 3px;
+      border-radius: 3px; display: block;
+    }
+    #layers-panel .lp-lg-tip {
+      margin-top: 4px; padding: 7px 9px; border-radius: 8px;
+      background: rgba(124, 179, 95, 0.14); color: rgba(238, 242, 236, 0.85);
+    }
+    #layers-panel .lp-credit { margin: 12px 0 0; padding-top: 11px; border-top: 1px solid rgba(255, 255, 255, 0.11); font-size: 10.5px; line-height: 1.5; color: rgba(238, 242, 236, 0.45); }
+    /* V0.25 — grouped layer library, live legends, per-layer opacity */
+    #layers-panel .lp-sec { margin: 0 0 4px; border-top: 1px solid rgba(255, 255, 255, 0.09); }
+    #layers-panel .lp-sec summary {
+      display: flex; align-items: center; gap: 9px; list-style: none;
+      padding: 9px 6px 8px; cursor: pointer; user-select: none; border-radius: 9px;
+    }
+    #layers-panel .lp-sec summary::-webkit-details-marker { display: none; }
+    #layers-panel .lp-sec summary:hover { background: rgba(255, 255, 255, 0.05); }
+    #layers-panel .lp-sec-ico { font-size: 16px; width: 22px; text-align: center; flex: 0 0 22px; }
+    #layers-panel .lp-sec-txt { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 800; letter-spacing: 0.3px; line-height: 1.3; }
+    #layers-panel .lp-sec-txt .lp-note { font-weight: 500; letter-spacing: 0; }
+    #layers-panel .lp-sec-n { font-size: 10px; font-weight: 800; letter-spacing: 0.6px; color: #14200e; background: #7cb35f; border-radius: 999px; padding: 2px 7px; min-width: 0; }
+    #layers-panel .lp-sec-n:empty { display: none; }
+    #layers-panel .lp-sec-arrow { width: 7px; height: 7px; border: solid rgba(238, 242, 236, 0.5); border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg); transition: transform 0.15s; flex: 0 0 7px; margin-right: 3px; }
+    #layers-panel .lp-sec[open] .lp-sec-arrow { transform: rotate(45deg); }
+    #layers-panel .lp-sec .lp-row { margin-left: 4px; }
+    #layers-panel .lp-info {
+      flex: 0 0 18px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 10.5px; font-weight: 800; font-style: italic; font-family: Georgia, serif;
+      color: rgba(238, 242, 236, 0.55); border: 1px solid rgba(238, 242, 236, 0.25); cursor: help;
+    }
+    #layers-panel .lp-info:hover, #layers-panel .lp-info.on { color: #14200e; background: #e0b64a; border-color: #e0b64a; }
+    #layers-panel .lp-lgb { margin: 0 0 10px; padding: 9px 10px 8px; border-radius: 11px; background: rgba(255, 255, 255, 0.045); border: 1px solid rgba(255, 255, 255, 0.07); }
+    #layers-panel .lp-lgb-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+    #layers-panel .lp-lgb-head b { font-weight: 800; }
+    #layers-panel .lp-lgb-x { cursor: pointer; opacity: 0.5; font-size: 12px; padding: 0 4px; }
+    #layers-panel .lp-lgb-x:hover { opacity: 1; }
+    #layers-panel .lp-src { font-size: 10.5px; color: rgba(238, 242, 236, 0.5); margin: 2px 0 0; line-height: 1.4; }
+    #layers-panel .lp-src a { color: #e0b64a; text-decoration: none; }
+    #layers-panel .lp-lgb .lp-op { padding: 6px 0 4px; }
+    #layers-panel .lp-lg img { width: 18px; height: 18px; flex: 0 0 18px; margin-top: 1px; border-radius: 3px; background: rgba(255, 255, 255, 0.08); image-rendering: auto; }
+    #layers-panel .lp-lg-sub { font-size: 10px; font-weight: 800; letter-spacing: 0.7px; text-transform: uppercase; color: rgba(190, 220, 175, 0.75); padding: 6px 7px 1px; }
+    #layers-panel .lp-lg-more { display: none; }
+    #layers-panel .lp-lgb.all .lp-lg-more { display: flex; }
+    #layers-panel .lp-lg-showall { font-size: 11px; color: #e0b64a; cursor: pointer; padding: 5px 7px 2px; }
+    #layers-panel .lp-lg-showall:hover { text-decoration: underline; }
+    #layers-panel .lp-lg-wait { opacity: 0.55; font-style: italic; }
+    #layers-panel .lp-empty { font-size: 11.5px; color: rgba(238, 242, 236, 0.5); padding: 4px 7px 8px; line-height: 1.5; }
+    #layers-panel .lp-years.hist input[type=range] { accent-color: #c9a2ff; }
+    .vc-elev-popup .leaflet-popup-content { margin: 10px 14px; font-size: 13px; font-weight: 700; }
+    @media (max-width: 768px) {
+      #layers-toggle { top: 92px; }
+      #layers-panel { top: 126px; max-height: 60vh; }
+    }
+
+    /* ---- 🌍 3D terrain mode ---- */
+    #earth-toggle {
+      position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+      z-index: 1200;
+      background: linear-gradient(135deg, #10304f 0%, #2c6e9e 100%);
+      color: #fff; font-weight: 800; font-size: 12px; letter-spacing: 0.6px;
+      padding: 6px 16px; border-radius: 999px;
+      border: 1px solid rgba(160, 220, 255, 0.45);
+      cursor: pointer; user-select: none;
+      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.35);
+      transition: box-shadow 0.25s ease, transform 0.15s ease;
+    }
+    #earth-toggle:hover {
+      box-shadow: 0 0 20px rgba(90, 180, 255, 0.6);
+      transform: translateX(-50%) scale(1.05);
+    }
+    #earth3d { position: fixed; inset: 0; z-index: 3000; background: #000; display: none; opacity: 1; }
+    /* pre-build state: rendered at full size so the GL canvas warms up, but invisible & behind everything */
+    #earth3d.prebuilding { display: block; opacity: 0; pointer-events: none; z-index: -1; }
+    #earth3d.open { display: block; opacity: 1; pointer-events: auto; z-index: 3000; }
+    #earth3d-stars { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+    #earth3d-map { position: absolute; inset: 0; z-index: 1; }
+    #earth3d-loading {
+      position: absolute; inset: 0; z-index: 5; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; color: rgba(255, 255, 255, 0.85); font-size: 13px;
+      letter-spacing: 0.4px; pointer-events: none;
+    }
+    .earth-orb {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: radial-gradient(circle at 32% 30%, #7ec4ff 0%, #2c6e9e 45%, #10304f 100%);
+      animation: orbPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes orbPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 22px rgba(90, 180, 255, 0.45); }
+      50% { transform: scale(1.12); box-shadow: 0 0 34px rgba(120, 200, 255, 0.75); }
+    }
+    #earth3d-exit {
+      position: absolute; top: 14px; left: 14px; z-index: 10;
+      background: rgba(12, 14, 24, 0.85); color: #fff;
+      padding: 9px 18px; border-radius: 999px;
+      font-weight: 700; font-size: 13px; cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    }
+    #earth3d-exit:hover { background: rgba(40, 44, 66, 0.92); }
+    #earth3d-hint {
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      z-index: 10; max-width: 92vw; text-align: center;
+      color: rgba(255, 255, 255, 0.88); background: rgba(12, 14, 24, 0.6);
+      padding: 6px 16px; border-radius: 999px; font-size: 12px;
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+    #earth3d-attrib {
+      position: absolute; bottom: 2px; right: 6px; z-index: 10;
+      color: rgba(255, 255, 255, 0.5); font-size: 10px;
+    }
+    #earth3d .prop-chip3d {
+      background: linear-gradient(135deg, #4c3a8c 0%, #6a5acd 100%);
+      color: #fff; padding: 6px 13px; border-radius: 999px;
+      font-weight: 700; font-size: 12px; white-space: nowrap;
+      border: 1.5px solid rgba(255, 215, 0, 0.65); cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
+    }
+    #earth3d .prop-chip3d:hover { box-shadow: 0 0 16px rgba(255, 215, 0, 0.5); }
+    #earth3d .zone3d {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px; cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.55);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+    #earth3d-gearth {
+      position: absolute; bottom: 16px; right: 14px; z-index: 10;
+      background: rgba(12, 14, 24, 0.85); color: #fff;
+      padding: 7px 14px; border-radius: 999px;
+      font-weight: 700; font-size: 12px; cursor: pointer;
+      border: 1px solid rgba(140, 200, 255, 0.4);
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    }
+    #earth3d-gearth:hover { box-shadow: 0 0 14px rgba(90, 180, 255, 0.5); }
+    .portal-btn {
+      margin: 18px 0 6px; padding: 13px 18px; text-align: center;
+      background: linear-gradient(135deg, #2b1a55 0%, #6a3d9a 50%, #2c6e9e 100%);
+      color: #fff; font-weight: 800; font-size: 15px; letter-spacing: 0.4px;
+      border-radius: 14px; cursor: pointer; user-select: none;
+      border: 1.5px solid rgba(255, 215, 0, 0.55);
+      box-shadow: 0 4px 18px rgba(80, 40, 140, 0.45);
+      transition: box-shadow 0.25s ease, transform 0.15s ease;
+    }
+    .portal-btn:hover { box-shadow: 0 0 24px rgba(255, 215, 0, 0.4); transform: scale(1.02); }
+    .mode-strip {
+      margin: 0 0 16px; padding: 9px 16px; border-radius: 12px;
+      font-size: 13px; font-weight: 800; letter-spacing: 0.9px;
+      text-align: center; text-transform: uppercase;
+    }
+    .mode-strip.today { background: rgba(46, 125, 50, 0.14); color: #2b6e2f; border: 1px solid rgba(46, 125, 50, 0.35); }
+    .mode-strip.vision { background: linear-gradient(135deg, rgba(74, 20, 140, 0.16), rgba(255, 215, 0, 0.10)); color: #6a3d9a; border: 1px solid rgba(255, 215, 0, 0.5); }
+    /* ---- Deal / status card (V0.20): premium, spacious, readable ---- */
+    .status-card {
+      margin: 0 0 22px; padding: 20px 22px; border-radius: 18px;
+      background: linear-gradient(160deg, rgba(46, 125, 50, 0.10), rgba(46, 125, 50, 0.04));
+      border: 1px solid rgba(46, 125, 50, 0.28);
+      box-shadow: 0 4px 18px rgba(31, 28, 46, 0.06);
+    }
+    .status-card.vision {
+      background: linear-gradient(160deg, rgba(106, 61, 154, 0.13), rgba(255, 215, 0, 0.06));
+      border-color: rgba(160, 120, 30, 0.4);
+    }
+    .status-badge {
+      display: inline-block; margin-bottom: 15px; padding: 9px 17px;
+      border-radius: 999px; font-size: 14.5px; font-weight: 800; letter-spacing: 0.2px;
+      background: #2e7d32; color: #fff; box-shadow: 0 3px 10px rgba(46, 125, 50, 0.28);
+    }
+    .status-card.vision .status-badge { background: linear-gradient(135deg, #4c3a8c, #6a3d9a); box-shadow: 0 3px 12px rgba(106, 61, 154, 0.35); }
+    .status-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid rgba(31, 28, 46, 0.09); font-size: 15px; align-items: baseline; }
+    .status-row:last-of-type { border-bottom: none; }
+    .status-label { color: #7c7c88; font-weight: 600; white-space: nowrap; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .status-value { text-align: right; font-weight: 700; color: #2c2c35; font-size: 15px; }
+    .status-note { margin-top: 14px; padding-top: 13px; border-top: 1px dashed rgba(31, 28, 46, 0.15); font-size: 14px; line-height: 1.6; color: #55555f; font-style: italic; }
+    /* ---- Documents card (V0.20) ---- */
+    .docs-section { margin: 22px 0 6px; padding: 20px 22px; border-radius: 18px; background: linear-gradient(160deg, rgba(44, 110, 158, 0.10), rgba(44, 110, 158, 0.03)); border: 1px solid rgba(44, 110, 158, 0.28); box-shadow: 0 4px 18px rgba(31, 28, 46, 0.06); }
+    .docs-section h4 { margin: 0 0 4px; font-size: 17px; font-weight: 700; color: #235d86; letter-spacing: 0.2px; }
+    .docs-section .section-sub { margin: 0 0 14px; font-size: 13.5px; color: #6c7a86; font-weight: 500; }
+    .doc-link {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding: 14px 16px; margin-bottom: 10px; border-radius: 13px;
+      background: rgba(255, 255, 255, 0.72); border: 1px solid rgba(44, 110, 158, 0.28);
+      color: #26303a; text-decoration: none; font-weight: 700; font-size: 15px; line-height: 1.4;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+    .doc-link:last-child { margin-bottom: 0; }
+    .doc-link:hover { background: #ffffff; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(44, 110, 158, 0.22); }
+    .doc-dl { font-size: 12.5px; font-weight: 700; color: #2c6e9e; white-space: nowrap; background: rgba(44, 110, 158, 0.14); padding: 5px 11px; border-radius: 999px; }
+    .vc-survey-tip { background: rgba(14, 18, 26, 0.94); color: #dff7ff; border: 1px solid rgba(127, 240, 255, 0.45); border-radius: 8px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.2px; padding: 5px 9px; box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+    .vc-survey-tip::before { border-top-color: rgba(14, 18, 26, 0.94); }
+    .dossier-section { margin: 22px 0 6px; padding: 20px 22px; border-radius: 18px; background: linear-gradient(160deg, rgba(193, 144, 74, 0.11), rgba(193, 144, 74, 0.03)); border: 1px solid rgba(193, 144, 74, 0.30); box-shadow: 0 4px 18px rgba(31, 28, 46, 0.06); }
+    .dossier-section h4 { margin: 0 0 4px; font-size: 17px; font-weight: 700; color: #8a6423; letter-spacing: 0.2px; }
+    .dossier-section .section-sub { margin: 0 0 14px; font-size: 13.5px; color: #6c7a86; font-weight: 500; }
+    .ds-wait { font-size: 14px; color: #6c7a86; font-weight: 600; display: flex; align-items: center; gap: 9px; padding: 6px 0; }
+    .ds-spin { width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(193, 144, 74, 0.3); border-top-color: #b8862f; animation: dsspin 0.8s linear infinite; flex: none; }
+    @keyframes dsspin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .ds-spin { animation: none; } }
+    .ds-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(193, 144, 74, 0.26); }
+    .ds-apn { font-size: 15.5px; font-weight: 800; color: #4a3a1c; letter-spacing: 0.3px; font-variant-numeric: tabular-nums; }
+    .ds-situs { font-size: 13px; font-weight: 600; color: #7d8792; }
+    .ds-flag { font-size: 13.5px; line-height: 1.55; font-weight: 600; color: #3c4650; background: rgba(255, 255, 255, 0.72); border-left: 3px solid #b8862f; border-radius: 0 10px 10px 0; padding: 10px 14px; margin-bottom: 9px; }
+    .ds-flag.watch { border-left-color: #c1553f; }
+    .ds-flag.note { border-left-color: #5f79c0; }
+    .ds-flag.good { border-left-color: #6b8f6b; }
+    .ds-fold { border-top: 1px solid rgba(193, 144, 74, 0.22); }
+    .ds-fold:first-of-type { border-top: none; }
+    .ds-fold > summary { cursor: pointer; list-style: none; padding: 11px 2px; font-size: 14.5px; font-weight: 700; color: #4a3a1c; display: flex; align-items: center; gap: 9px; }
+    .ds-fold > summary::-webkit-details-marker { display: none; }
+    .ds-fold > summary::before { content: '+'; color: #b8862f; font-weight: 800; width: 11px; font-size: 15px; flex: none; }
+    .ds-fold[open] > summary::before { content: '\\2013'; }
+    .ds-fold > summary:hover { color: #8a6423; }
+    .ds-count { margin-left: auto; font-size: 11.5px; font-weight: 700; color: #a08652; background: rgba(193, 144, 74, 0.16); border-radius: 999px; padding: 2px 9px; }
+    .ds-rows { padding: 2px 0 14px 20px; }
+    .ds-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 6px 0; border-bottom: 1px dotted rgba(120, 110, 90, 0.22); }
+    .ds-row:last-child { border-bottom: none; }
+    .ds-k { font-size: 13px; font-weight: 600; color: #7d8792; flex: none; max-width: 48%; }
+    .ds-v { font-size: 13.5px; font-weight: 700; color: #2b3540; text-align: right; line-height: 1.45; }
+    .ds-note { font-size: 13px; color: #6c7a86; font-weight: 500; margin: 0 0 10px; line-height: 1.55; }
+    .ds-doc { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 13px; margin-bottom: 8px; border-radius: 12px; background: rgba(255, 255, 255, 0.72); border: 1px solid rgba(193, 144, 74, 0.28); text-decoration: none; }
+    .ds-doc:hover { background: #fff; box-shadow: 0 5px 14px rgba(193, 144, 74, 0.22); }
+    .ds-doc-l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ds-doc-l b { font-size: 14px; font-weight: 800; color: #2b3540; letter-spacing: 0.2px; }
+    .ds-doc-l i { font-style: normal; font-size: 12px; color: #7d8792; font-weight: 600; }
+    .ds-doc-o { font-size: 12px; font-weight: 700; color: #8a6423; white-space: nowrap; background: rgba(193, 144, 74, 0.16); padding: 5px 10px; border-radius: 999px; flex: none; }
+    .ds-foot { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(193, 144, 74, 0.26); font-size: 11.5px; line-height: 1.6; color: #8d97a1; font-weight: 500; }
+    /* V0.29.2 — the full County Record on the classic page */
+    .ds-auth { flex-basis: 100%; font-size: 12px; font-weight: 600; color: #8a6423; }
+    .ds-acts { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+    .ds-btn { font: inherit; font-size: 12px; font-weight: 700; line-height: 1.2; color: #6b4f1d; background: rgba(193, 144, 74, 0.14); border: 1px solid rgba(193, 144, 74, 0.35); border-radius: 999px; padding: 5px 11px; cursor: pointer; text-decoration: none; display: inline-block; }
+    .ds-btn:hover { background: rgba(193, 144, 74, 0.26); }
+    .ds-sub { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #a08652; margin: 14px 0 8px; }
+    .ds-wait-i { color: #a08652; font-weight: 600; text-transform: none; letter-spacing: 0; }
+    .ds-read { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-bottom: 10px; }
+    .ds-rd { background: rgba(255, 255, 255, 0.72); border: 1px solid rgba(193, 144, 74, 0.26); border-radius: 12px; padding: 9px 11px; min-width: 0; }
+    .ds-rd-l { font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #a08652; }
+    .ds-rd-v { font-size: 13.5px; font-weight: 700; color: #2b3540; margin: 2px 0; line-height: 1.4; overflow-wrap: anywhere; }
+    .ds-bar { height: 4px; border-radius: 2px; background: rgba(193, 144, 74, 0.18); overflow: hidden; margin: 5px 0; }
+    .ds-bar i { display: block; height: 100%; background: linear-gradient(90deg, #b8862f, #e0b45c); }
+    .ds-rd-n { font-size: 11.5px; color: #7d8792; font-weight: 500; line-height: 1.45; }
+    .ds-row.cont .ds-k { visibility: hidden; }
+    .ds-v { overflow-wrap: anywhere; }
+    .ds-rows.mono .ds-k, .ds-rows.mono .ds-v { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+    .ds-portals { padding: 2px 0 14px 20px; }
+    .ds-pg { margin-bottom: 10px; }
+    .ds-pg-l { font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #a08652; margin: 6px 0 5px; }
+    .ds-pi { margin: 0 0 7px; }
+    .ds-pf { display: inline; margin: 0; }
+    .ds-pl { display: inline-block; font: inherit; font-size: 13px; font-weight: 700; line-height: 1.3; color: #8a6423; text-decoration: none; background: rgba(255, 255, 255, 0.72); border: 1px solid rgba(193, 144, 74, 0.3); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+    .ds-pl:hover { background: #fff; box-shadow: 0 4px 12px rgba(193, 144, 74, 0.22); }
+    .ds-pn { font-size: 12px; color: #7d8792; margin: 3px 0 0 4px; line-height: 1.45; }
+    .ds-lot-link { display: inline-block; margin-top: 7px; font-size: 12px; font-weight: 700; color: #8a6423; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+    @media (max-width: 640px) { .ds-read { grid-template-columns: 1fr 1fr; } .ds-rows, .ds-portals { padding-left: 8px; } .ds-k { max-width: 44%; } }
+    #community-card {
+      position: fixed; inset: 0; z-index: 2500; display: none;
+      align-items: center; justify-content: center;
+      background: rgba(8, 10, 18, 0.55);
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    }
+    #community-card.open { display: flex; }
+    #community-card-box {
+      position: relative; width: min(94vw, 470px); max-height: 84vh; overflow-y: auto;
+      background: rgba(20, 22, 34, 0.97); color: #f2f2f6;
+      border: 1.5px solid rgba(255, 215, 0, 0.45); border-radius: 22px;
+      padding: 26px 26px 22px; box-shadow: 0 22px 70px rgba(0, 0, 0, 0.6);
+    }
+    #community-card-box .cc-close {
+      position: absolute; top: 14px; right: 16px; cursor: pointer;
+      font-size: 17px; opacity: 0.7; padding: 4px 8px;
+    }
+    #community-card-box .cc-close:hover { opacity: 1; }
+    #community-card-box .cc-title { font-size: 22px; font-weight: 800; letter-spacing: 0.2px; margin: 0 34px 16px 0; line-height: 1.3; }
+    /* dark-modal contrast overrides for the reused deal card + strip */
+    #community-card-box .status-card { background: rgba(46, 125, 50, 0.20); border-color: rgba(120, 200, 130, 0.35); box-shadow: none; }
+    #community-card-box .status-card.vision { background: linear-gradient(160deg, rgba(106, 61, 154, 0.30), rgba(255, 215, 0, 0.09)); border-color: rgba(255, 215, 0, 0.4); }
+    #community-card-box .status-label { color: rgba(242, 242, 246, 0.68); }
+    #community-card-box .status-value { color: #ffffff; }
+    #community-card-box .status-row { border-bottom-color: rgba(255, 255, 255, 0.12); }
+    #community-card-box .status-note { color: rgba(242, 242, 246, 0.82); border-top-color: rgba(255, 255, 255, 0.18); }
+    #community-card-box .mode-strip.today { color: #86e39a; }
+    #community-card-box .mode-strip.vision { color: #dcbcff; }
+    #community-card-box .cc-docs { margin: 4px 0 6px; font-size: 13.5px; opacity: 0.85; }
+    #community-card-box .cc-actions { display: flex; gap: 12px; margin-top: 18px; }
+    #community-card-box .cc-btn {
+      flex: 1; text-align: center; padding: 15px 12px; border-radius: 14px;
+      font-weight: 800; font-size: 14.5px; cursor: pointer; user-select: none;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+    #community-card-box .cc-btn.primary { background: rgba(255, 255, 255, 0.13); border: 1px solid rgba(255, 255, 255, 0.32); }
+    #community-card-box .cc-btn.primary:hover { background: rgba(255, 255, 255, 0.22); transform: translateY(-2px); }
+    #community-card-box .cc-btn.portal { background: linear-gradient(135deg, #2b1a55, #6a3d9a); border: 1px solid rgba(255, 215, 0, 0.5); }
+    #community-card-box .cc-btn.portal:hover { box-shadow: 0 0 18px rgba(255, 215, 0, 0.4); transform: translateY(-2px); }
+    @media (max-width: 768px) {
+      #earth-toggle { top: 56px; }
+      #earth3d-hint { font-size: 11px; }
+      #earth3d-gearth { bottom: 56px; }
+    }
+
+    @media (max-width: 768px) {
+      .admin-popup {
+        top: auto; bottom: 12px; left: 10px; right: 10px; width: auto;
+        max-height: 62vh; overflow-y: auto;
+      }
+    }
   </style>
 </head>
 <body>
@@ -4192,48 +3057,46 @@ app.get('/', (req, res) => {
   
   <div class="admin-popup" id="admin-popup" style="display: none;">
     <div class="popup-header">
-      <h3>🎯 Zone Admin Controls</h3>
+      <h3>✏️ Position Editor</h3>
       <button class="close-popup" id="close-popup">&times;</button>
     </div>
     
     <div class="popup-content">
-      <div class="zone-selector" style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Select Zone to Move:</label>
-        <select id="zone-move-selector" style="width: 100%; padding: 10px; border-radius: 6px; border: 2px solid #e0e0e0; font-size: 14px; margin-bottom: 10px;">
-          <option value="">Choose a zone...</option>
-        </select>
+      <label class="editor-label">1 · Pick a property:</label>
+      <div id="edit-property-buttons" class="edit-property-buttons"></div>
+      
+      <label class="editor-label">2 · Move the icons:</label>
+      <button class="control-button" id="edit-toggle-btn" disabled>🔓 Start Editing</button>
+      
+      <div class="edit-hint" id="edit-hint" style="display: none;">
+        Drag any <strong>glowing icon</strong> to its new spot — the map still pans and zooms normally. When everything looks right, press <strong>Done</strong>, then <strong>🔒 Save Layout for Everyone</strong>.
       </div>
       
-      <button class="control-button edit-button" id="unlock-zone-btn" style="background: #4CAF50; margin-bottom: 10px;" disabled>
-        🔓 Unlock Selected Zone
-      </button>
-      
-      <button class="control-button edit-button" id="lock-zone-btn" style="background: #FF9800; margin-bottom: 10px; display: none;">
-        🔒 Lock Zone Position
-      </button>
-      
-      <button class="control-button capture-button" id="capture-zones-btn" style="background: #9C27B0; margin-bottom: 10px;">
-        💾 Capture All Positions
-      </button>
-      
-      <div class="status-indicator" id="status-indicator">
+      <div class="status-indicator" id="edit-status">
         <div>🔒</div>
-        <div class="status-text">All Zones Locked</div>
+        <div class="status-text">Pick a property to begin</div>
       </div>
       
-      <div class="status-indicator" id="selected-zone-indicator" style="background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); border-left-color: #FF9800; margin-top: 10px; display: none;">
-        <div>📍</div>
-        <div class="status-text" id="selected-zone-name">None Selected</div>
+      <div class="moved-list" id="moved-list" style="display: none;"></div>
+      
+      <button class="control-button" id="reset-positions-btn" style="display: none;">↩️ Reset This Property</button>
+      
+      <label class="editor-label">3 · Save your layout:</label>
+      <button class="control-button" id="save-layout-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; margin-bottom: 12px;">🔒 Save Layout for Everyone</button>
+      <div id="pin-row" style="display: none; margin-bottom: 12px;">
+        <input id="edit-pin-input" type="password" placeholder="Edit PIN" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 8px;">
+        <button class="control-button" id="pin-confirm-btn" style="background: #4CAF50; color: #fff;">✅ Confirm PIN &amp; Save</button>
       </div>
+      <button class="control-button capture-button" id="capture-zones-btn">📋 Capture / Export (backup)</button>
       
       <div class="status-indicator" id="zoom-indicator" style="background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border-left-color: #2196F3; margin-top: 10px;">
         <div>🔍</div>
-        <div class="status-text" id="zoom-level">Zoom: 17</div>
+        <div class="status-text" id="zoom-level">Zoom: —</div>
       </div>
     </div>
   </div>
 
-  <!-- Territory Drawing Editor Panel -->
+    <!-- Territory Drawing Editor Panel -->
   <div class="territory-editor" id="territory-editor" style="display: none;">
     <div class="editor-header">
       <h3>🎨 Territory Drawing Editor</h3>
@@ -4302,21 +3165,55 @@ app.get('/', (req, res) => {
     </div>
   </div>
   
+  <!-- Current / Vision mode toggle -->
+  <div id="mode-toggle" title="Switch between today's reality and the Lemuria vision">
+    <span class="mt-opt mt-current">Today</span>
+    <span class="mt-opt mt-vision">✨ Vision</span>
+  </div>
+
+  <!-- 🌍 3D terrain mode (Google-Earth-style) -->
+  <div id="earth-toggle" title="Tilt into 3D — or just hold your middle mouse button and drag on the map (two-finger drag on mobile)">🌍 3D</div>
+  <div id="layers-toggle" title="County GIS layers — topo contours, aerial imagery by year, parcels, zoning and hazards">🗺️ Layers</div>
+  <div id="layers-panel">
+    <div class="lp-head"><span>🗺️ Map Layers</span><span class="lp-close" id="lp-close">✕</span></div>
+    <p class="lp-sub">Live public data — Ventura County GIS, the California Geological Survey, USGS, FEMA, NRCS and BLM — drawn straight from each agency’s own map server the moment you switch it on. Nothing is copied, nothing goes stale.</p>
+    <div id="lp-body"></div>
+    <p class="lp-credit">Imagery &amp; parcels: Ventura County GIS · Geology, faults, landslides, minerals: California Geological Survey · Relief, topo, hydrography, elevation: USGS · Flood: FEMA · Soils: USDA NRCS · Ownership, PLSS: BLM · Historic topo: USGS via Esri Living Atlas</p>
+  </div>
+  <div id="earth3d">
+    <div id="earth3d-stars"></div>
+    <div id="earth3d-loading"><div class="earth-orb"></div><span>waking the planet…</span></div>
+    <div id="earth3d-map"></div>
+    <div id="earth3d-exit">✕ Back to Map</div>
+    <div id="earth3d-hint">drag to move · hold middle mouse (or right-drag / two fingers) to orbit &amp; tilt · scroll out to see the whole planet · click a chip to fly there</div>
+    <div id="earth3d-gearth" title="Open this exact view in Google Earth (new tab)">🌐 Google Earth</div>
+    <div id="earth3d-attrib">Imagery © Esri &nbsp;·&nbsp; Terrain: Mapzen / AWS Open Data</div>
+  </div>
+
+  <!-- Community preview card (opens first on property click) -->
+  <div id="community-card" onclick="if (event.target === this) window.closeCommunityCard()">
+    <div id="community-card-box"></div>
+  </div>
+
   <!-- Map Container -->
   <div id="map"></div>
   
   <!-- Footer -->
-  <div class="map-footer">
-    © 2025 Sulphur Mountain Eco-Village | 18 Project Zones | $3M Development Investment
-  </div>
+  <div class="map-footer"><span id="map-footer-text">© 2026 Ojai Valley Properties | ${PROPERTIES.length} Properties • ${PROJECT_ZONES.filter(z => (z.mode || 'both') !== 'vision').length} Projects | Interactive Map</span></div>
   
   <script>
-    console.log('🗺️ Initializing EcoVillageBuilder Interactive Map...');
+    console.log('🗺️ Initializing Howard Property Interactive Map...');
     
     // Initialize map centered on Sulphur Mountain property
     const map = L.map('map', {
-      center: [34.433086, -119.155336],
-      zoom: 17,
+      center: [34.4287, -119.2375],
+      zoom: 13,
+      zoomSnap: 0,
+      zoomDelta: 0.5,
+      wheelDebounceTime: 20,
+      wheelPxPerZoomLevel: 110,
+      inertiaDeceleration: 2400,
+      easeLinearity: 0.16,
       zoomControl: true,
       scrollWheelZoom: true,
       doubleClickZoom: true,
@@ -4388,7 +3285,769 @@ app.get('/', (req, res) => {
     
     // Add default layer and layer control
     satelliteLayer.addTo(map);
-    const layerControl = L.control.layers(baseLayers).addTo(map);
+    // (the rich county-layer panel below replaces Leaflet's default layer control)
+
+    // ===================================================================
+    // V0.21 — VENTURA COUNTY GIS LAYER ENGINE
+    // Every source here is public, keyless and CORS-open on the county's
+    // own ArcGIS server (maps.ventura.org) — the same server the assessor
+    // parcel geometry already comes from.
+    // ===================================================================
+    var VC_ROOT = 'https://maps.ventura.org/arcgis/rest/services/';
+    var VC_BLANK = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+    var VC_ATTR = '🗺️ Ventura County GIS';
+
+    // Services whose tile cache uses the standard web-mercator scheme can be
+    // consumed directly as XYZ tiles (fast, CDN-cached at the county).
+    function vcXYZ(svc, opts) {
+      return L.tileLayer(VC_ROOT + svc + '/MapServer/tile/{z}/{y}/{x}', Object.assign({
+        attribution: VC_ATTR, minZoom: 1, maxZoom: 22, maxNativeZoom: 21,
+        errorTileUrl: VC_BLANK, updateWhenIdle: true, updateWhenZooming: false, keepBuffer: 2
+      }, opts || {}));
+    }
+
+    // Everything else — the historic aerials (custom cache scheme) and every
+    // dynamic overlay — is tiled by us against the service's export endpoint.
+    // V0.25: the same transport now speaks to any ArcGIS MapServer or ImageServer
+    // (CGS, USGS, FEMA, BLM, DWR, Esri Living Atlas) and to WMS (NRCS soils):
+    // a def carries root (defaults to the county), svc, and a kind.
+    function vcSvcBase(def) {
+      return (def.root || VC_ROOT) + def.svc + '/' + (def.kind === 'imgsvc' ? 'ImageServer' : 'MapServer');
+    }
+    function vcExportBase(def) { return vcSvcBase(def) + (def.kind === 'imgsvc' ? '/exportImage' : '/export'); }
+    // everything after the bbox — shared by the 2D tile layer and the 3D raster source
+    function vcExportTail(def, transparent, px) {
+      var q = '&bboxSR=3857&imageSR=3857&size=' + px + ',' + px + '&f=image';
+      if (def.kind === 'imgsvc') return q + '&format=jpgpng' + (typeof def.extra === 'function' ? def.extra() : (def.extra || ''));
+      return q + '&format=' + (transparent ? 'png32' : 'jpg')
+        + '&transparent=' + (transparent ? 'true' : 'false')
+        + (def.showLayers ? '&layers=show:' + def.showLayers : '')
+        + '&dpi=96';
+    }
+    function vcWmsUrl(def, bboxToken) {
+      return def.url + '?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=' + encodeURIComponent(def.layers)
+        + '&STYLES=&SRS=EPSG:3857&BBOX=' + bboxToken + '&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true';
+    }
+    var VCExportLayer = L.TileLayer.extend({
+      options: {
+        minZoom: 1, maxZoom: 22, tileSize: 256, px: 512, base: '', tail: '',
+        errorTileUrl: VC_BLANK, updateWhenIdle: true, updateWhenZooming: false, keepBuffer: 1
+      },
+      getTileUrl: function (c) {
+        var W = 40075016.685578488, half = W / 2;
+        var span = W / Math.pow(2, c.z);            // tileSize is 256 => one tile per grid cell
+        var xmin = -half + c.x * span, ymax = half - c.y * span;
+        return this.options.base + '?bbox=' + xmin + ',' + (ymax - span) + ',' + (xmin + span) + ',' + ymax + this.options.tail;
+      }
+    });
+    // def is a catalog entry (or anything with kind/svc/root/showLayers)
+    function vcExport(def, opts) {
+      opts = opts || {};
+      var px = opts.px || 512, transparent = opts.transparent !== false;
+      return new VCExportLayer(null, Object.assign({
+        base: vcExportBase(def), tail: vcExportTail(def, transparent, px), px: px, attribution: def.attr || VC_ATTR
+      }, opts));
+    }
+    function vcXYZDef(def, opts) {
+      return L.tileLayer(vcSvcBase(def) + '/tile/{z}/{y}/{x}', Object.assign({
+        attribution: def.attr || VC_ATTR, minZoom: 1, maxZoom: 22, maxNativeZoom: def.maxNative || 21,
+        errorTileUrl: VC_BLANK, updateWhenIdle: true, updateWhenZooming: false, keepBuffer: 2
+      }, opts || {}));
+    }
+    function vcWms(def, opts) {
+      return L.tileLayer.wms(def.url, Object.assign({
+        layers: def.layers, format: 'image/png', transparent: true, version: '1.1.1', uppercase: true,
+        attribution: def.attr || VC_ATTR, errorTileUrl: VC_BLANK, updateWhenIdle: true, updateWhenZooming: false, keepBuffer: 1
+      }, opts || {}));
+    }
+
+    // ---- the catalog ----------------------------------------------------
+    var VC_BASES = [
+      { id: 'esri',  label: '🛰️ Satellite (Esri)',   note: 'global, always current', ready: satelliteLayer },
+      { id: 'gsat',  label: '🛰️ Satellite (Google)',  note: '',                      ready: googleSatLayer },
+      { id: 'osm',   label: '🗺️ Street map',          note: '',                      ready: osmLayer },
+      // every county flight on file, oldest first - driven by the year slider
+      { id: '1945',   year: 1945, when: '1945',     note: 'the oldest flight on file', kind: 'export', svc: 'SDs/1945Aerial' },
+      { id: '2000',   year: 2000, when: 'Apr 2000', note: '', kind: 'export', svc: 'SDs/2000AprAerial' },
+      { id: '2001',   year: 2001, when: 'Dec 2001', note: '', kind: 'export', svc: 'SDs/2001DecAerial' },
+      { id: '2002',   year: 2002, when: 'Oct 2002', note: '', kind: 'export', svc: 'SDs/2002OctAerial' },
+      { id: '2003',   year: 2003, when: 'Jan 2003', note: '', kind: 'export', svc: 'SDs/2003JanAerial' },
+      { id: '2004',   year: 2004, when: 'Sep 2004', note: '', kind: 'export', svc: 'SDs/2004SepAerial' },
+      { id: '2005',   year: 2005, when: 'Sep 2005', note: '', kind: 'export', svc: 'SDs/2005SepAerial' },
+      { id: '2006',   year: 2006, when: 'Jun 2006', note: '', kind: 'export', svc: 'SDs/2006JunAerial' },
+      { id: '2007',   year: 2007, when: 'Jul 2007', note: '', kind: 'export', svc: 'SDs/2007JulAerial' },
+      { id: '2008',   year: 2008, when: 'Apr 2008', note: '', kind: 'export', svc: 'SDs/2008AprAerial' },
+      { id: '2009',   year: 2009, when: 'Apr 2009', note: '', kind: 'export', svc: 'SDs/2009AprAerial' },
+      { id: '2010',   year: 2010, when: 'Dec 2010', note: '', kind: 'export', svc: 'SDs/2010DecAerial' },
+      { id: '2011',   year: 2011, when: 'Dec 2011', note: '', kind: 'export', svc: 'SDs/2011DecAerial' },
+      { id: '2012',   year: 2012, when: 'Dec 2012', note: '', kind: 'export', svc: 'SDs/2012DecAerial' },
+      { id: '2014',   year: 2014, when: 'Feb 2014', note: '', kind: 'export', svc: 'SDs/2014FebAerial' },
+      { id: '2015',   year: 2015, when: 'Dec 2015', note: '', kind: 'export', svc: 'SDs/2015DecAerial' },
+      { id: '2016m',  year: 2016, when: 'Mar 2016', note: '', kind: 'export', svc: 'SDs/2016MarAerial' },
+      { id: '2016',   year: 2016, when: 'Dec 2016', note: '', kind: 'export', svc: 'SDs/2016DecAerial' },
+      { id: '2017',   year: 2017, when: 'Oct 2017', note: 'weeks before the Thomas Fire', kind: 'export', svc: 'SDs/2017OctAerial' },
+      { id: '2018',   year: 2018, when: 'Oct 2018', note: '', kind: 'export', svc: 'SDs/2018OctAerial' },
+      { id: '2018f',  year: 2018, when: 'Nov 2018', note: 'post-Thomas-Fire flight — burn area only', kind: 'export', svc: 'SDs/2018NovDecPostFireAerial' },
+      { id: '2019v',  year: 2019, when: 'Apr 2019', note: 'Vexcel', kind: 'export', svc: 'SDs/2019MarAprVexcelAerial' },
+      { id: '2019',   year: 2019, when: 'Dec 2019', note: '', kind: 'export', svc: 'SDs/2019DecAerial' },
+      { id: '2020',   year: 2020, when: '2020',     note: '3 in Vexcel', kind: 'export', svc: 'SDs/2020Vexcel3Inch2' },
+      { id: '2021',   year: 2021, when: '2021',     note: '3 in Vexcel — sharpest', kind: 'export', svc: 'SDs/2021Vexcel3Inch' },
+      { id: '2022v',  year: 2022, when: '2022',     note: '3 in Vexcel', kind: 'export', svc: 'SDs/2022Vexcel3Inch' },
+      { id: '2022',   year: 2022, when: '2022',     note: 'full county', kind: 'export', svc: 'SDs/2022FullCountyAerial' },
+      { id: '2023u',  year: 2023, when: '2023',     note: 'urban · developed areas only', kind: 'xyz', svc: 'SDs/2023UrbanAerial' },
+      { id: '2023',   year: 2023, when: '2023',     note: 'countywide', kind: 'xyz', svc: 'SDs/2023CountyWideAerial' },
+      { id: '2024u',  year: 2024, when: '2024',     note: 'urban · developed areas only', kind: 'xyz', svc: 'SDs/2024UrbanAerial' },
+      { id: '2024',   year: 2024, when: '2024',     note: 'countywide', kind: 'xyz', svc: 'SDs/2024CountyWideAerial' },
+      { id: '2025',   year: 2025, when: '2025',     note: '3 in · developed areas', kind: 'xyz', svc: 'SDs/2025UrbanAerial' }
+    ];
+    var VC_FLIGHTS = VC_BASES.filter(function (b) { return b.year; });
+    var vcLastFlight = '2024';
+
+    // ---- the layer library (V0.25) ---------------------------------------
+    // Every entry is fetched live from the agency's own map server the moment
+    // it is switched on — nothing is copied, nothing goes stale. group files
+    // it in the panel, z fixes the draw order (fills low, lines high, labels
+    // top), src/srcUrl credit the publisher in the legend.
+    var R_CGS  = 'https://gis.conservation.ca.gov/server/rest/services/';
+    var R_USGS = 'https://basemap.nationalmap.gov/arcgis/rest/services/';
+    var R_FEMA = 'https://hazards.fema.gov/arcgis/rest/services/';
+    var R_NHD  = 'https://hydro.nationalmap.gov/arcgis/rest/services/';
+    var R_QF   = 'https://earthquake.usgs.gov/arcgis/rest/services/';
+    var R_BLM  = 'https://gis.blm.gov/arcgis/rest/services/';
+    var R_DWR  = 'https://gis.water.ca.gov/arcgis/rest/services/';
+    var R_HIST = 'https://historical1.arcgis.com/arcgis/rest/services/';
+    var S_VC   = 'Ventura County GIS', S_CGS = 'California Geological Survey', S_USGS = 'USGS', S_FEMA = 'FEMA', S_BLM = 'Bureau of Land Management';
+
+    var VC_GROUPS = [
+      { id: 'county',  icon: '🏛️', label: 'County & parcels',        note: 'what the county planner sees — parcels, zoning, contours, the survey' },
+      { id: 'terrain', icon: '🗻', label: 'Terrain & historic maps', note: 'USGS relief, today’s topo, and every USGS edition of this ground back to 1903' },
+      { id: 'geo',     icon: '⛏️', label: 'Geology & minerals',      note: 'what is under the ground — rock units, mineral studies, mines, oil & gas' },
+      { id: 'seismic', icon: '🌋', label: 'Faults & earthquakes',    note: 'every mapped fault, the regulated Alquist-Priolo traces, the historical shocks' },
+      { id: 'ground',  icon: '🪨', label: 'Landslides & soils',      note: 'slope stability, slides mapped in the field, the soil survey, farmland grades' },
+      { id: 'water',   icon: '💧', label: 'Water & flood',           note: 'FEMA flood zones, every named creek, groundwater basins' },
+      { id: 'land',    icon: '📏', label: 'Ownership & survey grid', note: 'who holds the land around you, and the township grid every deed refers to' }
+    ];
+
+    // the historic USGS topo editions on file over the Ojai valley (newest edition on or before the year is drawn)
+    var VC_HIST_YEARS = [1903, 1947, 1952, 1964, 1967, 1988, 1995];
+    var VC_HIST_NOTES = {
+      1903: '15-minute Santa Paula sheet — surveyed 1901–02, the first map of this ground',
+      1947: '15-minute sheet, 1947 revision',
+      1952: 'first 7.5-minute Ojai quad — aerial photos 1947',
+      1964: '15-minute sheet, 1964 edition',
+      1967: '7.5-minute Ojai quad, 1967 edition',
+      1988: '7.5-minute Ojai quad, 1988 edition — photos 1984',
+      1995: '7.5-minute Ojai quad, 1995 — the last paper edition'
+    };
+    var vcHistYear = 1952;
+    function vcHistRule() {
+      return '&mosaicRule=' + encodeURIComponent(JSON.stringify({
+        mosaicMethod: 'esriMosaicAttribute', sortField: 'DateCurrent', sortValue: String(vcHistYear), ascending: false,
+        where: 'DateCurrent <= ' + vcHistYear + ' AND Map_Scale <= 62500'
+      }));
+    }
+
+    var VC_OVERLAYS = [
+      // —— county & parcels ————————————————————————————————————————————————
+      { id: 'topo',    group: 'county', label: '⛰️ Topo contours',     note: 'county contours — 100 ft, 20 ft then 5 ft as you zoom in', svc: 'SDs/Topography', op: 0.92, z: 350, src: S_VC, minZoom: 16, farNote: 'zoom in closer to see the contours',
+        legendText: 'Contour lines — each one a fixed step in elevation: 100 ft far out, 20 ft, then 5 ft up close. With contours on, click anywhere on the land to read its real elevation (USGS 3DEP, 1 m).' },
+      { id: 'survey',  group: 'county', label: '📐 Survey sheet — Sulphur Mtn', note: 'Henry Land Surveying, Nov 2024 · 1 ft contours, structures, fences, poles · the surveyed boundary with every bearing, the 16 ft easement and the found monuments', kind: 'image', url: '/images/sulphur-mountain/survey/topo-survey-overlay.png', bounds: [[34.4315996, -119.1582952], [34.4336893, -119.1546039]], vector: '/api/survey/sulphur-mountain', op: 0.88, z: 360, src: 'Henry Land Surveying · record map 14-PM-15', srcUrl: 'https://maps.ventura.org/recordmaps/pm/014/014pm015.pdf',
+        legendText: 'The survey sheet, registered to its own surveyed corners (within about 0.3 m on the parcel body). Hover the dashed cyan boundary for each bearing and distance; amber is the 16 ft access easement; white dots are the monuments the surveyor found.' },
+      { id: 'bldg',    group: 'county', label: '🏚️ Building footprints', note: 'every structure standing today, mapped by the county', svc: 'DataDownloads/CommonData', showLayers: '0', op: 0.95, z: 330, src: S_VC },
+      { id: 'parcels', group: 'county', label: '▦ Parcel lines',       note: 'official assessor boundaries', svc: 'SDs/Parcels', op: 0.95, z: 345, src: S_VC },
+      { id: 'apn',     group: 'county', label: '# APN + acreage labels', note: '', svc: 'SDs/ParcelLabels', showLayers: '0,2', op: 0.95, z: 370, src: S_VC },
+      { id: 'recmaps', group: 'county', label: '🗂️ Recorded maps index', note: 'every recorded parcel map, tract and record of survey — the sheets a surveyor starts from', svc: 'DataDownloads/Survey', showLayers: '4', op: 0.55, z: 331, src: S_VC + ' · Surveyor', srcUrl: 'https://maps.ventura.org/recordmaps/' },
+      { id: 'zoning',  group: 'county', label: '⬛ Zoning',            note: 'base zone designations', svc: 'SDs/MyZoning', showLayers: '0', op: 0.5, z: 305, src: S_VC + ' · Planning' },
+      { id: 'ovz',     group: 'county', label: '🦌 Overlay zones',     note: 'habitat corridors, wildlife passage, Ojai dark sky', svc: 'SDs/OverlayZones', op: 0.45, z: 306, src: S_VC + ' · Planning' },
+      { id: 'habitat', group: 'county', label: '🌿 Habitat & sensitive areas', note: 'ESHA, habitat connectivity, wildlife corridors', svc: 'SDs/CV_PlanningGIS', showLayers: '3,4,6', op: 0.42, z: 307, src: S_VC + ' · Planning' },
+      { id: 'water',   group: 'county', label: '🏞️ Creeks & surface water', note: 'county drainage lines', svc: 'SDs/CV_PlanningGIS', showLayers: '8', op: 0.8, z: 338, src: S_VC },
+      { id: 'flood',   group: 'county', label: '💧 County floodplain', note: '100-year and 500-year, county mapping', svc: 'SDs/PWA_Floodplain', op: 0.45, z: 321, src: S_VC + ' · Public Works' },
+      { id: 'fire',    group: 'county', label: '🔥 CalFire SRA',       note: 'state fire responsibility area', svc: 'SDs/PWACalFireSRA', op: 0.35, z: 308, src: S_VC + ' · CAL FIRE' },
+      // —— terrain & historic maps ————————————————————————————————————————
+      { id: 'shade',    group: 'terrain', label: '🗻 Hillshade relief',   note: 'USGS 3DEP shaded relief — the lay of the land without leaving 2D', root: R_USGS, svc: 'USGSShadedReliefOnly', kind: 'export', op: 0.55, z: 302, src: S_USGS + ' 3DEP', srcUrl: 'https://www.usgs.gov/3d-elevation-program', attr: 'USGS',
+        legendText: 'Light from the north-west; brighter slopes face the light, darker slopes fall away from it. Turn it on under any base to make the terrain read.' },
+      { id: 'usgstopo', group: 'terrain', label: '🗺️ USGS topo (today)', note: 'the current US Topo — contours, trails, place names', root: R_USGS, svc: 'USGSTopo', kind: 'xyz', maxNative: 16, op: 0.85, z: 304, src: S_USGS + ' The National Map', srcUrl: 'https://www.usgs.gov/programs/national-geospatial-program/us-topo-maps-america', attr: 'USGS',
+        legendText: 'The standard USGS quadrangle style: brown contours, blue water, green woodland, black culture. Drawn to about 1:24,000.' },
+      { id: 'histtopo', group: 'terrain', label: '📜 Historic USGS topo', note: 'every USGS edition of this ground since 1903 — drag the year', root: R_HIST, svc: 'USA_Historical_Topo_Maps', kind: 'imgsvc', extra: vcHistRule, op: 0.85, z: 306, src: S_USGS + ' Historical Topographic Map Collection · Esri Living Atlas', srcUrl: 'https://www.usgs.gov/programs/national-geospatial-program/historical-topographic-maps-preserving-past', attr: 'USGS / Esri',
+        legendText: 'Scanned and georeferenced USGS sheets. The slider picks the newest edition published on or before that year at 1:62,500 or larger — old sheets are hand-drawn, so expect roads and creeks to sit a few metres off today’s imagery.' },
+      // —— geology & minerals —————————————————————————————————————————————
+      { id: 'geology',  group: 'geo', label: '🪨 Geologic map',       note: 'rock units, contacts, folds — Geologic Map of California (CGS, 2010)', root: R_CGS, svc: 'CGS/Geologic_Map_of_California', kind: 'export', op: 0.55, z: 310, src: S_CGS, srcUrl: 'https://maps.conservation.ca.gov/cgs/gmc/', attr: 'CGS' },
+      { id: 'quat',     group: 'geo', label: '🏜️ Quaternary deposits', note: 'the young surface — alluvium, fans, terraces, landslide debris (CGS)', root: R_CGS, svc: 'CGS/QuaternarySurficialDepositsSouthernCA', kind: 'export', px: 256, maxZoom: 13, nearNote: 'CGS drew this at 1:36,000 and wider — it softens as you zoom in closer', op: 0.55, z: 311, src: S_CGS, srcUrl: 'https://www.conservation.ca.gov/cgs', attr: 'CGS' },
+      { id: 'minerals', group: 'geo', label: '⛏️ Mineral land classification', note: 'CGS mineral studies, production areas and classification reports · geothermal springs and wells', root: R_CGS, svc: 'CGS/IW_MineralResourcesProgram', kind: 'export', showLayers: '0,1,2,3,4,7,10', op: 0.6, z: 312, src: S_CGS + ' Mineral Resources Program', srcUrl: 'https://www.conservation.ca.gov/cgs/minerals', attr: 'CGS' },
+      { id: 'mines',    group: 'geo', label: '🚧 Active mines',        note: 'permitted surface mines — Mines Online, Division of Mine Reclamation', root: R_CGS, svc: 'MOL/MOLMines', kind: 'export', op: 0.95, z: 336, src: 'CA Division of Mine Reclamation', srcUrl: 'https://maps.conservation.ca.gov/mol/', attr: 'DMR' },
+      { id: 'wells',    group: 'geo', label: '🛢️ Oil & gas wells',     note: 'every CalGEM well — active, idle, plugged (the Ojai oil field is next door)', root: R_CGS, svc: 'WellSTAR/Wells', kind: 'export', op: 0.95, z: 337, src: 'CalGEM WellSTAR', srcUrl: 'https://www.conservation.ca.gov/calgem', attr: 'CalGEM' },
+      { id: 'radon',    group: 'geo', label: '☢️ Radon potential',     note: 'CGS radon potential zones', root: R_CGS, svc: 'CGS/RadonPotentialZones', kind: 'export', op: 0.45, z: 313, src: S_CGS, srcUrl: 'https://www.conservation.ca.gov/cgs/radon', attr: 'CGS' },
+      // —— faults & earthquakes ——————————————————————————————————————————
+      { id: 'faults',  group: 'seismic', label: '🌋 Fault activity map',  note: 'every mapped fault, colored by how recently it moved (CGS, 2010)', root: R_CGS, svc: 'CGS/FaultActivityMapCA', kind: 'export', px: 256, maxZoom: 12, nearNote: 'a regional map, drawn at 1:150,000 — softens as you zoom in; for close work use Alquist-Priolo and USGS Quaternary faults', op: 0.95, z: 340, src: S_CGS + ' Fault Activity Map', srcUrl: 'https://maps.conservation.ca.gov/cgs/fam/', attr: 'CGS' },
+      { id: 'ap',      group: 'seismic', label: '⚠️ Alquist-Priolo fault traces', note: 'state-regulated surface-rupture traces — habitable buildings need a fault study and a 50 ft setback', root: R_CGS, svc: 'CGS_Earthquake_Hazard_Zones/SHP_Fault_Traces', kind: 'export', op: 0.95, z: 342, src: S_CGS + ' Seismic Hazards Program', srcUrl: 'https://www.conservation.ca.gov/cgs/alquist-priolo', attr: 'CGS' },
+      { id: 'qfaults', group: 'seismic', label: '〰️ USGS Quaternary faults', note: 'national Quaternary fault and fold database, 2014 hazard model', root: R_QF, svc: 'haz/hazfaults2014', kind: 'export', op: 0.9, z: 341, src: S_USGS + ' Earthquake Hazards Program', srcUrl: 'https://www.usgs.gov/programs/earthquake-hazards/faults', attr: 'USGS' },
+      { id: 'nshm',    group: 'seismic', label: '📈 Fault slip rates',    note: 'preferred slip rate on each fault — 2023 National Seismic Hazard Model', root: R_CGS, svc: 'CGS/MS48_NSHM2023_Faults', kind: 'export', op: 0.9, z: 341, src: S_CGS + ' Map Sheet 48', attr: 'CGS' },
+      { id: 'quakes',  group: 'seismic', label: '💥 Historical earthquakes M3+', note: 'every recorded shock of magnitude 3 and up (CGS catalog)', root: R_CGS, svc: 'CGS/CA_HistEQs_M3Plus', kind: 'export', op: 0.9, z: 343, src: S_CGS, attr: 'CGS' },
+      // —— landslides & soils ———————————————————————————————————————————
+      { id: 'lssusc',  group: 'ground', label: '⛰️ Landslide susceptibility', note: 'CGS Map Sheet 58 — slope and rock strength ranked 0 to X', root: R_CGS, svc: 'CGS/MS58_LandslideSusceptibility_Classes', kind: 'export', px: 256, maxZoom: 13, nearNote: 'CGS drew this at 1:36,000 and wider — it softens as you zoom in closer', op: 0.55, z: 314, src: S_CGS + ' Map Sheet 58', srcUrl: 'https://www.conservation.ca.gov/cgs/landslides', attr: 'CGS' },
+      { id: 'lsinv',   group: 'ground', label: '🪨 Mapped landslides',   note: 'CGS landslide inventory — deposits, scarps and source areas actually mapped in the field', op: 0.8, z: 335, src: S_CGS + ' Landslide Inventory', srcUrl: 'https://www.conservation.ca.gov/cgs/landslides', attr: 'CGS',
+        parts: [
+          { root: R_CGS, svc: 'CGS/LandslideInventory_DC1_Older', kind: 'export' },
+          { root: R_CGS, svc: 'CGS/LandslideInventory_DC1_Younger', kind: 'export' },
+          { root: R_CGS, svc: 'CGS/LandslideInventory_DC2', kind: 'export' },
+          { root: R_CGS, svc: 'CGS/LandslideInventory_DC3', kind: 'export' }
+        ] },
+      { id: 'soils',   group: 'ground', label: '🌱 Soil survey (SSURGO)', note: 'USDA NRCS soil map units — the dossier names the unit under each property', kind: 'wms', url: 'https://SDMDataAccess.sc.egov.usda.gov/Spatial/SDM.wms', layers: 'mapunitpoly', op: 0.7, z: 315, src: 'USDA NRCS Soil Survey', srcUrl: 'https://websoilsurvey.nrcs.usda.gov/', attr: 'USDA NRCS',
+        legendText: 'Each outlined area is one soil map unit; the code inside it (e.g. 190, "Sespe–Castaic") is what the county and the septic engineer look up. Open the dossier for the unit under the property.' },
+      { id: 'farmland', group: 'ground', label: '🌾 Important farmland', note: 'Prime · Statewide · Unique · Local · Grazing — Farmland Mapping 2022', root: R_CGS, svc: 'DLRP/CaliforniaImportantFarmland_2022', kind: 'xyz', maxNative: 16, op: 0.55, z: 316, src: 'CA Dept of Conservation · Farmland Mapping & Monitoring', srcUrl: 'https://www.conservation.ca.gov/dlrp/fmmp', attr: 'CA DOC' },
+      { id: 'williamson', group: 'ground', label: '📜 Williamson Act', note: 'agricultural preserve contracts — lower taxes, restricted use', root: R_CGS, svc: 'DLRP/CaliforniaWilliamsonActEnrollment_2025', kind: 'export', showLayers: '9', op: 0.5, z: 317, src: 'CA Dept of Conservation · Williamson Act 2025', srcUrl: 'https://www.conservation.ca.gov/dlrp/wa', attr: 'CA DOC' },
+      // —— water & flood ——————————————————————————————————————————————
+      { id: 'nfhl',    group: 'water', label: '🌊 FEMA flood zones',   note: 'the National Flood Hazard Layer — A / AE / X zones and base flood elevations', root: R_FEMA, svc: 'public/NFHL', kind: 'export', showLayers: '28,27,16', op: 0.55, z: 320, src: S_FEMA + ' National Flood Hazard Layer', srcUrl: 'https://msc.fema.gov/portal/home', attr: 'FEMA' },
+      { id: 'nhd',     group: 'water', label: '🏞️ Streams & waterbodies', note: 'National Hydrography Dataset — every named creek and drainage', root: R_NHD, svc: 'nhd', kind: 'export', op: 0.9, z: 339, src: S_USGS + ' National Hydrography Dataset', srcUrl: 'https://www.usgs.gov/national-hydrography', attr: 'USGS' },
+      { id: 'gwbasin', group: 'water', label: '🕳️ Groundwater basins', note: 'DWR Bulletin 118 basins and subbasins', root: R_DWR, svc: 'Geoscientific/i08_B118_CA_GroundwaterBasins', kind: 'export', op: 0.4, z: 318, src: 'CA Dept of Water Resources · Bulletin 118', srcUrl: 'https://water.ca.gov/programs/groundwater-management/bulletin-118', attr: 'CA DWR' },
+      // —— ownership & survey grid ————————————————————————————————————————
+      { id: 'blm',     group: 'land', label: '🏕️ Public land ownership', note: 'Forest Service, BLM, Park Service and other federal land', root: R_BLM, svc: 'lands/BLM_Natl_SMA_Cached_without_PriUnk', kind: 'xyz', maxNative: 16, op: 0.5, z: 319, src: S_BLM + ' Surface Management Agency', srcUrl: 'https://gbp-blm-egis.hub.arcgis.com/', attr: 'BLM' },
+      { id: 'plss',    group: 'land', label: '📐 Township · range · section', note: 'the PLSS grid every legal description refers to (BLM CadNSDI)', root: R_BLM, svc: 'Cadastral/BLM_Natl_PLSS_CadNSDI', kind: 'export', op: 0.85, z: 339, src: S_BLM + ' Cadastral NSDI', srcUrl: 'https://gbp-blm-egis.hub.arcgis.com/', attr: 'BLM' }
+    ];
+
+    var vcBaseCache = {}, vcOverlayCache = {};
+    var vcActiveBase = 'esri';
+    var vcActiveOverlays = {};
+    var vcTopoOpacity = 0.92;
+
+    function vcBaseLayer(def) {
+      if (def.ready) return def.ready;
+      if (!vcBaseCache[def.id]) {
+        vcBaseCache[def.id] = vcTrackLoading(def.kind === 'xyz'
+          ? vcXYZ(def.svc)
+          : vcExport(def, { transparent: false, px: 512 }));
+      }
+      return vcBaseCache[def.id];
+    }
+    // the surveyed boundary as drawn on the sheet: one segment per call so each carries its bearing
+    // and distance, the 16 ft access easement, and the monuments the surveyor actually found
+    function vcSurveyVectors(def, group) {
+      if (def._vecLoaded) return;
+      def._vecLoaded = true;
+      fetch(def.vector).then(function (r) { return r.json(); }).then(function (s) {
+        def._vec = s;
+        var ring = (s.corners || []).map(function (c) { return c.latlng; });
+        for (var i = 0; i < ring.length; i++) {
+          var call = (s.calls || [])[i];
+          L.polyline([ring[i], ring[(i + 1) % ring.length]], { color: '#7ff0ff', weight: 3, opacity: 0.95, dashArray: '10 7', lineCap: 'butt' })
+            .bindTooltip(call ? (call.bearing + ' · ' + Number(call.distance_ft).toFixed(2) + ' ft') : 'surveyed line', { sticky: true, className: 'vc-survey-tip' })
+            .addTo(group);
+        }
+        (s.easement16 || []).forEach(function (poly) {
+          L.polygon(poly, { color: '#ffc24d', weight: 1, opacity: 0.9, fillColor: '#ffc24d', fillOpacity: 0.28 })
+            .bindTooltip('16 ft access easement — as drawn on the survey', { sticky: true, className: 'vc-survey-tip' })
+            .addTo(group);
+        });
+        (s.monuments || []).forEach(function (mo) {
+          L.circleMarker(mo.at, { radius: 5, color: '#ffffff', weight: 2, fillColor: '#7ff0ff', fillOpacity: 1 })
+            .bindTooltip(mo.label, { className: 'vc-survey-tip' })
+            .addTo(group);
+        });
+        if (window.vcSync3DLayers) window.vcSync3DLayers();
+      }).catch(function (e) { console.warn('survey vectors:', e); });
+    }
+    // per-layer opacity: user setting wins, then the catalog default; topo keeps its own slider
+    var vcOverlayOp = {};
+    function vcOvOpacity(def) {
+      if (vcOverlayOp[def.id] != null) return vcOverlayOp[def.id];
+      if (def.id === 'topo') return vcTopoOpacity;
+      return def.op || 0.9;
+    }
+    // one raster for one def (never a parts def) — the transport is chosen by kind
+    function vcRasterFor(def, opacity, zIndex) {
+      var o = { opacity: opacity, pane: 'vcOverlayPane', zIndex: zIndex };
+      if (def.kind === 'xyz') return vcTrackLoading(vcXYZDef(def, o));
+      if (def.kind === 'wms') return vcTrackLoading(vcWms(def, o));
+      // scale-limited services (CGS regional sheets) are requested at their native scale and overzoomed from there
+      if (def.maxZoom) o.maxNativeZoom = def.maxZoom;
+      return vcTrackLoading(vcExport(def, Object.assign({ transparent: true, px: def.px || 512 }, o)));
+    }
+    function vcOverlayLayer(def) {
+      if (!vcOverlayCache[def.id]) {
+        var op = vcOvOpacity(def), z = def.z || 300;
+        if (def.kind === 'image') {
+          var scan = L.imageOverlay(def.url, def.bounds, {
+            opacity: op,
+            pane: 'vcOverlayPane',
+            interactive: false,
+            className: 'vc-scan',
+            zIndex: z,
+            alt: 'Recorded topographic survey traced onto the map'
+          });
+          var grp = L.layerGroup([scan]);
+          if (def.vector) vcSurveyVectors(def, grp);
+          vcOverlayCache[def.id] = grp;
+          return grp;
+        }
+        if (def.parts) {
+          vcOverlayCache[def.id] = L.layerGroup(def.parts.map(function (p) { return vcRasterFor(p, op, z); }));
+          return vcOverlayCache[def.id];
+        }
+        vcOverlayCache[def.id] = vcRasterFor(def, op, z);
+      }
+      return vcOverlayCache[def.id];
+    }
+    // every raster inside a cached overlay (a plain tile layer, or the rasters of a group)
+    function vcRastersOf(lyr) {
+      if (!lyr) return [];
+      if (lyr.setOpacity && !(lyr instanceof L.Path)) return [lyr];
+      var out = [];
+      if (lyr.eachLayer) lyr.eachLayer(function (l) { if (l.setOpacity && !(l instanceof L.Path)) out.push(l); });
+      return out;
+    }
+    function vcSetOverlayOpacity(id, v) {
+      var def = vcDefById(VC_OVERLAYS, id);
+      if (!def) return;
+      vcOverlayOp[id] = v;
+      if (id === 'topo') { vcTopoOpacity = v; var t = document.getElementById('lp-topo-op'); if (t && Math.abs(parseInt(t.value, 10) / 100 - v) > 0.011) t.value = Math.round(v * 100); }
+      vcRastersOf(vcOverlayCache[id]).forEach(function (l) { l.setOpacity(v); });
+      var m = window.earth3dRef;
+      if (m && m.getLayer) {
+        var ids = ['vc-ov-' + id];
+        (def.parts || []).forEach(function (_, i) { ids.push('vc-ov-' + id + '-p' + i); });
+        ids.forEach(function (lid) { try { if (m.getLayer(lid)) m.setPaintProperty(lid, 'raster-opacity', v); } catch (e) {} });
+      }
+      try { localStorage.setItem('ojaiMapOverlayOp', JSON.stringify(vcOverlayOp)); } catch (e) {}
+    }
+    // the historic-topo year changed: rebuild that one layer, new above old, old removed once the new has drawn
+    function vcSetHistYear(year, immediate) {
+      year = Number(year);
+      if (VC_HIST_YEARS.indexOf(year) < 0) return;
+      var big = document.getElementById('lp-hist-big'), lab = document.getElementById('lp-hist-label');
+      if (big) big.textContent = year;
+      if (lab) lab.textContent = VC_HIST_NOTES[year] || '';
+      clearTimeout(vcHistTimer);
+      var apply = function () {
+        if (vcHistYear === year && vcOverlayCache['histtopo']) return;
+        vcHistYear = year;
+        try { localStorage.setItem('ojaiMapHistYear', String(year)); } catch (e) {}
+        var def = vcDefById(VC_OVERLAYS, 'histtopo');
+        var old = vcOverlayCache['histtopo'];
+        delete vcOverlayCache['histtopo'];
+        if (vcActiveOverlays['histtopo']) {
+          var nu = vcOverlayLayer(def);
+          if (nu.setZIndex) nu.setZIndex((def.z || 300) + 1);
+          nu.addTo(map);
+          var settle = function () { if (old && map.hasLayer(old)) map.removeLayer(old); if (nu.setZIndex) nu.setZIndex(def.z || 300); };
+          if (old && nu.once) { nu.once('load', settle); setTimeout(settle, 3500); } else settle();
+        } else if (old && map.hasLayer(old)) map.removeLayer(old);
+        vcSyncPanel();
+        if (window.vcSync3DLayers) window.vcSync3DLayers();
+      };
+      if (immediate) apply(); else vcHistTimer = setTimeout(apply, 180);
+    }
+    var vcHistTimer = null;
+    function vcDefById(list, id) {
+      for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+      return null;
+    }
+
+    var vcBaseSwapTimer = null;
+    function vcSetBase(id) {
+      var def = vcDefById(VC_BASES, id);
+      if (!def) return;
+      if (def.year) vcLastFlight = id;
+      var want = vcBaseLayer(def);
+      var stale = [];
+      for (var i = 0; i < VC_BASES.length; i++) {
+        var other = VC_BASES[i];
+        if (other.id === id) continue;
+        var lyr = other.ready || vcBaseCache[other.id];
+        if (lyr && map.hasLayer(lyr)) stale.push(lyr);
+      }
+      // the new imagery goes on top; the old stays underneath until the new has drawn,
+      // so scrubbing the year slider never flashes to blank
+      if (want.setZIndex) want.setZIndex(1);
+      if (!map.hasLayer(want)) want.addTo(map);
+      var settle = function () {
+        clearTimeout(vcBaseSwapTimer);
+        for (var k = 0; k < stale.length; k++) if (map.hasLayer(stale[k]) && stale[k] !== want) map.removeLayer(stale[k]);
+        if (want.setZIndex) want.setZIndex(0);
+      };
+      clearTimeout(vcBaseSwapTimer);
+      if (stale.length && want.once) { want.once('load', settle); vcBaseSwapTimer = setTimeout(settle, 3500); }
+      else settle();
+      vcActiveBase = id;
+      try { localStorage.setItem('ojaiMapBase', id); } catch (e) {}
+      vcSyncPanel();
+      if (window.vcSync3DLayers) window.vcSync3DLayers();
+    }
+    // the year slider: index into VC_FLIGHTS
+    var vcFlightTimer = null;
+    function vcFlightIndexOf(id) { for (var i = 0; i < VC_FLIGHTS.length; i++) if (VC_FLIGHTS[i].id === id) return i; return VC_FLIGHTS.length - 1; }
+    function vcFlightLabel(f) { return f.when + (f.note ? ' \u00b7 ' + f.note : ''); }
+    function vcSetFlight(idx, immediate) {
+      var f = VC_FLIGHTS[Math.max(0, Math.min(VC_FLIGHTS.length - 1, idx))];
+      var lab = document.getElementById('lp-year-label');
+      if (lab) lab.textContent = vcFlightLabel(f);
+      var big = document.getElementById('lp-year-big');
+      if (big) big.textContent = f.year;
+      clearTimeout(vcFlightTimer);
+      if (immediate) vcSetBase(f.id);
+      else vcFlightTimer = setTimeout(function () { vcSetBase(f.id); }, 160);
+    }
+
+    function vcToggleOverlay(id) {
+      var def = vcDefById(VC_OVERLAYS, id);
+      if (!def) return;
+      var lyr = vcOverlayLayer(def);
+      if (vcActiveOverlays[id]) {
+        delete vcActiveOverlays[id];
+        if (map.hasLayer(lyr)) map.removeLayer(lyr);
+      } else {
+        vcActiveOverlays[id] = true;
+        lyr.addTo(map);
+        if (lyr.setZIndex) lyr.setZIndex(def.z || 300);
+        // a regional sheet switched on while zoomed in tight: pull back so it can actually be seen
+        if (def.maxZoom && map.getZoom() > def.maxZoom + 1.5) map.flyTo(map.getCenter(), def.maxZoom + 0.5, { duration: 1.1 });
+        if (def.bounds) {
+          try {
+            var bb = L.latLngBounds(def.bounds);
+            if (!map.getBounds().intersects(bb)) map.fitBounds(bb, { padding: [50, 50] });
+          } catch (e) {}
+        }
+      }
+      try { localStorage.setItem('ojaiMapOverlays', JSON.stringify(Object.keys(vcActiveOverlays))); } catch (e) {}
+      vcSyncPanel();
+      if (window.vcSync3DLayers) window.vcSync3DLayers();
+    }
+
+    // ---- panel UI -------------------------------------------------------
+    function vcRow(kind, id, label, note, on, info) {
+      return '<div class="lp-row ' + kind + (on ? ' on' : '') + '" data-kind="' + kind + '" data-id="' + id + '">'
+        + '<span class="lp-dot"></span>'
+        + '<span class="lp-txt">' + label + (note ? '<span class="lp-note">' + note + '</span>' : '') + '</span>'
+        + (info ? '<span class="lp-info' + (vcPeek[id] ? ' on' : '') + '" data-info="' + id + '" title="legend, source and opacity">i</span>' : '')
+        + '</div>';
+    }
+    var vcPeek = {};        // layers whose legend is pinned open even while the layer is off
+    var vcSecOpen = {};     // remembered open/closed state per section
+    var vcLegendCache = {}; // id -> Promise<[{layer,label,img}]>
+    var vcLegendSig = '';
+    function vcHistBlock() {
+      var on = !!vcActiveOverlays['histtopo'], yi = VC_HIST_YEARS.indexOf(vcHistYear);
+      return '<div class="lp-years hist' + (on ? ' live' : '') + '">'
+        + '<div class="lp-year-head"><b id="lp-hist-big">' + vcHistYear + '</b><span id="lp-hist-label">' + (VC_HIST_NOTES[vcHistYear] || '') + '</span></div>'
+        + '<input type="range" id="lp-hist-year" min="0" max="' + (VC_HIST_YEARS.length - 1) + '" value="' + (yi < 0 ? 0 : yi) + '" step="1" aria-label="Historic topo edition year">'
+        + '<div class="lp-year-ticks"><span>1903</span><span>1952</span><span>1967</span><span>1995</span></div>'
+        + '</div>';
+    }
+    function vcBuildPanel() {
+      var body = document.getElementById('lp-body');
+      if (!body) return;
+      var h = '<div class="lp-group">Base imagery</div>';
+      for (var j = 0; j < VC_BASES.length; j++) {
+        var b = VC_BASES[j];
+        if (b.year) continue;
+        h += vcRow('radio', b.id, b.label, b.note, vcActiveBase === b.id);
+      }
+      var curDef = vcDefById(VC_BASES, vcActiveBase), onFlight = !!(curDef && curDef.year);
+      var fi = vcFlightIndexOf(onFlight ? vcActiveBase : vcLastFlight), fcur = VC_FLIGHTS[fi];
+      h += '<div class="lp-row radio lp-flight' + (onFlight ? ' on' : '') + '" data-kind="radio" data-id="' + fcur.id + '">'
+         + '<span class="lp-dot"></span>'
+         + '<span class="lp-txt">🛩️ County aerial flights<span class="lp-note">' + VC_FLIGHTS.length + ' flights, 1945 to 2025 — drag the year</span></span>'
+         + '</div>';
+      h += '<div class="lp-years' + (onFlight ? ' live' : '') + '">'
+         + '<div class="lp-year-head"><b id="lp-year-big">' + fcur.year + '</b><span id="lp-year-label">' + vcFlightLabel(fcur) + '</span></div>'
+         + '<input type="range" id="lp-year" min="0" max="' + (VC_FLIGHTS.length - 1) + '" value="' + fi + '" step="1" aria-label="Aerial flight year">'
+         + '<div class="lp-year-ticks"><span>1945</span><span>2005</span><span>2015</span><span>2025</span></div>'
+         + '</div>';
+
+      h += '<div class="lp-group">Layers</div>';
+      for (var g = 0; g < VC_GROUPS.length; g++) {
+        var grp = VC_GROUPS[g], defs = [], nOn = 0;
+        for (var i = 0; i < VC_OVERLAYS.length; i++) if (VC_OVERLAYS[i].group === grp.id) { defs.push(VC_OVERLAYS[i]); if (vcActiveOverlays[VC_OVERLAYS[i].id]) nOn++; }
+        var open = vcSecOpen[grp.id] != null ? vcSecOpen[grp.id] : (grp.id === 'county' || nOn > 0);
+        h += '<details class="lp-sec" data-sec="' + grp.id + '"' + (open ? ' open' : '') + '>'
+          + '<summary><span class="lp-sec-ico">' + grp.icon + '</span>'
+          + '<span class="lp-sec-txt">' + grp.label + '<span class="lp-note">' + grp.note + '</span></span>'
+          + '<span class="lp-sec-n" data-n="' + grp.id + '">' + (nOn ? nOn + ' on' : '') + '</span><span class="lp-sec-arrow"></span></summary>';
+        for (var d = 0; d < defs.length; d++) {
+          var o = defs[d];
+          h += vcRow('check', o.id, o.label, o.note, !!vcActiveOverlays[o.id], true);
+          if (o.id === 'topo') h += '<div class="lp-op">Topo opacity <input type="range" id="lp-topo-op" min="20" max="100" value="' + Math.round(vcTopoOpacity * 100) + '"></div>';
+          if (o.id === 'histtopo') h += vcHistBlock();
+        }
+        h += '</details>';
+      }
+      h += '<div class="lp-group">What you are looking at</div>';
+      h += '<div class="lp-legend" id="lp-legend-live"></div>';
+      body.innerHTML = h;
+
+      var yr = document.getElementById('lp-year');
+      if (yr) {
+        yr.addEventListener('input', function () { vcSetFlight(parseInt(this.value, 10), false); });
+        yr.addEventListener('change', function () { vcSetFlight(parseInt(this.value, 10), true); });
+        yr.addEventListener('click', function (e) { e.stopPropagation(); });
+      }
+      var hy = document.getElementById('lp-hist-year');
+      if (hy) {
+        hy.addEventListener('input', function () { vcSetHistYear(VC_HIST_YEARS[parseInt(this.value, 10)], false); });
+        hy.addEventListener('change', function () { vcSetHistYear(VC_HIST_YEARS[parseInt(this.value, 10)], true); });
+        hy.addEventListener('click', function (e) { e.stopPropagation(); });
+      }
+      var rows = body.querySelectorAll('.lp-row');
+      for (var k = 0; k < rows.length; k++) {
+        rows[k].addEventListener('click', function (e) {
+          if (e && e.target && e.target.closest && e.target.closest('.lp-info')) return;   // the i button has its own handler
+          var id = this.getAttribute('data-id');
+          if (this.classList.contains('lp-flight')) { vcSetFlight(vcFlightIndexOf(vcLastFlight), true); return; }
+          if (this.getAttribute('data-kind') === 'radio') vcSetBase(id); else vcToggleOverlay(id);
+        });
+      }
+      var secs = body.querySelectorAll('details.lp-sec');
+      for (var s = 0; s < secs.length; s++) {
+        secs[s].addEventListener('toggle', function () {
+          vcSecOpen[this.getAttribute('data-sec')] = this.open;
+          try { localStorage.setItem('ojaiMapSections', JSON.stringify(vcSecOpen)); } catch (e) {}
+        });
+      }
+      // one delegated handler for the legend affordances (they are re-rendered often)
+      body.addEventListener('click', function (e) {
+        var t = e.target.closest ? e.target.closest('.lp-info, .lp-lgb-x, .lp-lg-showall') : null;
+        if (!t) return;
+        e.stopPropagation(); e.preventDefault();
+        if (t.classList.contains('lp-info')) {
+          var id = t.getAttribute('data-info');
+          if (vcPeek[id]) delete vcPeek[id]; else vcPeek[id] = true;
+          vcSyncPanel(true);
+          var blk = body.querySelector('.lp-lgb[data-lg="' + id + '"]');
+          if (blk && blk.scrollIntoView) blk.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        } else if (t.classList.contains('lp-lgb-x')) {
+          delete vcPeek[t.getAttribute('data-x')];
+          vcSyncPanel(true);
+        } else if (t.classList.contains('lp-lg-showall')) {
+          var blk2 = t.closest('.lp-lgb'); if (blk2) { blk2.classList.toggle('all'); t.textContent = blk2.classList.contains('all') ? 'show fewer' : t.getAttribute('data-all'); }
+        }
+      });
+      body.addEventListener('input', function (e) {
+        var t = e.target;
+        if (t && t.classList && t.classList.contains('lp-op-in')) vcSetOverlayOpacity(t.getAttribute('data-op'), parseInt(t.value, 10) / 100);
+      });
+      vcUpdateTopoHint();
+      var op = document.getElementById('lp-topo-op');
+      if (op) op.addEventListener('input', function () { vcSetOverlayOpacity('topo', parseInt(this.value, 10) / 100); });
+      vcSyncPanel(true);
+    }
+    // ---- live legend: one block per layer that is on (or pinned with the i button) ----
+    function vcLegendFetch(def) {
+      if (vcLegendCache[def.id]) return vcLegendCache[def.id];
+      var parts = def.parts || [def];
+      vcLegendCache[def.id] = Promise.all(parts.map(function (p) {
+        if (p.kind === 'wms' || p.kind === 'imgsvc' || p.kind === 'image') return [];
+        var want = p.showLayers ? p.showLayers.split(',').map(Number) : null;
+        var base = vcSvcBase(p);
+        var meta = want ? Promise.resolve(null) : fetch(base + '?f=json').then(function (r) { return r.json(); }).catch(function () { return null; });
+        return Promise.all([fetch(base + '/legend?f=json').then(function (r) { return r.json(); }), meta]).then(function (res) {
+          var j = res[0], info = res[1], vis = null;
+          if (info && info.layers) {
+            // only the layers the service draws by default (a parent group must be visible too)
+            var byId = {}; info.layers.forEach(function (l) { byId[l.id] = l; });
+            vis = {};
+            info.layers.forEach(function (l) {
+              var ok = l.defaultVisibility !== false, par = l.parentLayerId;
+              while (ok && par != null && par >= 0 && byId[par]) { ok = byId[par].defaultVisibility !== false; par = byId[par].parentLayerId; }
+              if (ok && (!l.subLayerIds || !l.subLayerIds.length)) vis[l.id] = true;
+            });
+          }
+          var out = [], seen = {};
+          (j.layers || []).forEach(function (l) {
+            if (want && want.indexOf(l.layerId) < 0) return;
+            if (vis && !vis[l.layerId]) return;
+            (l.legend || []).forEach(function (e) {
+              var key = (e.label || l.layerName) + '|' + (e.imageData || '').slice(0, 64);
+              if (seen[key]) return; seen[key] = true;
+              out.push({ layer: l.layerName, label: e.label || l.layerName, img: 'data:' + (e.contentType || 'image/png') + ';base64,' + e.imageData });
+            });
+          });
+          return out;
+        }).catch(function () { return []; });
+      })).then(function (arrs) { return [].concat.apply([], arrs); });
+      return vcLegendCache[def.id];
+    }
+    function vcLegendBlock(def) {
+      var op = Math.round(vcOvOpacity(def) * 100);
+      return '<div class="lp-lgb" data-lg="' + def.id + '">'
+        + '<div class="lp-lgb-head"><b>' + def.label + '</b><span class="lp-lgb-x" data-x="' + def.id + '" title="hide this legend">✕</span></div>'
+        + (def.src ? '<div class="lp-src">' + def.src + (def.srcUrl ? ' · <a href="' + def.srcUrl + '" target="_blank" rel="noopener">source ↗</a>' : '') + '</div>' : '')
+        + (def.id === 'topo' ? '' : '<div class="lp-op">Opacity <input type="range" class="lp-op-in" data-op="' + def.id + '" min="10" max="100" value="' + op + '"></div>')
+        + '<div class="lp-lg-list" data-list="' + def.id + '">'
+        + (def.legendText ? '<div class="lp-lg">' + def.legendText + '</div>' : '<div class="lp-lg lp-lg-wait">loading the legend from ' + (def.src || 'the source') + '…</div>')
+        + '</div></div>';
+    }
+    function vcFillLegend(def) {
+      if (def.legendText) return;
+      vcLegendFetch(def).then(function (items) {
+        var box = document.querySelector('#lp-body .lp-lg-list[data-list="' + def.id + '"]');
+        if (!box) return;
+        if (!items.length) { box.innerHTML = '<div class="lp-lg">' + (def.note || 'no legend published for this layer') + '</div>'; return; }
+        var CAP = 24, h = '', last = null, multi = false;
+        for (var i = 1; i < items.length; i++) if (items[i].layer !== items[0].layer) { multi = true; break; }
+        items.forEach(function (it, i) {
+          var more = i >= CAP ? ' lp-lg-more' : '';
+          if (multi && it.layer !== last) { h += '<div class="lp-lg-sub' + more + '">' + it.layer + '</div>'; last = it.layer; }
+          h += '<div class="lp-lg' + more + '"><img src="' + it.img + '" alt="">' + it.label + '</div>';
+        });
+        if (items.length > CAP) h += '<div class="lp-lg-showall" data-all="show all ' + items.length + ' entries">show all ' + items.length + ' entries</div>';
+        box.innerHTML = h;
+      });
+    }
+    function vcRenderLegend(force) {
+      var live = document.getElementById('lp-legend-live');
+      if (!live) return;
+      var ids = [];
+      for (var i = 0; i < VC_OVERLAYS.length; i++) { var id = VC_OVERLAYS[i].id; if (vcActiveOverlays[id] || vcPeek[id]) ids.push(id); }
+      var sig = ids.join(',');
+      if (!force && sig === vcLegendSig) return;
+      vcLegendSig = sig;
+      if (!ids.length) { live.innerHTML = '<div class="lp-empty">Switch a layer on — its legend, its source and an opacity control appear here. The <b>i</b> on any row shows the legend without switching the layer on.</div>'; return; }
+      var h = '';
+      ids.forEach(function (id) { h += vcLegendBlock(vcDefById(VC_OVERLAYS, id)); });
+      live.innerHTML = h;
+      ids.forEach(function (id) { vcFillLegend(vcDefById(VC_OVERLAYS, id)); });
+    }
+    function vcSyncPanel(forceLegend) {
+      var body = document.getElementById('lp-body');
+      if (!body) return;
+      var rows = body.querySelectorAll('.lp-row');
+      var curDef = vcDefById(VC_BASES, vcActiveBase), onFlight = !!(curDef && curDef.year);
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i], id = r.getAttribute('data-id');
+        var on = r.classList.contains('lp-flight') ? onFlight
+          : (r.getAttribute('data-kind') === 'radio' ? (vcActiveBase === id) : !!vcActiveOverlays[id]);
+        r.classList.toggle('on', on);
+        var inf = r.querySelector('.lp-info'); if (inf) inf.classList.toggle('on', !!vcPeek[id]);
+      }
+      var yrs = body.querySelector('.lp-years:not(.hist)'); if (yrs) yrs.classList.toggle('live', onFlight);
+      var yr = document.getElementById('lp-year');
+      if (yr && onFlight) { var fi = vcFlightIndexOf(vcActiveBase); if (parseInt(yr.value, 10) !== fi) yr.value = fi;
+        var big = document.getElementById('lp-year-big'), lab = document.getElementById('lp-year-label');
+        if (big) big.textContent = VC_FLIGHTS[fi].year; if (lab) lab.textContent = vcFlightLabel(VC_FLIGHTS[fi]); }
+      var hys = body.querySelector('.lp-years.hist'); if (hys) hys.classList.toggle('live', !!vcActiveOverlays['histtopo']);
+      var hy = document.getElementById('lp-hist-year');
+      if (hy) { var hi = VC_HIST_YEARS.indexOf(vcHistYear); if (hi >= 0 && parseInt(hy.value, 10) !== hi) hy.value = hi; }
+      for (var g = 0; g < VC_GROUPS.length; g++) {
+        var n = 0;
+        for (var k = 0; k < VC_OVERLAYS.length; k++) if (VC_OVERLAYS[k].group === VC_GROUPS[g].id && vcActiveOverlays[VC_OVERLAYS[k].id]) n++;
+        var badge = body.querySelector('.lp-sec-n[data-n="' + VC_GROUPS[g].id + '"]'); if (badge) badge.textContent = n ? n + ' on' : '';
+      }
+      vcRenderLegend(!!forceLegend);
+      var btn = document.getElementById('layers-toggle');
+      if (btn) btn.classList.toggle('active', Object.keys(vcActiveOverlays).length > 0 || vcActiveBase !== 'esri');
+    }
+
+    // The county only draws contours below roughly 1:9,000 — zoomed out past
+    // that the layer is genuinely empty, so say so instead of looking broken.
+    var VC_TOPO_MIN_ZOOM = 16;
+    function vcUpdateTopoHint() {
+      var z = map.getZoom();
+      for (var i = 0; i < VC_OVERLAYS.length; i++) {
+        var d = VC_OVERLAYS[i];
+        if (d.minZoom == null && d.maxZoom == null) continue;
+        var row = document.querySelector('#lp-body .lp-row[data-id="' + d.id + '"] .lp-note');
+        if (!row) continue;
+        var far = d.minZoom != null && z < d.minZoom, near = d.maxZoom != null && z > d.maxZoom + 1.5;
+        row.textContent = far ? (d.farNote || 'zoom in closer to see this') : near ? (d.nearNote || 'drawn for a wider view — softer this close') : d.note;
+        row.style.color = (far || near) ? '#e8b964' : '';
+      }
+    }
+
+    // subtle activity light on the Layers button while county tiles are in flight
+    var vcPending = 0;
+    function vcTrackLoading(layer) {
+      layer.on('loading', function () { vcPending++; vcPaintBusy(); });
+      layer.on('load', function () { vcPending = Math.max(0, vcPending - 1); vcPaintBusy(); });
+      return layer;
+    }
+    function vcPaintBusy() {
+      var b = document.getElementById('layers-toggle');
+      if (b) b.classList.toggle('busy', vcPending > 0);
+    }
+
+    var vcPanelOpen = false;
+    function vcTogglePanel(force) {
+      var p = document.getElementById('layers-panel');
+      if (!p) return;
+      vcPanelOpen = (typeof force === 'boolean') ? force : !vcPanelOpen;
+      p.classList.toggle('open', vcPanelOpen);
+    }
+
+    // ---- click anywhere for a real ground elevation (USGS 3DEP, 1 m) -----
+    var vcElevBusy = false;
+    function vcElevationAt(latlng) {
+      if (vcElevBusy) return;
+      vcElevBusy = true;
+      var pt = encodeURIComponent(JSON.stringify({ x: latlng.lng, y: latlng.lat, spatialReference: { wkid: 4326 } }));
+      fetch('https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/identify'
+            + '?geometry=' + pt + '&geometryType=esriGeometryPoint&returnGeometry=false&f=json')
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          vcElevBusy = false;
+          var m = parseFloat(j && j.value);
+          if (!isFinite(m)) return;
+          var ft = Math.round(m * 3.28084);
+          L.popup({ className: 'vc-elev-popup', closeButton: false })
+            .setLatLng(latlng)
+            .setContent('⛰️ ' + ft.toLocaleString() + ' ft <span style="font-weight:500;opacity:0.65">(' + m.toFixed(1) + ' m)</span>')
+            .openOn(map);
+        })
+        .catch(function () { vcElevBusy = false; });
+    }
+
+    (function initCountyLayers() {
+      // county rasters sit above the base imagery but below the property
+      // boundaries, lot lines, zone markers and popups
+      try {
+        map.createPane('vcOverlayPane');
+        var vp = map.getPane('vcOverlayPane');
+        vp.style.zIndex = 250;
+        vp.style.pointerEvents = 'none';
+      } catch (e) {}
+      try {
+        var savedBase = localStorage.getItem('ojaiMapBase');
+        if (savedBase && vcDefById(VC_BASES, savedBase)) vcActiveBase = savedBase;
+        var savedOv = JSON.parse(localStorage.getItem('ojaiMapOverlays') || '[]');
+        for (var i = 0; i < savedOv.length; i++) if (vcDefById(VC_OVERLAYS, savedOv[i])) vcActiveOverlays[savedOv[i]] = true;
+        var savedOp = JSON.parse(localStorage.getItem('ojaiMapOverlayOp') || '{}');
+        for (var oid in savedOp) if (vcDefById(VC_OVERLAYS, oid) && isFinite(savedOp[oid])) vcOverlayOp[oid] = Math.max(0.1, Math.min(1, Number(savedOp[oid])));
+        if (vcOverlayOp['topo'] != null) vcTopoOpacity = vcOverlayOp['topo'];
+        vcSecOpen = JSON.parse(localStorage.getItem('ojaiMapSections') || '{}') || {};
+        var savedHy = parseInt(localStorage.getItem('ojaiMapHistYear') || '', 10);
+        if (VC_HIST_YEARS.indexOf(savedHy) >= 0) vcHistYear = savedHy;
+      } catch (e) {}
+
+      vcBuildPanel();
+      if (vcActiveBase !== 'esri') vcSetBase(vcActiveBase);
+      var restore = Object.keys(vcActiveOverlays);
+      for (var k = 0; k < restore.length; k++) {
+        var d = vcDefById(VC_OVERLAYS, restore[k]);
+        if (d) { var l = vcOverlayLayer(d); l.addTo(map); if (l.setZIndex) l.setZIndex(d.z || 300); }
+      }
+      vcSyncPanel();
+
+      var btn = document.getElementById('layers-toggle');
+      if (btn) btn.addEventListener('click', function (e) { e.stopPropagation(); vcTogglePanel(); });
+      var close = document.getElementById('lp-close');
+      if (close) close.addEventListener('click', function (e) { e.stopPropagation(); vcTogglePanel(false); });
+      var panel = document.getElementById('layers-panel');
+      if (panel) panel.addEventListener('click', function (e) { e.stopPropagation(); });
+      document.addEventListener('click', function () { if (vcPanelOpen) vcTogglePanel(false); });
+
+      map.on('zoomend', vcUpdateTopoHint);
+      map.on('click', function (e) {
+        if (!vcActiveOverlays['topo']) return;
+        if (window.positionEditActive) return;
+        if (Date.now() < (window.ignoreMapClicksUntil || 0)) return;
+        vcElevationAt(e.latlng);
+      });
+    })();
+    window.leafletMap = map;
+    window.vcSetBase = vcSetBase;
+    window.vcToggleOverlay = vcToggleOverlay;
+    window.vcState = function () { return { base: vcActiveBase, overlays: Object.keys(vcActiveOverlays), histYear: vcHistYear, opacity: vcOverlayOp }; };
+    window.vcSetHistYear = vcSetHistYear;
+    window.vcSetOverlayOpacity = vcSetOverlayOpacity;
+    window.vcCatalog = function () { return { groups: VC_GROUPS, overlays: VC_OVERLAYS.map(function (o) { return { id: o.id, group: o.group, kind: o.kind || 'export', z: o.z, parts: (o.parts || []).length }; }) }; };
     
     // Prevent accidental map clicks during panel swipes and track panel state
     window.ignoreMapClicksUntil = 0;
@@ -4477,8 +4136,7 @@ app.get('/', (req, res) => {
     });
     
     // Add recenter control (jump back to property)
-    const propertyCenter = [34.433086, -119.155336];
-    const propertyZoom = 17;
+    // Recenter returns to the all-properties overview (bounds set once boundaries build)
     const recenterControl = L.control({ position: 'bottomright' });
     recenterControl.onAdd = function(m) {
       const div = L.DomUtil.create('div', 'leaflet-bar recenter-control');
@@ -4496,7 +4154,7 @@ app.get('/', (req, res) => {
       L.DomEvent.disableClickPropagation(div);
       L.DomEvent.on(btn, 'click', function(e) {
         L.DomEvent.stopPropagation(e);
-        map.flyTo(propertyCenter, propertyZoom, { animate: true, duration: 0.75 });
+        if (window.allPropertiesBounds) map.flyToBounds(window.allPropertiesBounds, { padding: [130, 60], easeLinearity: 0.12 });
       });
       return div;
     };
@@ -4504,127 +4162,136 @@ app.get('/', (req, res) => {
 
     console.log('🛰️ Multi-layer satellite imagery system initialized');
     
-    // Load project zones data
-    const zones = ZONES_DATA_PLACEHOLDER;
-    const permanentLines = PERMANENT_LINES_PLACEHOLDER;
-    
-    console.log('📊 Loaded', zones.length, 'project zones and', permanentLines.length, 'property lines');
-    
-    // Create ONE continuous boundary path by ordering all coordinates in sequence
-    // This ensures smooth color flow with no visible endpoints
-    const boundaryCoordinates = [];
-    
-    // Add all coordinates in order to form complete perimeter
-    permanentLines.forEach(function(lineData) {
-      // Add all points except last (to avoid duplication with next segment's first point)
-      for (var i = 0; i < lineData.coordinates.length - 1; i++) {
-        boundaryCoordinates.push(lineData.coordinates[i]);
-      }
+    // Load multi-property data
+    const properties = PROPERTIES_PLACEHOLDER;
+    const propertiesById = {};
+    properties.forEach(function(p) {
+      propertiesById[p.id] = p;
+      p.zones.forEach(function(z) { z.propertyId = p.id; });
     });
-    
-    // Add the very last coordinate to close the loop
-    if (permanentLines.length > 0) {
-      var lastLine = permanentLines[permanentLines.length - 1];
-      var lastCoord = lastLine.coordinates[lastLine.coordinates.length - 1];
-      boundaryCoordinates.push(lastCoord);
-      // Connect back to start to close the boundary
-      boundaryCoordinates.push(boundaryCoordinates[0]);
-    }
-    
+    const zones = [].concat.apply([], properties.map(function(p) { return p.zones; }));
+
+    console.log('📊 Loaded', properties.length, 'properties |', zones.length, 'total zones');
+
     var propertyLines = [];
-    
-    // Create base golden glow line
-    var blurLine = L.polyline(boundaryCoordinates, {
-      color: '#FFD700',
-      weight: 10,
-      opacity: 0.52,
-      className: 'property-line-blur',
-      interactive: false,
-      lineCap: 'round',
-      lineJoin: 'round',
-      smoothFactor: 1.5
-    }).addTo(map);
-    
-    // Create ONE single continuous line (no segments, no endpoints!)
-    var mainLine = L.polyline(boundaryCoordinates, {
-      color: '#7C3AED',
-      weight: 8,
-      opacity: 0.88,
-      className: 'property-line-magical property-line-gradient',
-      interactive: true,
-      bubblingMouseEvents: true,
-      lineCap: 'round',
-      lineJoin: 'round',
-      smoothFactor: 1.5
-    }).addTo(map);
-    
-    mainLine._locked = true;
-    mainLine._permanent = true;
-    propertyLines.push(mainLine);
-    
-    mainLine.on('click', function(e) {
-      if (window.ignoreMapClicksUntil && Date.now() < window.ignoreMapClicksUntil) { L.DomEvent.stopPropagation(e); return; }
-      // Close zone panel if open to avoid overlap
-      const side = document.getElementById('side-panel');
-      if (side && side.classList.contains('open')) { side.classList.remove('open'); }
-      // If already open, do nothing
-      const pp = document.getElementById('property-panel');
-      if (pp && pp.classList.contains('open')) { L.DomEvent.stopPropagation(e); return; }
-      openPropertyPanel();
-      if (mainLine._path) { mainLine._path.classList.add('active'); }
-      L.DomEvent.stopPropagation(e);
+    var allBounds = null;
+
+    properties.forEach(function(prop) {
+      // Lot territories: REAL recorded parcel lines inside the property
+      // (drawn first so the rainbow boundary + icons stay on top)
+      if (prop.lots && prop.lots.length) {
+        var ls = prop.lotStyle || {};
+        prop.lots.forEach(function(lot) {
+          (lot.rings || []).forEach(function(ring) {
+            var lotPoly = L.polygon(ring, {
+              color: ls.color || '#FFFFFF',
+              weight: ls.weight || 1.4,
+              opacity: ls.opacity || 0.85,
+              fillColor: ls.fillColor || '#FFFFFF',
+              fillOpacity: ls.fillOpacity || 0.05,
+              interactive: true
+            }).addTo(map);
+            lotPoly.bindPopup(
+              '<div style="font-weight:700;margin-bottom:4px;">' + (lot.name || 'Lot') + '</div>' +
+              '<div style="font-family:monospace;font-size:12px;margin-bottom:2px;">APN ' + lot.apn + '</div>' +
+              '<div style="font-size:12px;color:#555;">' + lot.acreage + ' acres</div>' +
+              (lot.apn ? '<span class="ds-lot-link" onclick="window.openLotRecord(&quot;' + prop.id + '&quot;,&quot;' + String(lot.apn).replace(/[^0-9A-Za-z-]/g, '') + '&quot;)">&#128451; county record for this lot</span>' : '')
+            );
+          });
+        });
+        console.log('🗺️ ' + prop.name + ': ' + prop.lots.length + ' lot territories rendered');
+      }
+
+      // Stitch this property's boundary segments into one closed loop
+      var boundaryCoordinates = [];
+      prop.boundary.forEach(function(lineData) {
+        for (var i = 0; i < lineData.coordinates.length - 1; i++) {
+          boundaryCoordinates.push(lineData.coordinates[i]);
+        }
+      });
+      if (prop.boundary.length > 0) {
+        var lastLine = prop.boundary[prop.boundary.length - 1];
+        boundaryCoordinates.push(lastLine.coordinates[lastLine.coordinates.length - 1]);
+        boundaryCoordinates.push(boundaryCoordinates[0]);
+      }
+
+      var blurLine = L.polyline(boundaryCoordinates, {
+        color: '#FFD700', weight: 10, opacity: 0.52,
+        className: 'property-line-blur', interactive: false,
+        lineCap: 'round', lineJoin: 'round', smoothFactor: 1.5
+      }).addTo(map);
+
+      var mainLine = L.polyline(boundaryCoordinates, {
+        color: '#7C3AED', weight: 8, opacity: 0.88,
+        className: 'property-line-magical property-line-gradient',
+        interactive: true, bubblingMouseEvents: true,
+        lineCap: 'round', lineJoin: 'round', smoothFactor: 1.5
+      }).addTo(map);
+      mainLine._locked = true; mainLine._permanent = true;
+      propertyLines.push(mainLine);
+
+      var openHandler = function(e) {
+        if (window.positionEditActive) { L.DomEvent.stopPropagation(e); return; }
+        if (window.ignoreMapClicksUntil && Date.now() < window.ignoreMapClicksUntil) { L.DomEvent.stopPropagation(e); return; }
+        var side = document.getElementById('side-panel');
+        if (side && side.classList.contains('open')) { side.classList.remove('open'); }
+        var pp = document.getElementById('property-panel');
+        if (pp && pp.classList.contains('open') && window.currentPropertyId === prop.id) { L.DomEvent.stopPropagation(e); return; }
+        window.openCommunityCard(prop.id);
+        if (mainLine._path) { mainLine._path.classList.add('active'); }
+        L.DomEvent.stopPropagation(e);
+      };
+      mainLine.on('click', openHandler);
+
+      var hitLine = L.polyline(boundaryCoordinates, {
+        color: '#000', weight: 30, opacity: 0.0001,
+        className: 'property-line-hit', interactive: true,
+        lineCap: 'round', lineJoin: 'round'
+      }).addTo(map);
+      hitLine.on('click', openHandler);
+
+      var b = mainLine.getBounds();
+      allBounds = allBounds ? allBounds.extend(b) : L.latLngBounds(b.getSouthWest(), b.getNorthEast());
+
+      // Property name chip — visible at overview zoom, click to fly in
+      var labelMarker = L.marker(prop.center, {
+        interactive: true,
+        zIndexOffset: 2000,
+        icon: L.divIcon({
+          className: 'property-label-marker',
+          html: '<div class="property-label-chip">' + prop.labelChip + '</div>',
+          iconSize: null,
+          iconAnchor: [0, 0]
+        })
+      }).addTo(map);
+      if (!window.propertyChipEls) window.propertyChipEls = {};
+      window.propertyChipEls[prop.id] = function() {
+        var el = labelMarker.getElement();
+        return el && el.querySelector('.property-label-chip');
+      };
+      labelMarker.on('click', function(e) {
+        L.DomEvent.stopPropagation(e);
+        map.flyTo(prop.center, prop.zoom, { animate: true, easeLinearity: 0.12 });
+      });
     });
 
-    // Add a wide, invisible hit area to make tapping the boundary easier on mobile
-    var hitLine = L.polyline(boundaryCoordinates, {
-      color: '#000',
-      weight: 30,
-      opacity: 0.0001,
-      className: 'property-line-hit',
-      interactive: true,
-      lineCap: 'round',
-      lineJoin: 'round'
-    }).addTo(map);
-    hitLine.on('click', function(e) {
-      if (window.ignoreMapClicksUntil && Date.now() < window.ignoreMapClicksUntil) { L.DomEvent.stopPropagation(e); return; }
-      const side = document.getElementById('side-panel');
-      if (side && side.classList.contains('open')) { side.classList.remove('open'); }
-      const pp = document.getElementById('property-panel');
-      if (pp && pp.classList.contains('open')) { L.DomEvent.stopPropagation(e); return; }
-      openPropertyPanel();
-      if (mainLine._path) { mainLine._path.classList.add('active'); }
-      L.DomEvent.stopPropagation(e);
-    });
-    
-    // Apply CSS-based gradient animation
+    // Shared CSS rainbow animation for all boundary lines
     setTimeout(function() {
-      if (mainLine._path) {
-        // Inject CSS animation for smooth color flow
-        var style = document.createElement('style');
-        style.textContent = '@keyframes rainbow-flow {' +
-          '0% { stroke: #6366F1; }' +
-          '20% { stroke: #8B5CF6; }' +
-          '40% { stroke: #EC4899; }' +
-          '60% { stroke: #F59E0B; }' +
-          '80% { stroke: #10B981; }' +
-          '100% { stroke: #6366F1; }' +
-          '}' +
-          '.property-line-gradient {' +
-          'animation: rainbow-flow 10s ease-in-out infinite;' +
-          'stroke-linecap: round;' +
-          'stroke-linejoin: round;' +
-          '}';
-        document.head.appendChild(style);
-        
-        console.log('✨ CSS rainbow animation applied to single continuous line');
-      }
+      var style = document.createElement('style');
+      style.textContent = '@keyframes rainbow-flow {' +
+        '0% { stroke: #6366F1; } 20% { stroke: #8B5CF6; } 40% { stroke: #EC4899; }' +
+        '60% { stroke: #F59E0B; } 80% { stroke: #10B981; } 100% { stroke: #6366F1; }' +
+        '} .property-line-gradient { animation: rainbow-flow 10s ease-in-out infinite; stroke-linecap: round; stroke-linejoin: round; }';
+      document.head.appendChild(style);
     }, 200);
+
+    // Start at the all-properties overview
+    window.allPropertiesBounds = allBounds;
+    if (allBounds) map.fitBounds(allBounds, { padding: [130, 60] });
+
+    console.log('🌈 Rainbow boundaries created for', properties.length, 'properties');
     
-    console.log('🌈 Single continuous rainbow boundary line created');
-    
-    console.log('🌈 Continuous flowing rainbow boundary created');
-    
-    // Zone color mapping
+        // Zone color mapping
     const zoneColorMap = {
       agriculture: '#4CAF50',
       residential: '#2196F3', 
@@ -4636,7 +4303,8 @@ app.get('/', (req, res) => {
       wellness: '#00BCD4',
       landscape: '#8BC34A',
       beekeeping: '#FFD700',  // Golden yellow for beekeeping
-      events: '#FF6B6B'  // Coral red for events and gatherings
+      events: '#FF6B6B',  // Coral red for events and gatherings
+      water: '#0288D1'   // Lake blue for pond & swimming hole
     };
     
     // Store original positions for reset functionality
@@ -4678,7 +4346,9 @@ app.get('/', (req, res) => {
       const marker = L.marker(zone.position, {
         draggable: window.editMode || false,
         zoneId: zone.id, // Add zone ID for reset functionality
+        propertyId: zone.propertyId,
         zoneName: zone.name, // Add zone name for capture functionality
+        zoneMode: zone.mode || 'both', // 'current' | 'vision' | 'both' — gated by the mode toggle
         icon: L.divIcon({
           className: 'zone-marker',
           html: '<div style="background: linear-gradient(135deg, ' + zoneColor + ' 0%, ' + zoneColor + 'dd 50%, ' + zoneColor + 'aa 100%); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; text-align: center; box-shadow: 0 8px 16px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.2); border: 2px solid rgba(255,255,255,0.4); filter: brightness(1.1) contrast(1.1); transform: perspective(100px) rotateX(15deg); text-shadow: 0 1px 2px rgba(0,0,0,0.3);">' + zone.emoji + '</div>',
@@ -4690,6 +4360,7 @@ app.get('/', (req, res) => {
       
       // Add click handlers for interactive side panel (guard against swipe-ending ghost clicks)
       const clickHandler = (e) => {
+        if (window.positionEditActive) { L.DomEvent.stopPropagation(e); return; }
         if (window.ignoreMapClicksUntil && Date.now() < window.ignoreMapClicksUntil) { L.DomEvent.stopPropagation(e); return; }
         if (window.panelIsClosing) { L.DomEvent.stopPropagation(e); return; }
         // DEBUG: Log which zone is being clicked
@@ -4708,23 +4379,38 @@ app.get('/', (req, res) => {
       marker.on('click', clickHandler);
       polygon.on('click', clickHandler);
       
-      // Add drag functionality with position saving
-      marker.on('dragend', function(e) {
-        const newPos = e.target.getLatLng();
-        zone.position = [newPos.lat, newPos.lng];
-        console.log('📍 ' + zone.name + ' moved to: [' + newPos.lat + ', ' + newPos.lng + ']');
-        
-        // Update polygon position as well
-        map.removeLayer(polygon);
-        const newCircularPolygon = createCircularPolygon([newPos.lat, newPos.lng], 15);
-        const newPolygon = L.polygon(newCircularPolygon, {
+      // Drag support: track the CURRENT territory circle so repeat drags
+      // replace it instead of stacking duplicates (old bug), and feed the
+      // Position Editor via notifyZoneMoved + a redraw registry for Reset.
+      let zonePolygon = polygon;
+      const territoryKey = zone.propertyId + '/' + zone.id;
+      const redrawTerritory = function(pos) {
+        try { map.removeLayer(zonePolygon); } catch (err) {}
+        zonePolygon = L.polygon(createCircularPolygon(pos, 15), {
           color: zoneColorMap[zone.type] || '#333',
           fillColor: zoneColorMap[zone.type] || '#333',
           fillOpacity: 0.3,
           weight: 2,
           opacity: 0.8
         }).addTo(map);
-        newPolygon.on('click', clickHandler);
+        zonePolygon.on('click', clickHandler);
+      };
+      if (!window.zoneTerritories) window.zoneTerritories = {};
+      window.zoneTerritories[territoryKey] = redrawTerritory;
+      if (!window.zoneTerritoryToggles) window.zoneTerritoryToggles = {};
+      window.zoneTerritoryToggles[territoryKey] = function(show) {
+        try {
+          if (show) { if (!map.hasLayer(zonePolygon)) zonePolygon.addTo(map); }
+          else if (map.hasLayer(zonePolygon)) { map.removeLayer(zonePolygon); }
+        } catch (err) {}
+      };
+      
+      marker.on('dragend', function(e) {
+        const newPos = e.target.getLatLng();
+        zone.position = [newPos.lat, newPos.lng];
+        redrawTerritory([newPos.lat, newPos.lng]);
+        if (window.notifyZoneMoved) window.notifyZoneMoved(zone);
+        console.log('📍 ' + zone.name + ' moved to: [' + newPos.lat + ', ' + newPos.lng + ']');
       });
     });
     
@@ -4733,12 +4419,21 @@ app.get('/', (req, res) => {
     // Smooth dynamic marker scaling for visibility and pixel definition
     function updateMarkerScale() {
       const zoom = map.getZoom();
+      const mapEl = document.getElementById('map');
+      // overview-mode drives the property name chips (visible when zoomed out)
+      if (mapEl) mapEl.classList.toggle('overview-mode', zoom < 13.5);
       const scaleBase = 1 + (zoom - 17) * 0.08;
       const scale = Math.max(0.9, Math.min(1.9, scaleBase)) * (window.devicePixelRatio >= 2 ? 1.05 : 1);
       const baseFont = 22;
       zoneMarkers.forEach(m => {
         const el = m.getElement();
         if (!el) return;
+        // Each property's icons appear once you're zoomed near ITS scale, so a
+        // huge ranch at zoom 14 shows its icons while a neighbor's stay tucked.
+        const p = propertiesById[m.options && m.options.propertyId];
+        const minZoom = p ? (p.zoom - 2.5) : 13.5;
+        const inMode = !window.zoneVisibleInMode || window.zoneVisibleInMode(m.options && m.options.zoneMode);
+        el.style.display = (inMode && zoom >= minZoom) ? '' : 'none';
         const inner = el.querySelector('div');
         if (!inner) return;
         inner.style.transform = 'perspective(100px) rotateX(15deg) scale(' + scale + ')';
@@ -4746,6 +4441,7 @@ app.get('/', (req, res) => {
       });
     }
     map.on('zoomend', updateMarkerScale);
+    map.on('zoom', updateMarkerScale);
     updateMarkerScale();
     
     // Side panel functionality
@@ -4801,7 +4497,7 @@ app.get('/', (req, res) => {
       // Update header: ALWAYS set title with guaranteed visibility
       if (hero) {
         // Calculate title length for responsive sizing
-        const titleText = zone.emoji + ' ' + zone.name;
+        const titleText = zone.emoji + ' ' + (window.zoneView ? window.zoneView(zone).name : zone.name);
         const titleLength = titleText.length;
         let fontSizeClass = '';
         
@@ -4867,9 +4563,9 @@ app.get('/', (req, res) => {
       
       // Defer heavy DOM work to next frame for smoother opening
       requestAnimationFrame(function() {
-        content.innerHTML = generateProjectDetails(zone);
+        content.innerHTML = (window.modeStripHTML ? window.modeStripHTML() : '') + generateProjectDetails(zone);
         setupImageGalleryTabs();
-        loadZoneImages(zone.id);
+        loadZoneImages(zone);
         
         // Fix timeline on mobile after content loads
         if (window.innerWidth <= 768 && typeof fixTimelineOnMobile === 'function') {
@@ -4931,171 +4627,44 @@ app.get('/', (req, res) => {
       console.log('❌ Closed side panel');
     });
     
-    // Property Panel Functions - Unified for entire property
-    function openPropertyPanel() {
+    // Property Panel — parameterized per property
+    function openPropertyPanel(propId) {
+      const prop = propertiesById[propId];
+      if (!prop) return;
       const panel = document.getElementById('property-panel');
       const titleEl = document.getElementById('property-title');
       const contentEl = document.getElementById('property-panel-content');
-      // Ensure zone side panel is closed so panels do not overlap
       const sidePanel = document.getElementById('side-panel');
       if (sidePanel && sidePanel.classList.contains('open')) {
         sidePanel.classList.remove('open', 'swiping');
         sidePanel.style.transform = '';
       }
-      
-      // Update title
-      titleEl.textContent = 'Sulphur Mountain Property';
-      
-      // Build unified property content HTML with actual data
-      const content = '<div class="image-gallery-section" style="margin-bottom: 20px;">' +
-        '<h4 style="margin-bottom: 12px; color: #7C3AED;">📸 Property Gallery</h4>' +
-        '<div class="carousel-container">' +
-          '<div class="carousel-main" id="property-carousel-main">' +
-            '<div class="carousel-loading">Loading images...</div>' +
-          '</div>' +
-          '<div class="carousel-thumbnails" id="property-carousel-thumbnails"></div>' +
-        '</div>' +
-      '</div>' +
-      
-      '<div class="property-info-section">' +
-        '<h4>🏔️ Property Details</h4>' +
-        '<div class="property-detail-row">' +
-          '<span class="property-detail-label">Total Acreage:</span>' +
-          '<span class="property-detail-value">9.47 acres (marketed as 10 acres)</span>' +
-        '</div>' +
-        '<div class="property-detail-row">' +
-          '<span class="property-detail-label">APN:</span>' +
-          '<span class="property-detail-value">Ventura County, CA</span>' +
-        '</div>' +
-        '<div class="property-detail-row">' +
-          '<span class="property-detail-label">Zoning:</span>' +
-          '<span class="property-detail-value">Unique Upper Ojai Zoning (Residential, Agricultural, Community)</span>' +
-        '</div>' +
-        '<div class="property-detail-row">' +
-          '<span class="property-detail-label">Location:</span>' +
-          '<span class="property-detail-value">11962 Sulphur Mountain Road, Upper Ojai, CA</span>' +
-        '</div>' +
-      '</div>' +
-      
-      '<div class="property-info-section">' +
-        '<h4>✨ Property Features</h4>' +
-        '<ul class="property-features-list">' +
-          '<li><strong>Valuation:</strong> Current value $1.5M | Projected ARV $6.9M+ (Phase 3 completion)</li>' +
-          '<li><strong>Water Access:</strong> Active on-site well producing 17 GPM, connected to structures</li>' +
-          '<li><strong>Power:</strong> Two live power lines currently connected</li>' +
-          '<li><strong>Sewer:</strong> Main residence connected to city sewer system</li>' +
-          '<li><strong>Views:</strong> Unobstructed panoramic views of Topa-Topa Mountains ("Ojai Pink Moment")</li>' +
-        '</ul>' +
-      '</div>' +
-      
-      '<div class="property-info-section">' +
-        '<h4>📝 Additional Information</h4>' +
-        '<div style="display: flex; flex-direction: column; gap: 16px;">' +
-          
-          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #667eea;">' +
-            '<div style="font-weight: 600; color: #667eea; margin-bottom: 10px; font-size: 14px;">🗺️ Property Layout</div>' +
-            '<div style="color: #555; line-height: 1.8; font-size: 14px;">' +
-              '<p style="margin: 0 0 10px 0;">The property is naturally divided into <strong>three strategic sections</strong>, each optimized for specific uses:</p>' +
-              '<p style="margin: 0 0 6px 0; padding-left: 12px;"><span style="color: #667eea; font-weight: 600;">• Front Left Section:</span> Agriculture and operations hub</p>' +
-              '<p style="margin: 0 0 6px 0; padding-left: 12px;"><span style="color: #667eea; font-weight: 600;">• Middle Section:</span> Livestock and community kitchen facilities</p>' +
-              '<p style="margin: 0 0 0 0; padding-left: 12px;"><span style="color: #667eea; font-weight: 600;">• Right Hillside:</span> Guest lodging and event spaces</p>' +
-            '</div>' +
-          '</div>' +
-          
-          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #4CAF50;">' +
-            '<div style="font-weight: 600; color: #4CAF50; margin-bottom: 10px; font-size: 14px;">✅ Permitting & Development Status</div>' +
-            '<div style="color: #555; line-height: 1.8; font-size: 14px;">' +
-              '<p style="margin: 0 0 10px 0;">Permitting for the <strong>first three key structures</strong> is ready for submission.</p>' +
-              '<p style="margin: 0;">The permitting process is anticipated to clear quickly, allowing construction to begin on schedule.</p>' +
-            '</div>' +
-          '</div>' +
-          
-          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #FF9800;">' +
-            '<div style="font-weight: 600; color: #FF9800; margin-bottom: 10px; font-size: 14px;">💰 Investment Overview</div>' +
-            '<div style="color: #555; line-height: 1.8; font-size: 14px;">' +
-              '<p style="margin: 0 0 10px 0;">The total phased development budget is approximately <strong style="color: #FF9800;">$3 Million</strong>.</p>' +
-              '<p style="margin: 0;">This investment supports comprehensive regenerative development plans across all property sections.</p>' +
-            '</div>' +
-          '</div>' +
-          
-          '<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #10B981;">' +
-            '<div style="font-weight: 600; color: #10B981; margin-bottom: 10px; font-size: 14px;">🌱 Regenerative Agriculture & Lodging</div>' +
-            '<div style="color: #555; line-height: 1.8; font-size: 14px;">' +
-              '<p style="margin: 0 0 10px 0;"><strong>Guest Lodging:</strong> Plans include <strong>18-35+ unique units</strong> featuring 8-10 hillside cabins, 10-25+ creek-side glamping (tipis, yurts, safari tents), with phased expansion.</p>' +
-              '<p style="margin: 0 0 10px 0;"><strong>Agriculture:</strong> <strong>10-acre property</strong> dedicated to regenerative farming with fruit orchards, vegetable gardens, and integrated permaculture systems.</p>' +
-              '<p style="margin: 0;"><strong>Livestock & Nursery:</strong> Integrated permaculture system with beekeeping, mushroom cultivation, and plant nursery programs.</p>' +
-            '</div>' +
-          '</div>' +
-          
-        '</div>' +
-      '</div>' +
-      
-      '<div class="property-info-section">' +
-        '<h4>🔗 Project Links & Partners</h4>' +
-        '<div style="display: flex; flex-direction: column; gap: 20px;">' +
-          
-          '<div>' +
-            '<div style="font-weight: 600; color: #667eea; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; gap: 8px;">' +
-              '<span style="font-size: 18px;">🏔️</span> Sulphur Mountain Projects' +
-            '</div>' +
-            '<div style="display: flex; flex-direction: column; gap: 10px;">' +
-              '<a href="https://sulphurmountainroad.vercel.app/" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s ease; font-size: 14px; font-weight: 500;">' +
-                '<span style="font-size: 18px;">🌐</span>' +
-                '<span>Sulphur Mountain Website</span>' +
-                '<span style="margin-left: auto; font-size: 16px;">→</span>' +
-              '</a>' +
-              '<div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%); color: #6c757d; border-radius: 8px; font-size: 14px; font-weight: 500;">' +
-                '<span style="font-size: 18px;">🚀</span>' +
-                '<span>Sulphur Onboarding Platform</span>' +
-                '<span style="margin-left: auto; font-style: italic; font-size: 12px;">Coming Soon...</span>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-          
-          '<div style="border-top: 2px dashed #e9ecef; padding-top: 16px;">' +
-            '<div style="font-weight: 600; color: #10B981; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; gap: 8px;">' +
-              '<span style="font-size: 18px;">🤝</span> Partners' +
-            '</div>' +
-            '<div style="display: flex; flex-direction: column; gap: 10px;">' +
-              '<a href="https://santa-maria.vercel.app/" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s ease; font-size: 14px; font-weight: 500;">' +
-                '<span style="font-size: 18px;">🏝️</span>' +
-                '<span>Santa Maria</span>' +
-                '<span style="margin-left: auto; font-size: 16px;">→</span>' +
-              '</a>' +
-              '<a href="https://preview--lemuria-life.lovable.app/" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s ease; font-size: 14px; font-weight: 500;">' +
-                '<span style="font-size: 18px;">🌺</span>' +
-                '<span>Lemuria Life</span>' +
-                '<span style="margin-left: auto; font-size: 16px;">→</span>' +
-              '</a>' +
-            '</div>' +
-          '</div>' +
-          
-        '</div>' +
-      '</div>';
-      
-      // Open first for smooth animation, then inject heavy content
+      const panelData = (window.visionMode && prop.visionPanel) ? prop.visionPanel : prop.panel;
+      titleEl.textContent = panelData.title;
+      window.currentPropertyId = prop.id;
+
       panel.classList.add('open');
       if (typeof lockBodyScroll === 'function') lockBodyScroll();
       requestAnimationFrame(function() {
-        contentEl.innerHTML = content;
-        loadPropertyImages();
-        
-        // CRITICAL: Always scroll property panel to TOP when opening
+        contentEl.innerHTML = (window.modeStripHTML ? window.modeStripHTML() : '')
+          + (window.statusCardHTML ? window.statusCardHTML(prop) : '')
+          + panelData.html
+          + (window.dossierSectionHTML ? window.dossierSectionHTML(prop) : '')
+          + (window.docsSectionHTML ? window.docsSectionHTML(prop) : '')
+          + '<div class="portal-btn" onclick="window.enterPortal(&quot;' + prop.id + '&quot;)">' + (window.visionMode ? '🌍 Fly the Vision in 3D' : '🌀 Enter the Vision') + '</div>';
+        loadPropertyImages(prop.id);
+        if (window.loadDossier) window.loadDossier(prop);
         requestAnimationFrame(function() {
-          if (panel) {
-            panel.scrollTop = 0;
-          }
-          if (contentEl) {
-            contentEl.scrollTop = 0;
-          }
+          if (panel) panel.scrollTop = 0;
+          if (contentEl) contentEl.scrollTop = 0;
         });
       });
-      
-      console.log('🌈 Opened unified property panel with gallery');
+
+      console.log('🌈 Opened property panel:', prop.name);
     }
     
-    // Load property images from Supabase
-    function loadPropertyImages() {
+        // Load property images from Supabase
+    function loadPropertyImages(propId) {
       console.log('📸 Loading property images from image-urls.js');
       
       // Get reference to main carousel and thumbnails
@@ -5107,13 +4676,31 @@ app.get('/', (req, res) => {
         return;
       }
       
-      // Use pre-configured property images from IMAGE_URLS
-      fetch('/api/images/property/current')
+      // Use pre-configured property images from IMAGE_URLS.
+      // Vision mode prefers the property's vision gallery, falling back to current.
+      const propImgCategory = window.visionMode ? 'vision' : 'current';
+      fetch('/api/images/' + propId + '/property/' + propImgCategory)
         .then(response => response.json())
+        .then(data => {
+          if (propImgCategory === 'vision' && (!data.success || !data.images || data.images.length === 0)) {
+            return fetch('/api/images/' + propId + '/property/current').then(function(r) { return r.json(); });
+          }
+          return data;
+        })
         .then(data => {
           if (!data.success || !data.images || data.images.length === 0) {
             console.log('ℹ️ No property images found');
-            mainCarousel.innerHTML = '<div class="carousel-loading">No images available yet</div>';
+            const gallerySection = mainCarousel.closest('.image-gallery-section');
+            if (gallerySection) {
+              gallerySection.innerHTML = '<h4 style="margin-bottom: 12px; color: #7C3AED;">📸 Property Gallery</h4>' +
+                '<div style="background: rgba(255,255,255,0.92); border-radius: 12px; padding: 30px 16px; text-align: center; color: #555;">' +
+                  '<div style="font-size: 42px; opacity: 0.35; margin-bottom: 8px;">📷</div>' +
+                  '<div style="font-size: 14px; font-weight: 600;">Property photos coming soon</div>' +
+                  '<div style="font-size: 12px; opacity: 0.7; margin-top: 4px;">Galleries will appear here as they are added</div>' +
+                '</div>';
+            } else {
+              mainCarousel.innerHTML = '<div class="carousel-loading">No images available yet</div>';
+            }
             return;
           }
           
@@ -5136,7 +4723,9 @@ app.get('/', (req, res) => {
       
       // Create main image display with loading optimization
       const mainImg = document.createElement('img');
-      mainImg.src = imageUrls[0];
+      mainImg.src = cdnImg(imageUrls[0], 1400);
+      mainImg.dataset.raw = imageUrls[0];
+      mainImg.onerror = function() { if (this.dataset.raw && this.src !== this.dataset.raw) this.src = this.dataset.raw; };
       mainImg.alt = 'Property Image';
       mainImg.className = 'carousel-image';
       mainImg.id = 'property-main-image';
@@ -5172,7 +4761,8 @@ app.get('/', (req, res) => {
         if (mainImage) {
           // Fade transition
           mainImage.style.opacity = '0.5';
-          mainImage.src = imageUrls[currentIndex];
+          mainImage.dataset.raw = imageUrls[currentIndex];
+          mainImage.src = cdnImg(imageUrls[currentIndex], 1400);
           mainImage.onload = () => {
             mainImage.style.opacity = '1';
           };
@@ -5792,7 +5382,8 @@ app.get('/', (req, res) => {
     }
     
     // Load images for a specific zone (preserves gallery state)
-    async function loadZoneImages(zoneId) {
+    async function loadZoneImages(zone) {
+      const zoneId = zone.id;
       console.log('🖼️ loadZoneImages called for zoneId:', zoneId);
       const categories = ['current', 'vision'];
       
@@ -5802,7 +5393,7 @@ app.get('/', (req, res) => {
           if (!container) continue;
           
           // Fetch image URLs from API
-          const apiUrl = '/api/images/' + zoneId + '/' + category;
+          const apiUrl = '/api/images/' + zone.propertyId + '/' + zoneId + '/' + category;
           console.log('📡 Fetching images from:', apiUrl);
           const response = await fetch(apiUrl);
           const data = await response.json();
@@ -5832,9 +5423,9 @@ app.get('/', (req, res) => {
           } else {
             container.innerHTML = '<div class="no-images-message">' +
               '<div style="font-size: 48px; opacity: 0.3; margin-bottom: 10px;">📷</div>' +
-              '<div>No images configured for this category</div>' +
+              '<div>No photos here yet</div>' +
               '<div style="font-size: 13px; opacity: 0.7; margin-top: 5px;">' +
-              'Add URLs to image-urls.js to display images' +
+              'Photos for this project are coming soon' +
               '</div></div>';
           }
         } catch (error) {
@@ -5927,8 +5518,8 @@ app.get('/', (req, res) => {
         // Preload every image in this subcategory using new Image() so the browser
         // caches them regardless of display:none on the parent. When the tab becomes
         // active and the actual <img> tag is shown, it pulls from cache instantly.
-        const imgEls = content.querySelectorAll('.carousel-image, .carousel-thumbnail');
-        imgEls.forEach(img => {
+        const imgEls = content.querySelectorAll('.carousel-image');
+        Array.prototype.slice.call(imgEls, 0, 2).forEach(img => {
           const src = img.getAttribute('src');
           if (!src) return;
           const preloader = new Image();
@@ -5984,12 +5575,18 @@ app.get('/', (req, res) => {
     };
     
     // Create image carousel HTML with optimized loading
+    function cdnImg(src, w) {
+      if (!src || src.indexOf('http') !== 0) return src;
+      return 'https://wsrv.nl/?url=' + encodeURIComponent(src) + '&w=' + w + '&q=82&output=webp';
+    }
     function createImageCarousel(images, zoneId, category) {
       const mainImages = images.map((src, index) => \`
-        <img src="\${src}" 
-             class="carousel-image \${index === 0 ? 'active' : ''}" 
+        <img src="\${cdnImg(src, 1400)}"
+             data-raw="\${src}"
+             onerror="if(this.dataset.raw&&this.src!==this.dataset.raw){this.src=this.dataset.raw}"
+             class="carousel-image \${index === 0 ? 'active' : ''}"
              alt="Image \${index + 1}"
-             loading="eager"
+             loading="\${index === 0 ? 'eager' : 'lazy'}"
              fetchpriority="\${index === 0 ? 'high' : 'low'}"
              sizes="(max-width: 768px) 100vw, 580px"
              decoding="async"
@@ -5999,11 +5596,13 @@ app.get('/', (req, res) => {
       \`).join('');
       
       const thumbnails = images.map((src, index) => \`
-        <img src="\${src}" 
-             class="carousel-thumbnail \${index === 0 ? 'active' : ''}" 
+        <img src="\${cdnImg(src, 240)}"
+             data-raw="\${src}"
+             onerror="if(this.dataset.raw&&this.src!==this.dataset.raw){this.src=this.dataset.raw}"
+             class="carousel-thumbnail \${index === 0 ? 'active' : ''}"
              alt="Thumbnail \${index + 1}"
              data-index="\${index}"
-             loading="eager"
+             loading="lazy"
              decoding="async"
              onclick="goToSlide('\${category}', \${index})">
       \`).join('');
@@ -6518,7 +6117,18 @@ app.get('/', (req, res) => {
     // Zone positions are now permanently locked - no reset functionality needed
     
     // Generate comprehensive project details HTML
+    function zoneView(zone) {
+      var v = window.visionMode;
+      return {
+        name: (v && zone.visionName) || zone.name,
+        description: (v && zone.visionDescription) || zone.description,
+        features: (v && zone.visionFeatures) || zone.features
+      };
+    }
+    window.zoneView = zoneView;
     function generateProjectDetails(zone) {
+      const zv = zoneView(zone);
+      const prop = propertiesById[zone.propertyId] || { cta: {}, footerInfo: [] };
       const zoneColor = zoneColorMap[zone.type] || '#333';
       const lightColor = zoneColor + '15'; // 15% opacity for backgrounds
       const mediumColor = zoneColor + '40'; // 40% opacity for highlights
@@ -6542,15 +6152,27 @@ app.get('/', (req, res) => {
         <div class="project-section">
           <h3 style="color: \${zoneColor};">📋 Project Overview</h3>
           <div style="color: #555; line-height: 1.8; font-size: 15px; white-space: pre-wrap; word-wrap: break-word; margin: 0; padding: 0;">
-\${zone.description}</div>
+\${zv.description}</div>
         </div>
         
         <div class="project-section">
           <h3 style="color: \${zoneColor};">🏗️ Key Features & Infrastructure</h3>
           <ul class="feature-list">
-            \${zone.features.map(feature => \`<li>\${feature}</li>\`).join('')}
+            \${zv.features.map(feature => \`<li>\${feature}</li>\`).join('')}
           </ul>
         </div>
+        
+        \${zone.optionsTitle && zone.options ? \`
+          <div class="project-section">
+            <h3 style="color: \${zoneColor};">\${zone.optionsTitle}</h3>
+            \${zone.options.map(opt => \`
+              <div style="padding: 16px; background: linear-gradient(135deg, \${lightColor} 0%, \${mediumColor} 100%); border-radius: 10px; border-left: 4px solid \${zoneColor}; margin-bottom: 12px;">
+                <div style="font-weight: 700; color: \${zoneColor}; font-size: 15px; margin-bottom: 6px;">\${opt.name}</div>
+                <div style="color: #555; font-size: 13px; line-height: 1.5;">\${opt.details}</div>
+              </div>
+            \`).join('')}
+          </div>
+        \` : ''}
         
         \${zone.membershipTiers ? \`
           <div class="project-section">
@@ -6616,7 +6238,7 @@ app.get('/', (req, res) => {
             <h3 style="color: \${zoneColor};">📅 Development Timeline</h3>
             <div style="padding: 20px; background: linear-gradient(135deg, \${lightColor} 0%, \${mediumColor} 100%); border-radius: 12px; border-left: 4px solid \${zoneColor};">
               <span class="timeline-phase">\${zone.timeline}</span>
-              <p style="margin-top: 12px; color: #555; font-size: 14px; line-height: 1.5;">This zone is part of the comprehensive EcoVillageBuilder development plan, strategically phased for optimal cash flow and sustainable growth across the 10-acre Sulphur Mountain property.</p>
+              <p style="margin-top: 12px; color: #555; font-size: 14px; line-height: 1.5;">This zone is part of the property's phased development plan, strategically sequenced for sustainable growth.</p>
             </div>
           </div>
         \`}
@@ -7234,10 +6856,8 @@ app.get('/', (req, res) => {
         <div class="project-section cta-section">
           <h3 style="color: \${zoneColor};">🤝 Get Involved</h3>
           <div style="background: linear-gradient(135deg, \${zoneColor} 0%, \${zoneColor}CC 100%); padding: 30px; border-radius: 16px; text-align: center; color: white; border: 2px solid \${zoneColor};">
-            <h4 style="color: white; margin: 0 0 15px 0; font-size: 20px;">Ready to Join This Vision?</h4>
-            <p style="margin: 0 0 25px 0; opacity: 0.9; font-size: 15px; line-height: 1.5;">
-              Be part of creating a sustainable future at Sulphur Mountain Eco-Village. Whether you're an investor, partner, or future resident, we'd love to hear from you.
-            </p>
+            <h4 style="color: white; margin: 0 0 15px 0; font-size: 20px;">\${(prop.cta && prop.cta.heading) || 'Get In Touch'}</h4>
+            <p style="margin: 0 0 25px 0; opacity: 0.9; font-size: 15px; line-height: 1.5;">\${(prop.cta && prop.cta.paragraph) || ''}</p>
             
             <div class="contact-dropdown">
               <button class="dropdown-button" onclick="toggleDropdown(this)">
@@ -7246,72 +6866,284 @@ app.get('/', (req, res) => {
               </button>
               <div class="dropdown-content">
                 <div class="team-contact-header">Team Contact:</div>
-                <div class="contact-item">
-                  <span class="contact-name">Mark Panics</span>
-                  <a href="mailto:markeduardpancis@gmail.com" class="contact-email">markeduardpancis@gmail.com</a>
-                </div>
-                <div class="contact-item">
-                  <span class="contact-name">Paul Muresan</span>
-                  <a href="mailto:paulmuresan77@gmail.com" class="contact-email">paulmuresan77@gmail.com</a>
-                </div>
-                <div class="contact-item">
-                  <span class="contact-name">Johnatan Braniff</span>
-                  <a href="mailto:jbraniff1117@gmail.com" class="contact-email">jbraniff1117@gmail.com</a>
-                </div>
+                \${((prop.cta && prop.cta.contacts) || []).map(c => \`<div class="contact-item"><span class="contact-name">\${c.name}</span><a href="mailto:\${c.email}" class="contact-email">\${c.email}</a></div>\`).join('')}
               </div>
             </div>
 
-            <div class="action-buttons">
-              <a href="https://sulphurmountainroad.vercel.app/" target="_blank" class="action-button website-button">
-                🌐 Visit Website
-              </a>
-              <div class="action-button onboarding-button">
-                � Member/Partner Onboarding Platform
-                <span style="font-size: 13px; margin-left: 5px;">(Coming Soon...)</span>
-              </div>
-            </div>
+            \${((prop.cta && prop.cta.buttons) || []).length ? \`<div class="action-buttons">\${prop.cta.buttons.map(b => \`<a href="\${b.url}" target="_blank" class="action-button website-button">\${b.label}</a>\`).join('')}</div>\` : ''}
           </div>
         </div>
         
         <div class="project-footer">
           <div class="footer-content">
-            <div class="footer-title">🌿 Sulphur Mountain Eco-Village</div>
-            <div class="footer-info">
-              <span>18 Project Zones</span> • 
-              <span>$3M Investment</span> • 
-              <span>10-Acre Property</span> • 
-              <span>Ojai Valley, CA</span>
-            </div>
+            <div class="footer-title">\${prop.footerTitle || prop.name || ''}</div>
+            <div class="footer-info">\${(prop.footerInfo || []).map(t => \`<span>\${t}</span>\`).join(' • ')}</div>
             <div class="footer-tagline">Regenerative Living • Collaborative Design • Community Wellness</div>
           </div>
         </div>
       \`;
     }
     
-    // Admin Popup Menu Functionality
+        // ── Position Editor: pick property → edit all icons at once → capture ──
     const adminToggle = document.getElementById('admin-menu-toggle');
+    // editor mode: ?edit=1 turns the editor on for this browser (remembered), ?edit=0 turns it off
+    (function editorGate() {
+      try {
+        var q = new URLSearchParams(location.search).get('edit');
+        if (q === '1') localStorage.setItem('ojaiMapEditor', '1');
+        if (q === '0') localStorage.removeItem('ojaiMapEditor');
+        if (adminToggle && localStorage.getItem('ojaiMapEditor') !== '1') adminToggle.style.display = 'none';
+      } catch (e) { if (adminToggle) adminToggle.style.display = 'none'; }
+    })();
     const adminPopup = document.getElementById('admin-popup');
     const closePopup = document.getElementById('close-popup');
-    const statusIndicator = document.getElementById('status-indicator');
+    const statusIndicator = document.getElementById('edit-status');
+    window.positionEditActive = false;
     
-    // Toggle admin popup
-    adminToggle.addEventListener('click', () => {
-      adminPopup.style.display = adminPopup.style.display === 'none' ? 'block' : 'none';
-    });
-    
-    // Close admin popup
-    closePopup.addEventListener('click', () => {
-      adminPopup.style.display = 'none';
-    });
-    
-    // Close popup when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!adminPopup.contains(e.target) && !adminToggle.contains(e.target)) {
+    (function initPositionEditor() {
+      const buttonsWrap = document.getElementById('edit-property-buttons');
+      const editBtn = document.getElementById('edit-toggle-btn');
+      const hintEl = document.getElementById('edit-hint');
+      const movedList = document.getElementById('moved-list');
+      const resetBtn = document.getElementById('reset-positions-btn');
+      const zoomLevelEl = document.getElementById('zoom-level');
+      if (!adminToggle || !adminPopup || !buttonsWrap || !editBtn) return;
+      
+      let selectedPropId = null;
+      let editing = false;
+      const markerMap = new Map();
+      const movedZones = new Map();
+      
+      map.eachLayer(function(layer) {
+        if (layer.options && layer.options.zoneId) {
+          markerMap.set((layer.options.propertyId || '?') + '/' + layer.options.zoneId, layer);
+        }
+      });
+      
+      // Open/close: the panel STAYS OPEN while you work on the map.
+      // (The old version closed itself on any outside click — maddening.)
+      adminToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        adminPopup.style.display = adminPopup.style.display === 'none' ? 'block' : 'none';
+      });
+      closePopup.addEventListener('click', function() {
+        if (editing) stopEditing();
         adminPopup.style.display = 'none';
+      });
+      
+      function setStatus(icon, text, color) {
+        if (!statusIndicator) return;
+        statusIndicator.innerHTML = '<div>' + icon + '</div><div class="status-text">' + text + '</div>';
+        statusIndicator.style.borderLeftColor = color || '#F44336';
+        statusIndicator.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)';
       }
-    });
-
-    // Territory Drawing Editor Functionality
+      
+      function eachPropertyMarker(propId, fn) {
+        markerMap.forEach(function(marker, key) {
+          if (key.indexOf(propId + '/') === 0) fn(marker, key);
+        });
+      }
+      
+      function refreshMovedList() {
+        if (movedZones.size === 0) {
+          movedList.style.display = 'none';
+          movedList.innerHTML = '';
+          return;
+        }
+        movedList.style.display = 'block';
+        const items = [];
+        movedZones.forEach(function(z) {
+          items.push('<div class="moved-item">' + z.emoji + ' ' + z.name + ' <span class="moved-coords">' + (+z.position[0]).toFixed(6) + ', ' + (+z.position[1]).toFixed(6) + '</span></div>');
+        });
+        movedList.innerHTML = '<div class="moved-title">📍 Moved this session (' + movedZones.size + '):</div>' + items.join('');
+      }
+      
+      // Property buttons — generated from the registry, so future
+      // properties show up here automatically.
+      properties.forEach(function(prop) {
+        const b = document.createElement('button');
+        b.className = 'edit-prop-btn';
+        b.type = 'button';
+        b.textContent = prop.shortLabel || prop.name;
+        b.addEventListener('click', function() {
+          if (editing) stopEditing();
+          selectedPropId = prop.id;
+          Array.prototype.forEach.call(buttonsWrap.children, function(x) {
+            x.classList.toggle('active', x === b);
+          });
+          editBtn.disabled = false;
+          editBtn.textContent = '🔓 Start Editing ' + (prop.shortLabel || prop.name);
+          resetBtn.style.display = 'none';
+          setStatus('🎯', prop.name + ' selected — flying there now', '#2196F3');
+          map.flyTo(prop.center, prop.zoom, { animate: true, easeLinearity: 0.12 });
+        });
+        buttonsWrap.appendChild(b);
+      });
+      
+      function startEditing() {
+        if (!selectedPropId) return;
+        editing = true;
+        window.positionEditActive = true;
+        // Close any open panels so nothing overlaps while editing
+        const sp = document.getElementById('side-panel');
+        if (sp) { sp.classList.remove('open', 'swiping'); sp.style.transform = ''; }
+        const pp = document.getElementById('property-panel');
+        if (pp) { pp.classList.remove('open', 'swiping'); pp.style.transform = ''; }
+        if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+        
+        eachPropertyMarker(selectedPropId, function(marker) {
+          if (marker.dragging) marker.dragging.enable();
+          marker.setZIndexOffset(1500);
+          const el = marker.getElement();
+          if (el) el.classList.add('marker-editing');
+        });
+        editBtn.textContent = '✅ Done — Lock Positions';
+        editBtn.classList.add('editing');
+        hintEl.style.display = 'block';
+        resetBtn.style.display = 'block';
+        setStatus('🔓', 'Editing — drag the glowing icons', '#FF9800');
+      }
+      
+      function stopEditing() {
+        editing = false;
+        window.positionEditActive = false;
+        markerMap.forEach(function(marker) {
+          if (marker.dragging) marker.dragging.disable();
+          marker.setZIndexOffset(0);
+          const el = marker.getElement();
+          if (el) el.classList.remove('marker-editing');
+        });
+        const prop = propertiesById[selectedPropId];
+        editBtn.textContent = '🔓 Start Editing ' + (prop ? (prop.shortLabel || prop.name) : '');
+        editBtn.classList.remove('editing');
+        hintEl.style.display = 'none';
+        if (movedZones.size > 0) {
+          setStatus('💾', movedZones.size + ' icon(s) moved — hit Capture below', '#4CAF50');
+        } else {
+          setStatus('🔒', 'All icons locked', '#F44336');
+        }
+      }
+      
+      editBtn.addEventListener('click', function() {
+        if (editing) { stopEditing(); } else { startEditing(); }
+      });
+      
+      // Fed by every marker dragend
+      window.notifyZoneMoved = function(zone) {
+        movedZones.set(zone.propertyId + '/' + zone.id, zone);
+        refreshMovedList();
+        setStatus('📍', zone.emoji + ' ' + zone.name + ' moved', '#4CAF50');
+      };
+      
+      // Reset every icon of the selected property to its saved position
+      resetBtn.addEventListener('click', function() {
+        const prop = propertiesById[selectedPropId];
+        if (!prop) return;
+        prop.zones.forEach(function(zone) {
+          if (!zone.originalPosition) return;
+          const marker = markerMap.get(prop.id + '/' + zone.id);
+          if (!marker) return;
+          zone.position = [zone.originalPosition[0], zone.originalPosition[1]];
+          marker.setLatLng(zone.position);
+          const redraw = window.zoneTerritories && window.zoneTerritories[prop.id + '/' + zone.id];
+          if (redraw) redraw(zone.position);
+          movedZones.delete(prop.id + '/' + zone.id);
+        });
+        refreshMovedList();
+        setStatus('↩️', prop.name + ' reset to the saved layout', '#2196F3');
+      });
+      
+      // ── Permanent save: commits the layout to git via the server ──
+      const saveBtn = document.getElementById('save-layout-btn');
+      const pinRow = document.getElementById('pin-row');
+      const pinInput = document.getElementById('edit-pin-input');
+      const pinConfirm = document.getElementById('pin-confirm-btn');
+      
+      function collectPositions() {
+        const grouped = {};
+        markerMap.forEach(function(marker, key) {
+          const parts = key.split('/');
+          const propId = parts[0], zoneId = parts.slice(1).join('/');
+          if (!grouped[propId]) grouped[propId] = {};
+          const p = marker.getLatLng();
+          grouped[propId][zoneId] = [ +p.lat.toFixed(6), +p.lng.toFixed(6) ];
+        });
+        return grouped;
+      }
+      
+      function doSave(pin) {
+        if (editing) stopEditing();
+        setStatus('⏳', 'Saving layout to git…', '#2196F3');
+        if (saveBtn) saveBtn.disabled = true;
+        fetch('/api/save-positions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: pin, positions: collectPositions() })
+        }).then(function(r) { return r.json().then(function(data) { return { status: r.status, data: data }; }); }).then(function(resp) {
+          if (saveBtn) saveBtn.disabled = false;
+          if (resp.status === 200 && resp.data && resp.data.ok) {
+            try { localStorage.setItem('ojaiMapEditPin', pin); } catch (e) {}
+            if (pinRow) pinRow.style.display = 'none';
+            movedZones.clear();
+            refreshMovedList();
+            markerMap.forEach(function(marker, key) {
+              const parts = key.split('/');
+              const prop2 = propertiesById[parts[0]];
+              if (!prop2) return;
+              const z2 = prop2.zones.find(function(zz) { return zz.id === parts.slice(1).join('/'); });
+              if (!z2) return;
+              const p2 = marker.getLatLng();
+              z2.position = [p2.lat, p2.lng];
+              z2.originalPosition = [p2.lat, p2.lng];
+            });
+            setStatus('✅', 'Saved to git! Everyone sees this layout — a fresh deploy locks it in (~30s)', '#4CAF50');
+          } else if (resp.status === 401) {
+            try { localStorage.removeItem('ojaiMapEditPin'); } catch (e) {}
+            if (pinRow) pinRow.style.display = 'block';
+            if (pinInput) { pinInput.value = ''; pinInput.focus(); }
+            setStatus('🔑', 'Wrong PIN — enter the Edit PIN and try again', '#F44336');
+          } else if (resp.status === 501) {
+            setStatus('⚙️', 'Saving is not configured yet (needs EDIT_PIN + GITHUB_TOKEN on Vercel). Use Capture and send to Claude.', '#FF9800');
+          } else {
+            setStatus('⚠️', 'Save failed (' + resp.status + ') — try again, or use Capture as backup', '#F44336');
+          }
+        }).catch(function(err) {
+          if (saveBtn) saveBtn.disabled = false;
+          setStatus('⚠️', 'Save failed — no connection. Use Capture as backup.', '#F44336');
+        });
+      }
+      
+      if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+          let pin = null;
+          try { pin = localStorage.getItem('ojaiMapEditPin'); } catch (e) {}
+          if (pin) { doSave(pin); }
+          else {
+            if (pinRow) pinRow.style.display = 'block';
+            if (pinInput) pinInput.focus();
+            setStatus('🔑', 'First time: enter the Edit PIN, then hit Confirm', '#2196F3');
+          }
+        });
+      }
+      if (pinConfirm) {
+        pinConfirm.addEventListener('click', function() {
+          const pin = ((pinInput && pinInput.value) || '').trim();
+          if (!pin) { setStatus('🔑', 'Enter the Edit PIN first', '#F44336'); return; }
+          doSave(pin);
+        });
+      }
+      
+      // Live zoom readout
+      const updateZoomLabel = function() {
+        if (zoomLevelEl) zoomLevelEl.textContent = 'Zoom: ' + (Math.round(map.getZoom() * 10) / 10);
+      };
+      map.on('zoomend', updateZoomLabel);
+      updateZoomLabel();
+      
+      console.log('✏️ Position editor ready —', properties.length, 'properties');
+    })();
+    
+        // Territory Drawing Editor Functionality
     const territoryToggle = document.getElementById('territory-editor-toggle');
     const territoryEditor = document.getElementById('territory-editor');
     const closeTerritoryEditor = document.getElementById('close-territory-editor');
@@ -7540,186 +7372,67 @@ app.get('/', (req, res) => {
     // Bulletproof Capture Zone Positions functionality
     const captureZonesBtn = document.getElementById('capture-zones-btn');
     captureZonesBtn.addEventListener('click', () => {
-      console.log('\\n========== ZONE POSITIONS CAPTURED ==========');
-      console.log('Current marker positions for embedding:');
-      console.log('');
-      
-      const capturedPositions = [];
-      let zoneCount = 0;
-      
-      // Get all zone markers from the map
+      const grouped = {};
+      let total = 0;
       map.eachLayer(layer => {
         if (layer.options && layer.options.zoneId) {
-          const position = layer.getLatLng();
-          const zoneData = {
-            id: layer.options.zoneId,
-            name: layer.options.zoneName || layer.options.zoneId,
-            position: [position.lat, position.lng]
-          };
-          
-          capturedPositions.push(zoneData);
-          zoneCount++;
-          
-          // Log each position clearly
-          console.log(zoneCount + '. "' + zoneData.name + '"');
-          console.log('   position: [' + position.lat.toFixed(6) + ', ' + position.lng.toFixed(6) + '],');
-          console.log('');
+          const p = layer.getLatLng();
+          const propId = layer.options.propertyId || 'unknown';
+          if (!grouped[propId]) grouped[propId] = [];
+          grouped[propId].push({ id: layer.options.zoneId, position: [ +p.lat.toFixed(6), +p.lng.toFixed(6) ] });
+          total++;
         }
       });
+      const NL = String.fromCharCode(10);
+      const propBlocks = Object.keys(grouped).sort().map(function(propId) {
+        grouped[propId].sort(function(a, b) { return a.id.localeCompare(b.id); });
+        const lines = grouped[propId].map(function(z) { return '    "' + z.id + '": [' + z.position[0] + ', ' + z.position[1] + ']'; });
+        return '  "' + propId + '": {' + NL + lines.join(',' + NL) + NL + '  }';
+      });
+      const jsonText = '{' + NL + propBlocks.join(',' + NL) + NL + '}';
       
-      // Show summary
-      console.log('Total zones captured: ' + zoneCount);
-      console.log('Copy the position coordinates above to update your PROJECT_ZONES array');
-      console.log('=============================================\\n');
-      
-      // Update status indicator  
-      statusIndicator.innerHTML = '<div>🎯</div><div class="status-text">Captured ' + zoneCount + ' Positions!</div>';
+      statusIndicator.innerHTML = '<div>🎯</div><div class="status-text">Captured ' + total + ' positions</div>';
       statusIndicator.style.background = 'linear-gradient(135deg, #E8F5E8 0%, #A5D6A7 100%)';
       statusIndicator.style.borderLeftColor = '#4CAF50';
       
-      // Show user-friendly alert with instructions
-      alert('🎯 SUCCESS! Captured ' + zoneCount + ' zone positions!\\n\\n📋 Instructions:\\n1. Open browser console (F12)\\n2. Copy the coordinates shown\\n3. Update your PROJECT_ZONES array\\n\\n✅ All positions are now ready for embedding!');
-      
-      // Also create a downloadable text file with the positions
-      let positionsText = '';
-      capturedPositions.forEach(zone => {
-        positionsText += '"' + zone.id + '": position: [' + zone.position[0].toFixed(6) + ', ' + zone.position[1].toFixed(6) + ']\\n';
+      let overlay = document.getElementById('positions-overlay');
+      if (overlay) overlay.remove();
+      overlay = document.createElement('div');
+      overlay.id = 'positions-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:5000;display:flex;align-items:center;justify-content:center;padding:16px;';
+      overlay.innerHTML = '<div style="background:#fff;max-width:540px;width:100%;max-height:85vh;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.35);display:flex;flex-direction:column;overflow:hidden;">' +
+        '<div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:14px 18px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">📍 Captured Icon Positions' +
+        '<button id="close-positions-overlay" style="background:rgba(255,255,255,0.25);border:none;color:#fff;font-size:18px;width:30px;height:30px;border-radius:50%;cursor:pointer;">&times;</button></div>' +
+        '<div style="padding:14px 18px 6px 18px;font-size:13px;color:#555;line-height:1.5;">Current positions for every icon, grouped by property. <strong>Copy this and paste it to Claude</strong> to lock the new positions in permanently.</div>' +
+        '<textarea id="positions-textarea" readonly style="margin:10px 18px 0 18px;height:240px;font-family:monospace;font-size:12px;border:2px solid #e0e0e0;border-radius:8px;padding:10px;resize:none;white-space:pre;"></textarea>' +
+        '<div style="padding:14px 18px;display:flex;gap:10px;">' +
+        '<button id="copy-positions-btn" style="flex:1;background:#4CAF50;color:#fff;border:none;padding:12px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">📋 Copy to Clipboard</button>' +
+        '<button id="download-positions-btn" style="background:#607D8B;color:#fff;border:none;padding:12px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">⬇️ Download</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+      document.getElementById('positions-textarea').value = jsonText;
+      document.getElementById('close-positions-overlay').addEventListener('click', function() { overlay.remove(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+      document.getElementById('copy-positions-btn').addEventListener('click', function() {
+        const ta = document.getElementById('positions-textarea');
+        ta.select(); ta.setSelectionRange(0, 999999);
+        const done = function() { const b = document.getElementById('copy-positions-btn'); if (b) { b.textContent = '✅ Copied! Now paste it to Claude'; setTimeout(function(){ b.textContent = '📋 Copy to Clipboard'; }, 2500); } };
+        if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(jsonText).then(done).catch(function(){ try { document.execCommand('copy'); } catch(_) {} done(); }); }
+        else { try { document.execCommand('copy'); } catch(_) {} done(); }
       });
-      
-      const blob = new Blob([positionsText], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'zone-positions.txt';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      console.log('Positions also saved to zone-positions.txt file');
+      document.getElementById('download-positions-btn').addEventListener('click', function() {
+        const blob = new Blob([jsonText], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'zone-positions.json';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+      });
+      console.log('Captured positions:', jsonText);
     });
     
     // Zone movement controls - Carefully implemented
-    (function initZoneMovement() {
-      const selector = document.getElementById('zone-move-selector');
-      const unlockBtn = document.getElementById('unlock-zone-btn');
-      const lockBtn = document.getElementById('lock-zone-btn');
-      const selectedIndicator = document.getElementById('selected-zone-indicator');
-      const selectedName = document.getElementById('selected-zone-name');
-      const statusDiv = document.getElementById('status-indicator');
-      
-      if (!selector || !unlockBtn || !lockBtn) {
-        console.log('Zone movement UI not found');
-        return;
-      }
-      
-      const markerMap = new Map();
-      let currentMarker = null;
-      let currentZoneId = null;
-      
-      // Populate dropdown
-      zones.forEach(function(z) {
-        const opt = document.createElement('option');
-        opt.value = z.id;
-        opt.textContent = z.emoji + ' ' + z.name;
-        selector.appendChild(opt);
-      });
-      
-      // Map markers
-      map.eachLayer(function(layer) {
-        if (layer.options && layer.options.zoneId) {
-          markerMap.set(layer.options.zoneId, layer);
-        }
-      });
-      
-      // Selection handler
-      selector.addEventListener('change', function(e) {
-        const id = e.target.value;
-        if (!id) {
-          unlockBtn.disabled = true;
-          if (selectedIndicator) selectedIndicator.style.display = 'none';
-          return;
-        }
-        unlockBtn.disabled = false;
-        const z = zones.find(function(zone) { return zone.id === id; });
-        if (selectedName && z) {
-          selectedName.textContent = 'Selected: ' + z.emoji + ' ' + z.name;
-        }
-        if (selectedIndicator) selectedIndicator.style.display = 'flex';
-      });
-      
-      // Unlock handler
-      unlockBtn.addEventListener('click', function() {
-        const id = selector.value;
-        if (!id) return;
-        const marker = markerMap.get(id);
-        const z = zones.find(function(zone) { return zone.id === id; });
-        if (!marker || !z) return;
-        
-        marker.dragging.enable();
-        currentMarker = marker;
-        currentZoneId = id;
-        
-        const el = marker.getElement();
-        if (el) {
-          el.style.filter = 'drop-shadow(0 0 10px #FF9800) brightness(1.3)';
-          el.style.transform = 'scale(1.2)';
-          el.style.transition = 'all 0.3s ease';
-        }
-        
-        unlockBtn.style.display = 'none';
-        lockBtn.style.display = 'block';
-        
-        if (statusDiv) {
-          const txt = statusDiv.querySelector('.status-text');
-          if (txt) txt.textContent = z.emoji + ' ' + z.name + ' - UNLOCKED';
-          statusDiv.style.background = 'linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)';
-          statusDiv.style.borderLeftColor = '#FF9800';
-          const ico = statusDiv.querySelector('div:first-child');
-          if (ico) ico.textContent = '🔓';
-        }
-        
-        console.log('Unlocked:', z.name);
-      });
-      
-      // Lock handler
-      lockBtn.addEventListener('click', function() {
-        if (!currentMarker || !currentZoneId) return;
-        const z = zones.find(function(zone) { return zone.id === currentZoneId; });
-        
-        currentMarker.dragging.disable();
-        
-        const el = currentMarker.getElement();
-        if (el) {
-          el.style.filter = '';
-          el.style.transform = '';
-        }
-        
-        const pos = currentMarker.getLatLng();
-        console.log('Locked:', z.name);
-        console.log('New position:', [pos.lat, pos.lng]);
-        
-        unlockBtn.style.display = 'block';
-        lockBtn.style.display = 'none';
-        
-        if (statusDiv) {
-          const txt = statusDiv.querySelector('.status-text');
-          if (txt) txt.textContent = 'All Zones Locked';
-          statusDiv.style.background = 'linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%)';
-          statusDiv.style.borderLeftColor = '#F44336';
-          const ico = statusDiv.querySelector('div:first-child');
-          if (ico) ico.textContent = '🔒';
-        }
-        
-        currentMarker = null;
-        currentZoneId = null;
-      });
-      
-      console.log('Zone movement controls initialized');
-    })();
-    
-    // Image upload handling function
+    // (Old one-zone-at-a-time movement UI removed — replaced by the Position
+    // Editor above, which unlocks a whole property's icons at once.)
+        // Image upload handling function
     function handleImageUpload(input, zoneId, category) {
       const files = input.files;
       if (files.length === 0) return;
@@ -7808,7 +7521,941 @@ app.get('/', (req, res) => {
     fixTimelineOnMobile();
     window.addEventListener('resize', fixTimelineOnMobile);
     
-    console.log('✅ EcoVillageBuilder Interactive Map fully initialized');
+    // ---- 🌍 3D terrain mode (Google-Earth-style, MapLibre GL) ----
+    var earth3dMap = null;
+
+    // ---- V0.21: the same county layers, draped over the 3D terrain --------
+    // MapLibre expands {bbox-epsg-3857} per tile, so the county's /export
+    // endpoint works as a raster source with no proxy in between.
+    var VC_3D_DIRECT = {
+      gsat: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      osm: 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    };
+    function vc3dSource(def, transparent) {
+      if (def.kind === 'xyz') {
+        return { type: 'raster', tiles: [vcSvcBase(def) + '/tile/{z}/{y}/{x}'], tileSize: 256, maxzoom: def.maxNative || 21 };
+      }
+      if (def.kind === 'wms') {
+        return { type: 'raster', tiles: [vcWmsUrl(def, '{bbox-epsg-3857}')], tileSize: 256, maxzoom: 19 };
+      }
+      // MapLibre expands {bbox-epsg-3857} per tile, so any export endpoint works here too
+      var px = def.px || 512;
+      return {
+        type: 'raster', tileSize: px, maxzoom: def.maxZoom || (def.root ? 19 : 21),
+        tiles: [vcExportBase(def) + '?bbox={bbox-epsg-3857}' + vcExportTail(def, transparent, px)]
+      };
+    }
+    window.vcSync3DLayers = function () {
+      var m = earth3dMap;
+      if (!m || !earthReady || !m.getStyle) return;
+      try {
+        // tear down every county layer we own, base first-in/last-out
+        var own = ['vc-base'];
+        for (var k = 0; k < VC_OVERLAYS.length; k++) {
+          var oid = 'vc-ov-' + VC_OVERLAYS[k].id;
+          own.push(oid);
+          (VC_OVERLAYS[k].parts || []).forEach(function (_, pi) { own.push(oid + '-p' + pi); });
+        }
+        own.forEach(function (id) {
+          [id, id + '-line', id + '-ease'].forEach(function (l) { if (m.getLayer(l)) m.removeLayer(l); });
+          [id, id + '-vec'].forEach(function (src) { if (m.getSource(src)) m.removeSource(src); });
+        });
+        // sit above the built-in satellite but under boundaries, lots and markers
+        var before = null, ls = (m.getStyle().layers || []);
+        for (var i = 0; i < ls.length; i++) { if (ls[i].id !== 'sat') { before = ls[i].id; break; } }
+
+        var bd = vcDefById(VC_BASES, vcActiveBase);
+        if (bd && (bd.svc || VC_3D_DIRECT[bd.id])) {
+          m.addSource('vc-base', bd.svc
+            ? vc3dSource(bd, false)
+            : { type: 'raster', tiles: [VC_3D_DIRECT[bd.id]], tileSize: 256, maxzoom: 20 });
+          m.addLayer({ id: 'vc-base', type: 'raster', source: 'vc-base', paint: { 'raster-opacity': 1 } }, before);
+        }
+        // every active overlay in draw order (z), so fills stay under lines and labels
+        var active = VC_OVERLAYS.filter(function (d) { return vcActiveOverlays[d.id]; })
+          .sort(function (a, b) { return (a.z || 300) - (b.z || 300); });
+        for (var j = 0; j < active.length; j++) {
+          var d = active[j], sid = 'vc-ov-' + d.id, op = vcOvOpacity(d);
+          if (d.kind === 'image') {
+            var bb = d.bounds;
+            m.addSource(sid, { type: 'image', url: d.url, coordinates: [
+              [bb[0][1], bb[1][0]], [bb[1][1], bb[1][0]], [bb[1][1], bb[0][0]], [bb[0][1], bb[0][0]]
+            ] });
+            if (d._vec) {
+              var ring3 = (d._vec.corners || []).map(function (c) { return [c.latlng[1], c.latlng[0]]; });
+              if (ring3.length) ring3.push(ring3[0]);
+              var feats = [{ type: 'Feature', properties: { k: 'line' }, geometry: { type: 'LineString', coordinates: ring3 } }];
+              (d._vec.easement16 || []).forEach(function (p) {
+                var r = p.map(function (q) { return [q[1], q[0]]; }); r.push(r[0]);
+                feats.push({ type: 'Feature', properties: { k: 'ease' }, geometry: { type: 'Polygon', coordinates: [r] } });
+              });
+              m.addSource(sid + '-vec', { type: 'geojson', data: { type: 'FeatureCollection', features: feats } });
+              m.addLayer({ id: sid + '-ease', type: 'fill', source: sid + '-vec', filter: ['==', 'k', 'ease'], paint: { 'fill-color': '#ffc24d', 'fill-opacity': 0.3 } }, before);
+              m.addLayer({ id: sid + '-line', type: 'line', source: sid + '-vec', filter: ['==', 'k', 'line'], paint: { 'line-color': '#7ff0ff', 'line-width': 2.5, 'line-dasharray': [3, 2] } }, before);
+            }
+            m.addLayer({ id: sid, type: 'raster', source: sid, paint: { 'raster-opacity': op } }, before);
+          } else if (d.parts) {
+            for (var pi = 0; pi < d.parts.length; pi++) {
+              m.addSource(sid + '-p' + pi, vc3dSource(d.parts[pi], true));
+              m.addLayer({ id: sid + '-p' + pi, type: 'raster', source: sid + '-p' + pi, paint: { 'raster-opacity': op } }, before);
+            }
+          } else {
+            m.addSource(sid, vc3dSource(d, true));
+            m.addLayer({ id: sid, type: 'raster', source: sid, paint: { 'raster-opacity': op } }, before);
+          }
+        }
+      } catch (e) { console.warn('3D county layers:', e); }
+    };
+    var mlQueue = [], mlLoading = false;
+    function loadMapLibre(cb) {
+      if (window.maplibregl) return cb();
+      mlQueue.push(cb);
+      if (mlLoading) return;
+      mlLoading = true;
+      var css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css';
+      document.head.appendChild(css);
+      var sc = document.createElement('script');
+      sc.src = 'https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js';
+      sc.onload = function() {
+        mlLoading = false;
+        var q = mlQueue.splice(0);
+        q.forEach(function(f) { try { f(); } catch (e) { console.error(e); } });
+      };
+      sc.onerror = function() {
+        mlLoading = false; mlQueue.length = 0;
+        if (document.getElementById('earth3d').classList.contains('open')) {
+          alert('Could not load the 3D engine - please check your connection and try again.');
+          close3D();
+        }
+      };
+      document.head.appendChild(sc);
+    }
+    function stitchLoop3D(prop) {
+      var pts = [];
+      (prop.boundary || []).forEach(function(seg) {
+        var c = seg.coordinates || [];
+        for (var i = 0; i < c.length - 1; i++) pts.push([c[i][1], c[i][0]]);
+      });
+      if (pts.length) pts.push(pts[0].slice());
+      return pts;
+    }
+    var earthOpenedByGesture = false, earthReady = false;
+    var earthPendPitch = 0, earthPendBearing = 0;
+    var orbitDrag = null, midDrag2D = null;
+    var earthDiveTo = null;
+    function earthGestureDelta(ddx, ddy) {
+      if (earth3dMap && earthReady) {
+        earth3dMap.setPitch(Math.max(0, Math.min(80, earth3dMap.getPitch() - ddy * 0.35)));
+        earth3dMap.setBearing(earth3dMap.getBearing() + ddx * 0.35);
+      } else {
+        earthPendPitch = Math.max(0, Math.min(80, earthPendPitch - ddy * 0.35));
+        earthPendBearing += ddx * 0.35;
+      }
+    }
+    function open3D(opts) {
+      var e3 = document.getElementById('earth3d');
+      if (e3.classList.contains('open')) return;
+      earthPrebuilding = false;           // promote any in-flight background pre-build to a real open
+      e3.classList.remove('prebuilding');
+      earthOpenedByGesture = !!(opts && opts.gesture);
+      earthPendPitch = (opts && typeof opts.pitch === 'number') ? opts.pitch : 0;
+      earthPendBearing = 0;
+      e3.classList.add('open');
+      buildStars();
+      var lel = document.getElementById('earth3d-loading');
+      if (lel) lel.style.display = (earth3dMap && earthReady) ? 'none' : 'flex';
+      loadMapLibre(function() {
+        try { build3D(); }
+        catch (err) {
+          console.error('3D init failed:', err);
+          alert('The 3D view could not start on this device (WebGL needed).');
+          close3D();
+        }
+      });
+    }
+    function close3D() {
+      if (earth3dMap) {
+        try {
+          var cc = earth3dMap.getCenter();
+          map.setView([cc.lat, cc.lng], Math.max(Math.min(earth3dMap.getZoom() + 1, 19), 9), { animate: false });
+        } catch (e) {}
+      }
+      document.getElementById('earth3d').classList.remove('open');
+    }
+    var earthBuiltMode = null;
+    var earth3dMarkers = [];      // DOM property chips only now (6) — zones live on the GPU
+    var zoneImgCache = {};        // "emoji|color" -> map image id (added once, reused across rebuilds)
+    var earthFpsChecked = false;
+    var earthPrebuilding = false;
+    // Render an emoji badge (colored disc + white ring + glyph) to a canvas -> a GPU image.
+    // This is what lets ~50 zone markers ride on a symbol layer instead of ~50 reprojected DOM nodes.
+    function makeZoneIcon(emoji, col) {
+      var R = 2, S = 34, pad = 8, W = (S + pad) * R;
+      var cv = document.createElement('canvas');
+      cv.width = W; cv.height = W;
+      var ctx = cv.getContext('2d');
+      var cx = W / 2, r = (S / 2) * R;
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 5 * R; ctx.shadowOffsetY = 3 * R;
+      var g = ctx.createLinearGradient(cx - r, cx - r, cx + r, cx + r);
+      g.addColorStop(0, col); g.addColorStop(1, col + 'cc');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx, cx, r, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      ctx.lineWidth = 2 * R; ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.beginPath(); ctx.arc(cx, cx, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.font = (19 * R) + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      try { ctx.fillText(emoji, cx, cx + R); } catch (e) {}
+      var d = ctx.getImageData(0, 0, W, W);
+      return { width: W, height: W, data: d.data };
+    }
+    // Sample real frame rate once; if the device is struggling, drop terrain (the heaviest layer).
+    function sampleFps3D() {
+      if (earthFpsChecked || !earth3dMap) return;
+      earthFpsChecked = true;
+      var gaps = [], last = 0, n = 0;
+      function tick(ts) {
+        if (!earth3dMap) return;
+        if (last) gaps.push(ts - last);
+        last = ts; n++;
+        if (n < 75) { requestAnimationFrame(tick); return; }
+        var s = gaps.slice(20).sort(function(a, b) { return a - b; });   // drop warmup/entry frames
+        var med = s.length ? s[Math.floor(s.length / 2)] : 16;
+        var fps = 1000 / med;
+        // Report only — NEVER drop terrain. The hillsides ARE the 3D; keeping them is the whole point.
+        // (The opening fly-in briefly dips below 30fps on any machine, so auto-dropping was a false positive.)
+        console.log('🌍 3D running at ~' + fps.toFixed(0) + 'fps');
+      }
+      requestAnimationFrame(tick);
+    }
+    function earthEntry() {
+      if (earthDiveTo) {
+        var dvp = earthDiveTo; earthDiveTo = null;
+        earth3dMap.flyTo({
+          center: [dvp.center[1], dvp.center[0]],
+          zoom: Math.max((dvp.zoom || 15.5) - 1, 12.8),
+          pitch: 62, bearing: -24,
+          duration: 4200, curve: 1.7, essential: true
+        });
+      } else if (earthOpenedByGesture) {
+        earth3dMap.easeTo({ pitch: earthPendPitch, bearing: earthPendBearing, duration: 450 });
+      } else {
+        setTimeout(function() {
+          if (earth3dMap) earth3dMap.easeTo({ pitch: 58, bearing: -18, duration: 2600 });
+        }, 500);
+      }
+    }
+    function buildMarkers3D() {
+      if (!earth3dMap || !earth3dMap.getSource('zonesrc')) return;   // zone layer is created on 'load'
+      // ---- Zone markers: ONE GPU symbol layer (was ~50 DOM markers — the source of the lag) ----
+      var feats = [];
+      zones.forEach(function(z) {
+        if (window.zoneVisibleInMode && !window.zoneVisibleInMode(z.mode)) return;
+        var col = zoneColorMap[z.type] || '#455a64';
+        var key = z.emoji + '|' + col;
+        var imgId = zoneImgCache[key];
+        if (!imgId) {
+          imgId = 'zi' + Object.keys(zoneImgCache).length;
+          try { if (!earth3dMap.hasImage(imgId)) earth3dMap.addImage(imgId, makeZoneIcon(z.emoji, col), { pixelRatio: 2 }); }
+          catch (e) {}
+          zoneImgCache[key] = imgId;
+        }
+        var nm = (window.zoneView ? window.zoneView(z).name : z.name);
+        feats.push({ type: 'Feature', properties: { icon: imgId, name: nm },
+          geometry: { type: 'Point', coordinates: [z.position[1], z.position[0]] } });
+      });
+      earth3dMap.getSource('zonesrc').setData({ type: 'FeatureCollection', features: feats });
+      // ---- Property chips: 6 DOM markers (negligible), keeps the styled pill look + dive-on-click ----
+      earth3dMarkers.forEach(function(m) { try { m.remove(); } catch (e) {} });
+      earth3dMarkers = [];
+      properties.forEach(function(p) {
+        var el = document.createElement('div');
+        el.className = 'prop-chip3d';
+        el.textContent = (window.visionMode && p.visionLabelChip) ? p.visionLabelChip : p.labelChip;
+        el.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          earth3dMap.flyTo({
+            center: [p.center[1], p.center[0]],
+            zoom: Math.max((p.zoom || 15.5) - 1, 12.8),
+            pitch: 62, bearing: -24,
+            duration: 3400, curve: 1.55, essential: true
+          });
+        });
+        earth3dMarkers.push(new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -16] })
+          .setLngLat([p.center[1], p.center[0]])
+          .addTo(earth3dMap));
+      });
+      earthBuiltMode = !!window.visionMode;
+    }
+    function build3D() {
+      if (earth3dMap && earthReady) {
+        // The globe is alive & pre-built — just resync it to the 2D camera and re-enter (instant)
+        earth3dMap.resize();
+        var rc = map.getCenter(), rz = map.getZoom();
+        earth3dMap.jumpTo({ center: [rc.lng, rc.lat], zoom: Math.max(rz - 1, 10.8), pitch: 0, bearing: 0 });
+        // Re-assert terrain every open — the hillsides must always be there when you enter 3D.
+        try { if (!earth3dMap.getTerrain()) earth3dMap.setTerrain({ source: 'dem', exaggeration: 1.5 }); } catch (e) {}
+        if (earthBuiltMode !== !!window.visionMode) buildMarkers3D();
+        var lel2 = document.getElementById('earth3d-loading');
+        if (lel2) lel2.style.display = 'none';
+        earthEntry();
+        sampleFps3D();
+        return;
+      }
+      if (earth3dMap && !earthReady) {
+        // Construction is already in flight (a background pre-build) — just size it;
+        // the 'load' handler will finish the entry now that we're no longer prebuilding.
+        try { earth3dMap.resize(); } catch (e) {}
+        return;
+      }
+      var c2 = map.getCenter(), z2 = map.getZoom();
+      earth3dMap = new maplibregl.Map({
+        container: 'earth3d-map',
+        style: {
+          version: 8,
+          sources: {
+            sat: {
+              type: 'raster',
+              tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+              tileSize: 256, maxzoom: 19
+            },
+            dem: {
+              type: 'raster-dem',
+              tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+              tileSize: 256, encoding: 'terrarium', maxzoom: 14
+            }
+          },
+          layers: [{ id: 'sat', type: 'raster', source: 'sat' }],
+          projection: { type: 'globe' },
+          sky: {
+            'sky-color': 'rgba(2, 4, 12, 0)',
+            'horizon-color': 'rgba(110, 175, 255, 0.5)',
+            'fog-color': 'rgba(12, 26, 51, 0.6)',
+            'sky-horizon-blend': 0.7,
+            'horizon-fog-blend': 0.6,
+            'fog-ground-blend': 0.85,
+            'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 8, 1, 11, 0]
+          }
+        },
+        center: [c2.lng, c2.lat],
+        zoom: Math.max(z2 - 1, 10.8),
+        pitch: 0, bearing: 0, maxPitch: 80,
+        fadeDuration: 0,
+        // Cap the render resolution: on retina / 4K screens an uncapped devicePixelRatio makes the
+        // GPU push 4-9x the pixels every frame -> the lag & tearing johny saw. 1.5 stays crisp, runs fast.
+        pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
+        antialias: false,
+        attributionControl: false,
+        refreshExpiredTiles: false
+      });
+      earth3dMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+      window.earth3dRef = earth3dMap;
+      // Google-Earth middle-mouse orbit (right-drag / ctrl-drag / two-finger work natively)
+      var cvs3d = earth3dMap.getCanvasContainer();
+      cvs3d.addEventListener('mousedown', function(e) {
+        if (e.button === 1) { e.preventDefault(); orbitDrag = { x: e.clientX, y: e.clientY }; }
+      });
+      cvs3d.addEventListener('auxclick', function(e) { e.preventDefault(); });
+      earth3dMap.once('webglcontextlost', function() {
+        try { earth3dMap.remove(); } catch (e) {}
+        earth3dMap = null; window.earth3dRef = null;
+        earthBuiltMode = null; earthReady = false;
+        zoneImgCache = {}; earthFpsChecked = false; earthPrebuilding = false;  // rebuild adds fresh GPU images
+      });
+      earth3dMap.on('load', function() {
+        earthReady = true;
+        var lel = document.getElementById('earth3d-loading');
+        if (lel) lel.style.display = 'none';
+        try { earth3dMap.setTerrain({ source: 'dem', exaggeration: 1.5 }); }
+        catch (e) { console.warn('terrain not available with globe on this device:', e); }
+
+        // Rainbow-line stand-ins: gold glow + violet line per property boundary
+        properties.forEach(function(p, idx) {
+          var loop = stitchLoop3D(p);
+          if (!loop.length) return;
+          earth3dMap.addSource('b' + idx, { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: loop } } });
+          earth3dMap.addLayer({ id: 'bglow' + idx, type: 'line', source: 'b' + idx, paint: { 'line-color': '#FFD700', 'line-width': 7, 'line-blur': 5, 'line-opacity': 0.5 } });
+          earth3dMap.addLayer({ id: 'bline' + idx, type: 'line', source: 'b' + idx, paint: { 'line-color': '#B388FF', 'line-width': 2.6 } });
+        });
+
+        // Ranch parcel plat lines
+        properties.forEach(function(p, idx) {
+          if (!p.lots || !p.lots.length) return;
+          var feats = [];
+          p.lots.forEach(function(lot) {
+            (lot.rings || []).forEach(function(ring) {
+              feats.push({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: ring.map(function(q) { return [q[1], q[0]]; }) } });
+            });
+          });
+          earth3dMap.addSource('lots' + idx, { type: 'geojson', data: { type: 'FeatureCollection', features: feats } });
+          earth3dMap.addLayer({ id: 'lots' + idx, type: 'line', source: 'lots' + idx, paint: { 'line-color': '#FFFFFF', 'line-width': 0.9, 'line-opacity': 0.6 } });
+        });
+
+        // Zone markers live here: one empty GeoJSON source + symbol layer, filled by buildMarkers3D()
+        earth3dMap.addSource('zonesrc', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        earth3dMap.addLayer({
+          id: 'zones3d', type: 'symbol', source: 'zonesrc',
+          layout: {
+            'icon-image': ['get', 'icon'],
+            'icon-size': ['interpolate', ['linear'], ['zoom'], 11, 0.4, 14, 0.62, 17, 0.82],
+            'icon-allow-overlap': true, 'icon-ignore-placement': true, 'icon-anchor': 'center'
+          }
+        });
+        earth3dMap.on('click', 'zones3d', function(e) {
+          var f = e.features && e.features[0]; if (!f) return;
+          new maplibregl.Popup({ offset: 16, closeButton: false })
+            .setLngLat(f.geometry.coordinates.slice())
+            .setText(f.properties.name).addTo(earth3dMap);
+        });
+        earth3dMap.on('mouseenter', 'zones3d', function() { earth3dMap.getCanvas().style.cursor = 'pointer'; });
+        earth3dMap.on('mouseleave', 'zones3d', function() { earth3dMap.getCanvas().style.cursor = ''; });
+
+        buildMarkers3D();
+        if (window.vcSync3DLayers) window.vcSync3DLayers();
+        if (earthPrebuilding) {
+          // Warmed up invisibly. Let tiles settle, then drop back to display:none — the map stays
+          // alive & fully built, so the first real open is just resize + jumpTo + fly-in.
+          var settle = function() {
+            var pe = document.getElementById('earth3d');
+            if (pe && !pe.classList.contains('open')) pe.classList.remove('prebuilding');
+            earthPrebuilding = false;
+          };
+          earth3dMap.once('idle', settle); setTimeout(settle, 6000);
+          console.log('🌍 globe pre-built silently —', properties.length, 'properties ready before first open');
+        } else {
+          var leld = document.getElementById('earth3d-loading'); if (leld) leld.style.display = 'none';
+          earthEntry();
+          sampleFps3D();
+          console.log('🌍 globe mode ready -', properties.length, 'properties on a real planet (kept alive between opens)');
+        }
+      });
+    }
+
+    var earthBtn = document.getElementById('earth-toggle');
+    if (earthBtn) earthBtn.addEventListener('click', function() { open3D(); });
+    var earthExit = document.getElementById('earth3d-exit');
+    if (earthExit) earthExit.addEventListener('click', close3D);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && document.getElementById('earth3d').classList.contains('open')) close3D();
+    });
+
+    // ---- Google-Earth gesture bridge: hold middle mouse (or two fingers) to tilt into 3D ----
+    var mapEl2D = document.getElementById('map');
+    if (mapEl2D) {
+      mapEl2D.addEventListener('mousedown', function(e) {
+        if (e.button !== 1 || window.positionEditActive) return;
+        if (document.getElementById('earth3d').classList.contains('open')) return;
+        e.preventDefault();
+        midDrag2D = { x: e.clientX, y: e.clientY, live: false };
+      });
+      mapEl2D.addEventListener('auxclick', function(e) { e.preventDefault(); });
+      var twoFinger = null;
+      mapEl2D.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2 && !window.positionEditActive) {
+          var tdx = e.touches[0].clientX - e.touches[1].clientX;
+          var tdy = e.touches[0].clientY - e.touches[1].clientY;
+          twoFinger = { d: Math.sqrt(tdx * tdx + tdy * tdy), y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+        } else { twoFinger = null; }
+      }, { passive: true });
+      mapEl2D.addEventListener('touchmove', function(e) {
+        if (!twoFinger || e.touches.length !== 2) return;
+        if (document.getElementById('earth3d').classList.contains('open')) return;
+        var mdx = e.touches[0].clientX - e.touches[1].clientX;
+        var mdy = e.touches[0].clientY - e.touches[1].clientY;
+        var nd = Math.sqrt(mdx * mdx + mdy * mdy);
+        var ny = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        if (Math.abs(nd - twoFinger.d) < 45 && Math.abs(ny - twoFinger.y) > 38) {
+          twoFinger = null;
+          open3D({ gesture: true, pitch: 52 });
+        }
+      }, { passive: true });
+      mapEl2D.addEventListener('touchend', function() { twoFinger = null; }, { passive: true });
+    }
+    var orbitVel = null;
+    window.addEventListener('mousemove', function(e) {
+      if (midDrag2D) {
+        var gdx = e.clientX - midDrag2D.x, gdy = e.clientY - midDrag2D.y;
+        if (!midDrag2D.live) {
+          if (Math.abs(gdx) + Math.abs(gdy) > 5) { midDrag2D.live = true; open3D({ gesture: true, pitch: 0 }); }
+        } else {
+          earthGestureDelta(gdx, gdy);
+          orbitVel = { x: gdx, y: gdy };
+        }
+        midDrag2D.x = e.clientX; midDrag2D.y = e.clientY;
+        return;
+      }
+      if (orbitDrag && earth3dMap) {
+        var odx = e.clientX - orbitDrag.x, ody = e.clientY - orbitDrag.y;
+        earthGestureDelta(odx, ody);
+        orbitVel = { x: odx, y: ody };
+        orbitDrag.x = e.clientX; orbitDrag.y = e.clientY;
+      }
+    });
+    window.addEventListener('mouseup', function(e) {
+      if (e.button !== 1) return;
+      var hadDrag = !!(midDrag2D && midDrag2D.live) || !!orbitDrag;
+      midDrag2D = null; orbitDrag = null;
+      if (hadDrag && orbitVel && earth3dMap && earthReady && (Math.abs(orbitVel.x) > 2 || Math.abs(orbitVel.y) > 2)) {
+        var vx = orbitVel.x, vy = orbitVel.y;
+        (function glide() {
+          vx *= 0.9; vy *= 0.9;
+          if ((Math.abs(vx) < 0.4 && Math.abs(vy) < 0.4) || !earth3dMap) return;
+          earthGestureDelta(vx, vy);
+          requestAnimationFrame(glide);
+        })();
+      }
+      orbitVel = null;
+    });
+    var gearthBtn = document.getElementById('earth3d-gearth');
+    if (gearthBtn) gearthBtn.addEventListener('click', function() {
+      var glat = 34.4287, glng = -119.2375, gzm = 13, ghd = 0, gtl = 0;
+      if (earth3dMap) {
+        var gcc = earth3dMap.getCenter(); glat = gcc.lat; glng = gcc.lng;
+        gzm = earth3dMap.getZoom(); ghd = earth3dMap.getBearing(); gtl = earth3dMap.getPitch();
+      }
+      var gdist = Math.round(40075017 * Math.abs(Math.cos(glat * Math.PI / 180)) / Math.pow(2, gzm + 1));
+      window.open('https://earth.google.com/web/@' + glat.toFixed(6) + ',' + glng.toFixed(6) + ',0a,' + gdist + 'd,35y,' + ghd.toFixed(1) + 'h,' + gtl.toFixed(1) + 't,0r', '_blank');
+    });
+
+    // 🌀 Portal: property panel -> Vision mode -> cinematic globe dive
+    window.enterPortal = function(propId) {
+      var pp = document.getElementById('property-panel');
+      if (pp) pp.classList.remove('open');
+      if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+      if (!window.visionMode) { try { applyMode(true); } catch (e) {} }
+      earthDiveTo = propertiesById[propId] || null;
+      open3D({ dive: true });
+    };
+    function buildStars() {
+      var el = document.getElementById('earth3d-stars');
+      if (!el || el.dataset.built) return;
+      el.dataset.built = '1';
+      var sh = '';
+      for (var i = 0; i < 160; i++) {
+        var sx = (Math.random() * 100).toFixed(2);
+        var sy = (Math.random() * 100).toFixed(2);
+        var so = (Math.random() * 0.7 + 0.25).toFixed(2);
+        sh += (sh ? ', ' : '') + sx + 'vw ' + sy + 'vh 0 ' + (Math.random() > 0.85 ? '1px' : '0') + ' rgba(255,255,255,' + so + ')';
+      }
+      var dot = document.createElement('div');
+      dot.style.cssText = 'position:absolute;top:0;left:0;width:2px;height:2px;border-radius:50%;box-shadow:' + sh;
+      el.appendChild(dot);
+    }
+
+    // Pre-BUILD the whole 3D world silently at page load (johny: "pre-loaded and ready to display").
+    // The map is constructed in a full-size but invisible overlay so tiles, terrain, shaders and the
+    // zone layer are all ready BEFORE the first open — then it drops to display:none, still alive.
+    function prebuild3D() {
+      var e3 = document.getElementById('earth3d');
+      if (earth3dMap || !e3 || e3.classList.contains('open')) return;
+      earthPrebuilding = true;
+      e3.classList.add('prebuilding');
+      loadMapLibre(function() {
+        if (document.getElementById('earth3d').classList.contains('open')) return; // user beat us to it
+        try { build3D(); }
+        catch (e) {
+          earthPrebuilding = false;
+          e3.classList.remove('prebuilding');
+        }
+      });
+    }
+    // V0.21.1 — the pre-warm costs ~1.1MB (MapLibre + first tiles) and most
+    // visitors never open 3D, so only pay it where it is genuinely free:
+    // a roomy, fast, unmetered connection. Everyone else loads on demand
+    // (the pulsing orb already covers that), and hovering the 🌍 button
+    // starts the download early so the click still feels instant.
+    function should3DPrebuild() {
+      try {
+        var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+        if (c.saveData) return false;
+        if (c.effectiveType && /2g|3g/.test(c.effectiveType)) return false;
+        if (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory < 4) return false;
+        var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        if (coarse && Math.min(screen.width, screen.height) < 700) return false;   // phones
+        return true;
+      } catch (e) { return true; }
+    }
+    var earthPrefetched = false;
+    function prefetch3D() {
+      if (earthPrefetched || earth3dMap) return;
+      earthPrefetched = true;
+      try { loadMapLibre(function () {}); } catch (e) {}
+    }
+    if (should3DPrebuild()) {
+      setTimeout(prebuild3D, 2200);
+    } else {
+      var eb = document.getElementById('earth-toggle');
+      if (eb) {
+        eb.addEventListener('mouseenter', prefetch3D, { passive: true });
+        eb.addEventListener('touchstart', prefetch3D, { passive: true });
+      }
+    }
+
+    // ---- Status cards, mode strips, documents, community preview cards (V0.17) ----
+    window.modeStripHTML = function() {
+      if (window.visionMode) {
+        return '<div class="mode-strip vision">✨ VISION — proposed potential &amp; plans</div>';
+      }
+      return '<div class="mode-strip today">🏞️ TODAY — the property as it really is</div>';
+    };
+    window.statusCardHTML = function(prop) {
+      var st = prop.status && (window.visionMode ? prop.status.vision : prop.status.today);
+      if (!st) return '';
+      var h = '<div class="status-card' + (window.visionMode ? ' vision' : '') + '">';
+      h += '<div class="status-badge">' + st.badge + '</div>';
+      (st.rows || []).forEach(function(r) {
+        h += '<div class="status-row"><span class="status-label">' + r[0] + '</span><span class="status-value">' + r[1] + '</span></div>';
+      });
+      if (st.note) h += '<div class="status-note">' + st.note + '</div>';
+      h += '</div>';
+      return h;
+    };
+    // ---- the County Record, in full (V0.29.2: the classic page renders the same record as the atlas) ----
+    window.dossierSectionHTML = function(prop) {
+      if (!prop || (!prop.apn && !prop.center)) return '';
+      var sub = prop.lots && prop.lots.length > 1
+        ? 'This property is ' + prop.lots.length + ' separate parcels. Below is the one under the centre pin; click any lot line on the map and choose &ldquo;county record for this lot&rdquo; to read another.'
+        : 'Everything the public record holds on this parcel: the county, the state and the federal record, resolved live from the record keepers&rsquo; own servers when you opened this panel.';
+      return '<div class="dossier-section" id="dossier-section">'
+        + '<h4>&#128451;&#65039; The County Record</h4>'
+        + '<p class="section-sub" id="dossier-sub">' + sub + '</p>'
+        + '<div id="dossier-body"><div class="ds-wait"><span class="ds-spin"></span>Reading the county record…</div></div>'
+        + '</div>';
+    };
+    function dsEsc(s) {
+      return String(s === null || s === undefined ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    var DS_MAPTYPES = { PM: 'Parcel map', RS: 'Record of survey', MR: 'Miscellaneous record', TR: 'Tract map', WCR: 'Well completion report (DWR)' };
+    function dsRow(r) {
+      return '<div class="ds-row' + (r[0] ? '' : ' cont') + '"' + (r[2] ? ' data-key="' + dsEsc(r[2]) + '"' : '')
+        + '><span class="ds-k">' + dsEsc(r[0]) + '</span><span class="ds-v">' + dsEsc(r[1]) + '</span></div>';
+    }
+    function dsSections(rec, open) {
+      var h = '';
+      (rec.sections || []).forEach(function(s) {
+        h += '<details class="ds-fold ds-sec" data-sec="' + dsEsc(s.id) + '"' + (open ? ' open' : '') + '>'
+           + '<summary>' + dsEsc(s.label) + '<span class="ds-count">' + s.rows.length + '</span></summary>'
+           + '<div class="ds-rows">' + s.rows.map(dsRow).join('') + '</div></details>';
+      });
+      return h;
+    }
+    function dsRead(dims) {
+      if (!dims || !dims.length) return '';
+      return '<div class="ds-read">' + dims.map(function(d) {
+        return '<div class="ds-rd"><div class="ds-rd-l">' + dsEsc(d.label) + '</div><div class="ds-rd-v">' + dsEsc(d.value) + '</div>'
+          + (d.score !== null && d.score !== undefined ? '<div class="ds-bar"><i style="width:' + Math.max(0, Math.min(100, d.score)) + '%"></i></div>' : '')
+          + (d.note ? '<div class="ds-rd-n">' + dsEsc(d.note) + '</div>' : '') + '</div>';
+      }).join('') + '</div>';
+    }
+    function dsRecords(recs) {
+      if (!recs || !recs.length) return '';
+      var h = '<details class="ds-fold ds-sec" data-sec="recmaps" open><summary>Recorded maps, surveys &amp; well reports<span class="ds-count">' + recs.length + '</span></summary><div class="ds-rows">'
+        + '<p class="ds-note">Every map ever filed over this land — the same documents a surveyor retraces — and every well completion report the state holds nearby. Each one opens as the record keeper&rsquo;s own scan.</p>';
+      recs.forEach(function(r) {
+        var meta = [r.type ? (DS_MAPTYPES[r.type] || r.type) : null, r.year, r.surveyor, r.note, (r.pages ? r.pages + (r.pages > 1 ? ' sheets' : ' sheet') : null)]
+          .filter(Boolean).join(' · ');
+        if (r.url) {
+          h += '<a class="ds-doc" href="' + dsEsc(r.url) + '" target="_blank" rel="noopener">'
+             + '<span class="ds-doc-l"><b>' + dsEsc(r.label) + '</b><i>' + dsEsc(meta) + '</i></span>'
+             + '<span class="ds-doc-o">open ↗</span></a>';
+        } else {
+          h += '<div class="ds-row"><span class="ds-k">' + dsEsc(r.label) + '</span><span class="ds-v">' + dsEsc(meta) + '</span></div>';
+        }
+      });
+      return h + '</div></details>';
+    }
+    function dsPortals(portals, apn) {
+      if (!portals || !portals.length) return '';
+      var groups = [['county', 'County'], ['state', 'State'], ['federal', 'Federal'], ['directory', 'Directories']];
+      var h = '<details class="ds-fold ds-sec" data-sec="portals" open><summary>Where to look — the record keepers<span class="ds-count">' + portals.length + '</span></summary><div class="ds-portals">'
+        + '<p class="ds-note">GIS answers most questions; the rest live in the county&rsquo;s own systems. These open the right desk' + (apn ? ' — the APN is copied to your clipboard on the way' : '') + '.</p>';
+      groups.forEach(function(g) {
+        var items = portals.filter(function(p) { return p.group === g[0]; });
+        if (!items.length) return;
+        h += '<div class="ds-pg"><div class="ds-pg-l">' + g[1] + '</div>';
+        items.forEach(function(p) {
+          var link;
+          if (p.method === 'post') {
+            link = '<form class="ds-pf" method="post" action="' + dsEsc(p.url) + '" target="_blank" rel="noopener" data-apn="' + dsEsc(apn || '') + '">';
+            Object.keys(p.fields || {}).forEach(function(k) { link += '<input type="hidden" name="' + dsEsc(k) + '" value="' + dsEsc(p.fields[k]) + '">'; });
+            link += '<button class="ds-pl" type="submit">' + dsEsc(p.label) + ' ↗</button></form>';
+          } else {
+            link = '<a class="ds-pl" href="' + dsEsc(p.url) + '" target="_blank" rel="noopener" data-apn="' + dsEsc(apn || '') + '">' + dsEsc(p.label) + ' ↗</a>';
+          }
+          h += '<div class="ds-pi">' + link + (p.note ? '<div class="ds-pn">' + dsEsc(p.note) + '</div>' : '') + '</div>';
+        });
+        h += '</div>';
+      });
+      return h + '</div></details>';
+    }
+    function dsRaw(raw) {
+      if (!raw || !raw.length) return '';
+      return '<details class="ds-fold ds-sec" data-sec="raw"><summary>Raw assessor record<span class="ds-count">' + raw.length + ' fields</span></summary><div class="ds-rows mono">'
+        + raw.map(function(kv) { return '<div class="ds-row"><span class="ds-k">' + dsEsc(kv[0]) + '</span><span class="ds-v">' + dsEsc(kv[1]) + '</span></div>'; }).join('')
+        + '</div></details>';
+    }
+    function dsFoot(rec, deepState) {
+      var d = rec.resolvedAt ? new Date(rec.resolvedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+      return '<div class="ds-foot">' + (rec.sourcesAnswered || 0) + ' of ' + (rec.sourcesQueried || 0) + ' public sources answered'
+        + (rec.sourcesLate ? ' (' + rec.sourcesLate + ' late — refresh to fill them in)' : '')
+        + ' · resolved ' + d + (rec.cached ? ' (from the 30-day cache)' : '')
+        + (deepState === 'loading' ? ' · <span class="ds-wait-i">state &amp; federal layers and the terrain grid still loading…</span>'
+          : deepState === 'failed' ? ' · the state/federal resolver did not answer — refresh to try again' : '')
+        + '.<br>Assessor figures are the county&rsquo;s own and are not an appraisal. Recorded documents, not GIS, are the authority on boundaries and easements. Every row names its publisher; nothing here is inferred.</div>';
+    }
+    window.dossierHTML = function(rec, deepState, expanded) {
+      var c = rec.county;
+      var auth = c ? dsEsc(c.name) + (c.stateName ? ', ' + dsEsc(c.stateName) : '')
+        + (c.adapter ? ' · ' + dsEsc(c.authority || ('county adapter: ' + c.adapter)) : ' · no parcel adapter — federal + state record only') : '';
+      var h = '<div class="ds-head"><span class="ds-apn">' + dsEsc(rec.apn || (rec.center ? rec.center[0].toFixed(5) + ', ' + rec.center[1].toFixed(5) : '')) + '</span>'
+         + (rec.situs ? '<span class="ds-situs">' + dsEsc(rec.situs) + '</span>' : '')
+         + (rec.acreage ? '<span class="ds-situs">' + rec.acreage.toFixed(2) + ' ac</span>' : '')
+         + (auth ? '<span class="ds-auth">' + auth + '</span>' : '')
+         + '</div>';
+      h += '<div class="ds-acts">'
+         + '<button class="ds-btn" type="button" data-ds="expand">' + (expanded ? 'collapse all' : 'expand all') + '</button>'
+         + '<button class="ds-btn" type="button" data-ds="refresh" title="re-resolve from every source">refresh</button>'
+         + '<button class="ds-btn" type="button" data-ds="print" title="open a clean report in a new tab">report ↗</button>'
+         + '<button class="ds-btn" type="button" data-ds="json" title="download the whole record as JSON">JSON</button>'
+         + (rec.apn ? '<button class="ds-btn" type="button" data-ds="copy">copy APN</button>'
+             + '<a class="ds-btn" href="/?apn=' + encodeURIComponent(rec.apn) + '" target="_blank" rel="noopener" title="open this parcel in the atlas — search, save to research, compare">open in the atlas ↗</a>' : '')
+         + '</div>';
+      (rec.flags || []).forEach(function(f) { h += '<div class="ds-flag ' + dsEsc(f.level) + '">' + dsEsc(f.text) + '</div>'; });
+      if (rec.read && rec.read.length) {
+        h += '<div class="ds-sub">The read — seven things the record can answer' + (deepState === 'loading' ? ' <span class="ds-wait-i">(terrain grid loading)</span>' : '') + '</div>' + dsRead(rec.read);
+      }
+      h += dsSections(rec, expanded);
+      h += dsRecords(rec.records);
+      h += dsPortals(rec.portals, rec.apn);
+      h += dsRaw(rec.raw);
+      h += dsFoot(rec, deepState);
+      return h;
+    };
+    var dsState = { token: 0, target: null, core: null, all: null, deepState: 'loading', expanded: true };
+    function dsCopy(text, btn) {
+      try { if (navigator.clipboard) navigator.clipboard.writeText(text); } catch (e) { /* clipboard unavailable */ }
+      if (btn) { var old = btn.textContent; btn.textContent = 'copied'; setTimeout(function() { btn.textContent = old; }, 1200); }
+    }
+    function dsDownload(rec) {
+      var blob = new Blob([JSON.stringify(rec, null, 2)], { type: 'application/json' });
+      var u = URL.createObjectURL(blob); var a = document.createElement('a');
+      a.href = u; a.download = 'county-record-' + String(rec.apn || 'point').replace(/[^0-9a-z-]/gi, '') + '.json'; a.click();
+      setTimeout(function() { URL.revokeObjectURL(u); }, 2000);
+    }
+    function dsOpenReport(rec) {
+      var esc = dsEsc;
+      var rows = function(rs) { return rs.map(function(r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join(''); };
+      var h = '<!doctype html><html><head><meta charset="utf-8"><title>County record — ' + esc(rec.apn || 'parcel') + '</title>'
+        + '<style>body{font:13px/1.5 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1a1f1c;max-width:860px;margin:28px auto;padding:0 20px}h1{font-size:22px;margin:0 0 2px}h2{font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#4c5a52;margin:26px 0 6px;border-bottom:1px solid #d8ded9;padding-bottom:4px}.sub{color:#4c5a52;margin:0 0 14px}table{border-collapse:collapse;width:100%}th{text-align:left;width:34%;font-weight:600;color:#4c5a52;padding:4px 8px 4px 0;vertical-align:top;border-bottom:1px solid #eef1ee}td{padding:4px 0;vertical-align:top;border-bottom:1px solid #eef1ee}.flag{padding:6px 10px;border-left:3px solid #b98a2b;background:#fbf6e7;margin:4px 0}.flag.good{border-color:#4c8a3f;background:#eef6ea}.read{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}.rd{border:1px solid #d8ded9;border-radius:6px;padding:8px 10px}.rd b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#4c5a52}.rd i{display:block;font-style:normal;color:#4c5a52;font-size:11.5px}a{color:#1f5fa0}.foot{margin-top:24px;font-size:11px;color:#4c5a52}@media print{body{margin:0}}</style></head><body>'
+        + '<h1>' + esc(rec.apn || 'Point') + (rec.situs ? ' · ' + esc(rec.situs) : '') + '</h1>'
+        + '<p class="sub">' + (rec.acreage ? rec.acreage.toFixed(2) + ' ac · ' : '')
+        + (rec.county ? esc(rec.county.name) + (rec.county.stateName ? ', ' + esc(rec.county.stateName) : '') + ' · ' : '')
+        + 'resolved ' + (rec.resolvedAt ? new Date(rec.resolvedAt).toLocaleString() : '') + ' from ' + (rec.sourcesAnswered || 0) + ' public sources · Ojai Atlas county record</p>';
+      (rec.flags || []).forEach(function(f) { h += '<div class="flag ' + esc(f.level) + '">' + esc(f.text) + '</div>'; });
+      if (rec.read && rec.read.length) {
+        h += '<h2>The read</h2><div class="read">' + rec.read.map(function(d) {
+          return '<div class="rd"><b>' + esc(d.label) + '</b>' + esc(d.value) + (d.score !== null && d.score !== undefined ? ' · ' + d.score + '/100' : '') + '<i>' + esc(d.note) + '</i></div>';
+        }).join('') + '</div>';
+      }
+      (rec.sections || []).forEach(function(s) { h += '<h2>' + esc(s.label) + '</h2><table>' + rows(s.rows) + '</table>'; });
+      if (rec.records && rec.records.length) {
+        h += '<h2>Recorded maps, surveys &amp; well reports</h2><table>' + rec.records.map(function(r) {
+          return '<tr><th>' + esc(r.label) + '</th><td>' + [r.year, r.surveyor, r.note].filter(Boolean).map(function(x) { return esc(x); }).join(' · ') + (r.url ? ' — <a href="' + esc(r.url) + '">scan</a>' : '') + '</td></tr>';
+        }).join('') + '</table>';
+      }
+      if (rec.portals && rec.portals.length) {
+        h += '<h2>Where to look</h2><table>' + rec.portals.map(function(p) { return '<tr><th><a href="' + esc(p.url) + '">' + esc(p.label) + '</a></th><td>' + esc(p.note || '') + '</td></tr>'; }).join('') + '</table>';
+      }
+      if (rec.raw && rec.raw.length) {
+        h += '<h2>Raw assessor record</h2><table>' + rec.raw.map(function(kv) { return '<tr><th>' + esc(kv[0]) + '</th><td>' + esc(kv[1]) + '</td></tr>'; }).join('') + '</table>';
+      }
+      h += '<p class="foot">Assessor figures are the county&rsquo;s own and are not an appraisal. Recorded documents, not GIS, are the authority on boundaries and easements. Sources: county GIS, California Geological Survey, FEMA, USGS, NRCS, BLM, US Census — each row names its publisher.</p></body></html>';
+      var w = window.open('', '_blank'); if (!w) return;
+      w.document.open(); w.document.write(h); w.document.close();
+    }
+    function dsWire() {
+      var body = document.getElementById('dossier-body'); if (!body) return;
+      body.querySelectorAll('[data-ds]').forEach(function(b) {
+        b.addEventListener('click', function() {
+          var a = b.getAttribute('data-ds');
+          var rec = dsState.all || dsState.core;
+          if (a === 'expand') {
+            dsState.expanded = !dsState.expanded;
+            body.querySelectorAll('details.ds-sec').forEach(function(d) { if (d.getAttribute('data-sec') !== 'raw') d.open = dsState.expanded; });
+            b.textContent = dsState.expanded ? 'collapse all' : 'expand all';
+          } else if (a === 'refresh') { dsLoad(true); }
+          else if (a === 'print') { if (rec) dsOpenReport(rec); }
+          else if (a === 'json') { if (rec) dsDownload(rec); }
+          else if (a === 'copy') { if (rec && rec.apn) dsCopy(rec.apn, b); }
+        });
+      });
+      body.querySelectorAll('.ds-pf, a.ds-pl').forEach(function(el) {
+        el.addEventListener(el.tagName === 'FORM' ? 'submit' : 'click', function() { var apn = el.getAttribute('data-apn'); if (apn) dsCopy(apn); });
+      });
+    }
+    function dsDraw() {
+      var body = document.getElementById('dossier-body'); if (!body) return;
+      var rec = dsState.all || dsState.core; if (!rec) return;
+      body.innerHTML = window.dossierHTML(rec, dsState.deepState, dsState.expanded);
+      dsWire();
+    }
+    // core (the county) and all (county + state + federal + terrain, merged server-side) are asked for at
+    // once; the server shares the in-flight county fan-out between them, so the card fills in twice: the
+    // county record first, the whole record when the state/federal layers and the terrain grid land.
+    function dsLoad(refresh) {
+      var t = dsState.target; if (!t) return;
+      var token = ++dsState.token;
+      var q = t.apn ? 'apn=' + encodeURIComponent(t.apn) + (t.county ? '&county=' + encodeURIComponent(t.county) : '') : 'lat=' + t.lat + '&lon=' + t.lon;
+      var tail = '&read=1' + (refresh ? '&refresh=1' : '');
+      dsState.deepState = 'loading';
+      if (refresh) {
+        dsState.core = null; dsState.all = null;
+        var b0 = document.getElementById('dossier-body');
+        if (b0) b0.innerHTML = '<div class="ds-wait"><span class="ds-spin"></span>Re-resolving from every source…</div>';
+      }
+      fetch('/api/dossier?' + q + '&part=core' + tail)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (token !== dsState.token) return;
+          if (d.error) throw new Error(d.error);
+          if (!dsState.all) { dsState.core = d; dsDraw(); }
+        })
+        .catch(function(e) {
+          if (token !== dsState.token || dsState.core || dsState.all) return;
+          var b = document.getElementById('dossier-body');
+          if (b) b.innerHTML = '<div class="ds-wait">Could not reach the county records right now. ' + dsEsc(e.message || '') + ' <button class="ds-btn" type="button" data-ds="refresh">try again</button></div>';
+          dsWire();
+        });
+      fetch('/api/dossier?' + q + '&part=all' + tail)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (token !== dsState.token) return;
+          if (d.error) throw new Error(d.error);
+          dsState.all = d; dsState.deepState = 'done'; dsDraw();
+        })
+        .catch(function() {
+          if (token !== dsState.token) return;
+          dsState.deepState = 'failed';
+          if (dsState.core) dsDraw();
+        });
+    }
+    window.loadDossier = function(prop) {
+      var body = document.getElementById('dossier-body');
+      if (!body || !prop) return;
+      var o = window.dossierOverride; window.dossierOverride = null;
+      var t = o ? { apn: o.apn, county: o.county } : (prop.apn ? { apn: prop.apn, county: prop.county } : (prop.center ? { lat: prop.center[0], lon: prop.center[1] } : null));
+      if (!t) { body.innerHTML = '<div class="ds-wait">No parcel reference for this property yet.</div>'; return; }
+      if (o && o.label) { var sub = document.getElementById('dossier-sub'); if (sub) sub.textContent = o.label; }
+      dsState = { token: dsState.token, target: t, core: null, all: null, deepState: 'loading', expanded: true };
+      dsLoad(false);
+    };
+    // a lot line's popup -> the property panel, with the record for that lot alone
+    window.openLotRecord = function(propId, apn) {
+      var prop = propertiesById[propId]; if (!prop) return;
+      var lot = (prop.lots || []).filter(function(l) { return l.apn === apn; })[0];
+      map.closePopup();
+      window.dossierOverride = { apn: apn, county: prop.county,
+        label: (lot && lot.name ? lot.name + ' — ' : '') + 'APN ' + apn + (lot && lot.acreage ? ' · ' + lot.acreage + ' ac' : '') + ', one of the ' + (prop.lots || []).length + ' parcels of ' + prop.name + '. The county, state and federal record for this lot alone.' };
+      openPropertyPanel(propId);
+      setTimeout(function() { var s = document.getElementById('dossier-section'); if (s && s.scrollIntoView) s.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 420);
+    };
+    window.docsSectionHTML = function(prop) {
+      if (!prop.docs || !prop.docs.length) return '';
+      var h = '<div class="docs-section"><h4>📄 Documents &amp; Proposals</h4><p class="section-sub">Full write-ups and supporting materials — open any of these for the complete picture.</p>';
+      prop.docs.forEach(function(d) {
+        h += '<a class="doc-link" href="https://raw.githubusercontent.com/SacredRebel/EcoVillage-map/main/' + d.file + '" target="_blank" rel="noopener"><span>' + d.label + '</span><span class="doc-dl">open ↗</span></a>';
+      });
+      h += '</div>';
+      return h;
+    };
+    window.lastCommunityCardId = null;
+    window.openCommunityCard = function(propId) {
+      var prop = propertiesById[propId];
+      if (!prop) return;
+      var card = document.getElementById('community-card');
+      var box = document.getElementById('community-card-box');
+      if (!card || !box) { openPropertyPanel(propId); return; }
+      window.lastCommunityCardId = propId;
+      var title = (window.visionMode && prop.visionLabelChip) ? prop.visionLabelChip : (prop.labelChip || prop.name);
+      var h = '<div class="cc-close" onclick="window.closeCommunityCard()">✕</div>';
+      h += '<div class="cc-title">' + title + '</div>';
+      h += window.modeStripHTML();
+      h += window.statusCardHTML(prop);
+      if (prop.docs && prop.docs.length) {
+        h += '<div class="cc-docs">📄 ' + prop.docs.length + ' document' + (prop.docs.length > 1 ? 's' : '') + ' in Full Details</div>';
+      }
+      h += '<div class="cc-actions">';
+      h += '<div class="cc-btn primary" onclick="window.closeCommunityCard(); openPropertyPanel(&quot;' + prop.id + '&quot;)">📖 Full Details</div>';
+      h += '<div class="cc-btn portal" onclick="window.closeCommunityCard(); window.enterPortal(&quot;' + prop.id + '&quot;)">🌀 Enter the Vision</div>';
+      h += '</div>';
+      box.innerHTML = h;
+      card.classList.add('open');
+    };
+    window.closeCommunityCard = function() {
+      var card = document.getElementById('community-card');
+      if (card) card.classList.remove('open');
+      window.lastCommunityCardId = null;
+    };
+
+    // ---- Current / Vision mode engine ----
+    window.visionMode = false;
+    window.zoneVisibleInMode = function(mode) {
+      mode = mode || 'both';
+      if (mode === 'both') return true;
+      return window.visionMode ? (mode === 'vision') : (mode === 'current');
+    };
+    function applyMode(vision) {
+      window.visionMode = !!vision;
+      try { localStorage.setItem('ojaiMapMode', vision ? 'vision' : 'current'); } catch (err) {}
+      document.body.classList.toggle('vision-mode', !!vision);
+      var tgl = document.getElementById('mode-toggle');
+      if (tgl) tgl.classList.toggle('vision', !!vision);
+      // property chips swap to their vision identity
+      properties.forEach(function(p) {
+        var getEl = window.propertyChipEls && window.propertyChipEls[p.id];
+        var el = getEl && getEl();
+        if (el) el.textContent = (vision && p.visionLabelChip) ? p.visionLabelChip : p.labelChip;
+      });
+      // territory circles follow their zone's mode
+      zones.forEach(function(z) {
+        var t = window.zoneTerritoryToggles && window.zoneTerritoryToggles[z.propertyId + '/' + z.id];
+        if (t) t(window.zoneVisibleInMode(z.mode));
+      });
+      // markers re-evaluate visibility
+      updateMarkerScale();
+      // footer narrative
+      var f = document.getElementById('map-footer-text');
+      if (f) {
+        var visibleZones = zones.filter(function(z) { return window.zoneVisibleInMode(z.mode); }).length;
+        f.textContent = vision
+          ? ('© 2026 Lemuria Life — Sacred Villages | ' + properties.length + ' Properties • ' + visibleZones + ' Vision Projects | The Golden Age Map')
+          : ('© 2026 Ojai Valley Properties | ' + properties.length + ' Properties • ' + visibleZones + ' Projects | Interactive Map');
+      }
+      // live-refresh any open property panel / community card into the new mode
+      var ppEl = document.getElementById('property-panel');
+      if (ppEl && ppEl.classList.contains('open') && window.currentPropertyId) {
+        openPropertyPanel(window.currentPropertyId);
+      }
+      var ccElRef = document.getElementById('community-card');
+      if (ccElRef && ccElRef.classList.contains('open') && window.lastCommunityCardId) {
+        window.openCommunityCard(window.lastCommunityCardId);
+      }
+      console.log(vision ? '✨ Vision mode — Lemuria awakens' : '🏞️ Current mode — the reality of today');
+    }
+    window.applyMode = applyMode;
+    var modeToggleEl = document.getElementById('mode-toggle');
+    if (modeToggleEl) {
+      modeToggleEl.addEventListener('click', function() { applyMode(!window.visionMode); });
+    }
+    var savedMode = null;
+    try { savedMode = localStorage.getItem('ojaiMapMode'); } catch (err) {}
+    applyMode(savedMode === 'vision');
+
+    console.log('✅ Howard Property Interactive Map fully initialized');
     console.log('🎯 Ready for investor presentations and zone exploration');
     console.log('📁 Image upload system ready - all directories created');
   </script>
@@ -7816,9 +8463,9 @@ app.get('/', (req, res) => {
 </html>`
 
     // Replace placeholders with actual data
+    uploadsNow().catch(() => null);   // refresh in the background; the page uses the last known manifest
     const finalHtml = htmlContent
-      .replace('ZONES_DATA_PLACEHOLDER', JSON.stringify(PROJECT_ZONES))
-      .replace('PERMANENT_LINES_PLACEHOLDER', JSON.stringify(PERMANENT_PROPERTY_LINES));
+      .replace('PROPERTIES_PLACEHOLDER', JSON.stringify(withUploadedDocs(PROPERTIES, storeCached(UPLOADS_PATH) || EMPTY_UPLOADS)));
 
     // Set correct content type header and send as HTML
     res.type('html');
@@ -7830,7 +8477,7 @@ app.get('/', (req, res) => {
     console.error('❌ Error serving interactive map:', error);
     res.status(500).send('Server Error: ' + error.message);
   }
-});
+}
 
 // Helper function to parse budget strings (handles K suffix, ranges, and phases)
 function parseBudget(budgetStr) {
@@ -7857,6 +8504,143 @@ function parseBudget(budgetStr) {
 }
 
 // API endpoint for project zones data
+// ============================================================================
+//  THE COUNTY RECORD  (V0.22 → V0.29) — the resolver lives in lib/dossier.js
+//  (county adapters, state + federal layers, the terrain grid, the read).
+//  Here: the routes and the 30-day in-memory cache, per part.
+// ============================================================================
+const DOSSIER_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days for a complete answer
+const DOSSIER_SHORT_TTL_MS = 1000 * 60 * 60;     // 1 hour when a source errored (transient upstream failures heal themselves)
+const dossierCache = new Map();
+const dossierInflight = new Map();   // key -> promise: concurrent asks for the same part share one fan-out
+function dossierKey(q, part) {
+  return part + ':' + (q.apn ? 'apn:' + String(q.apn).replace(/[^0-9]/g, '') + (q.county ? '@' + q.county : '') : 'pt:' + q.lat.toFixed(5) + ',' + q.lon.toFixed(5));
+}
+async function cachedPart(q, part, fresh) {
+  const key = dossierKey(q, part);
+  const hit = dossierCache.get(key);
+  if (hit && !fresh && Date.now() - hit.ts < hit.ttl) return Object.assign({ cached: true }, hit.data);
+  let p = dossierInflight.get(key);
+  if (!p || fresh) {
+    p = (part === 'deep' ? resolveDeep(q) : resolveCore(q)).then((data) => {
+      // a partial (late) answer is never cached; one with errored sources only briefly
+      if (!data.partial) dossierCache.set(key, { ts: Date.now(), ttl: (data.sourcesAnswered || 0) >= (data.sourcesQueried || 0) ? DOSSIER_TTL_MS : DOSSIER_SHORT_TTL_MS, data });
+      return data;
+    }).finally(() => { if (dossierInflight.get(key) === p) dossierInflight.delete(key); });
+    dossierInflight.set(key, p);
+  }
+  const data = await p;
+  return Object.assign({ cached: false }, data);
+}
+// drop every cached part for one APN (after a title-evidence import, so the next read composes with it)
+function dossierForget(apn10) {
+  const tag = 'apn:' + String(apn10 || '').replace(/[^0-9]/g, '');
+  if (tag === 'apn:') return 0;
+  let n = 0;
+  for (const k of [...dossierCache.keys()]) if (k.includes(tag)) { dossierCache.delete(k); n++; }
+  return n;
+}
+function dossierQuery(req) {
+  const apn = req.query.apn ? String(req.query.apn) : null;
+  const lat = req.query.lat != null ? parseFloat(req.query.lat) : null;
+  const lon = req.query.lon != null ? parseFloat(req.query.lon) : null;
+  if (!apn && (lat === null || lon === null || !isFinite(lat) || !isFinite(lon))) return null;
+  const q = { apn, lat, lon };
+  if (req.query.county && /^\d{5}$/.test(String(req.query.county))) q.county = String(req.query.county);
+  if (req.query.debug === '1') q.debug = true;
+  if (req.query.provider === '0') q.provider = false;   // skip the metered provider lookup (the warm job does)
+  return q;
+}
+const SURVEY_FILES = { 'sulphur-mountain': 'sulphur-survey.json' };
+// V2 engine (docs/engine-blueprint.md): the same properties as JSON, positions already applied,
+// and the built single-engine app served at /v2 (source in v2/, output committed to public/v2)
+app.get('/api/properties', async (req, res) => {
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
+  res.json(withUploadedDocs(PROPERTIES, await uploadsNow()));
+});
+// Edge-cached tile proxy (V0.28): the slow dynamic GIS services (county + CGS /export, SSURGO WMS)
+// are fetched here once and cached at the CDN edge (s-maxage) - the first viewer pays the county's
+// render time, everyone after gets the tile in a few ms, and scripts/warm-tiles.mjs pre-bakes the
+// property areas. Allowlisted public hosts, GET, map-image endpoints only; never an open proxy.
+const TILE_HOSTS = new Set(['maps.ventura.org', 'gis.conservation.ca.gov', 'gis.water.ca.gov', 'hazards.fema.gov', 'earthquake.usgs.gov',
+  'hydro.nationalmap.gov', 'basemap.nationalmap.gov', 'sdmdataaccess.sc.egov.usda.gov', 'historical1.arcgis.com', 'gis.blm.gov']);
+app.get('/api/tile', async (req, res) => {
+  let url;
+  try { url = new URL(String(req.query.u || '')); } catch (e) { return res.status(400).json({ error: 'bad_url' }); }
+  const path = url.pathname.toLowerCase();
+  const allowed = url.protocol === 'https:' && TILE_HOSTS.has(url.hostname)
+    && (/\/(export|exportimage)$/.test(path) || /request=getmap/i.test(url.search));
+  if (!allowed) return res.status(400).json({ error: 'not_allowed' });
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 9000);
+  try {
+    const up = await fetch(url, { signal: ctl.signal, headers: { 'User-Agent': 'ojai-atlas/1.0 (+https://eco-village-map.vercel.app)', 'Accept': 'image/*' } });
+    clearTimeout(timer);
+    const ct = up.headers.get('content-type') || '';
+    if (!up.ok || !/^image\//i.test(ct)) { res.set('Cache-Control', 'no-store'); return res.status(up.ok ? 502 : up.status).end(); }
+    const buf = Buffer.from(await up.arrayBuffer());
+    res.set({
+      'Content-Type': ct,
+      'Content-Length': String(buf.length),
+      'Cache-Control': 'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=604800',
+      'Access-Control-Allow-Origin': '*',
+      'X-Tile-Upstream': url.hostname
+    });
+    res.end(buf);
+  } catch (e) {
+    clearTimeout(timer);
+    res.set('Cache-Control', 'no-store');
+    res.status(504).end();
+  }
+});
+app.use('/v2/assets', express.static(join(__dirname, 'public', 'v2', 'assets'), { maxAge: '365d', immutable: true }));
+app.use('/v2', express.static(join(__dirname, 'public', 'v2'), { maxAge: 0, etag: true, index: 'index.html' }));
+
+app.get('/api/survey/:propertyId', (req, res) => {
+  const f = SURVEY_FILES[req.params.propertyId];
+  if (!f) return res.status(404).json({ error: 'No survey data for this property.' });
+  try {
+    const body = readFileSync(join(__dirname, 'data', f), 'utf8');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.type('application/json').send(body);
+  } catch (e) { res.status(500).json({ error: 'Survey data unavailable.' }); }
+});
+
+app.get('/api/dossier', async (req, res) => {
+  const q = dossierQuery(req);
+  if (!q) return res.status(400).json({ error: 'Pass either apn, or lat and lon.' });
+  const part = req.query.part === 'deep' ? 'deep' : req.query.part === 'all' ? 'all' : 'core';
+  const fresh = req.query.refresh === '1';
+  try {
+    let data;
+    if (part === 'all') {
+      const [core, deep] = await Promise.all([cachedPart(q, 'core', fresh), cachedPart(q, 'deep', fresh)]);
+      data = mergeRecord(core, deep); data.cached = core.cached && deep.cached;
+    } else data = await cachedPart(q, part, fresh);
+    if (req.query.read === '1') data.read = readFrom(data);
+    res.set('Cache-Control', data.partial ? 'no-store' : 'public, max-age=86400');
+    res.json(data);
+  } catch (e) {
+    console.error('dossier:', e.message);
+    res.status(e.status || 502).json({ error: e.message || 'Could not resolve this parcel.' });
+  }
+});
+// the anchor alone: APN or point -> parcel identity + geometry (the APN search box flies here)
+app.get('/api/parcel', async (req, res) => {
+  const q = dossierQuery(req);
+  if (!q) return res.status(400).json({ error: 'Pass either apn, or lat and lon.' });
+  try {
+    const data = await resolveParcel(q);
+    res.set('Cache-Control', req.query.refresh === '1' ? 'no-store' : 'public, max-age=86400');
+    res.json(data);
+  } catch (e) { res.status(e.status || 502).json({ error: e.message || 'Could not resolve this parcel.' }); }
+});
+// which counties have a parcel adapter (the intake rule and the search box read this)
+app.get('/api/counties', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.json(Object.keys(COUNTY_ADAPTERS).map((fips) => { const a = COUNTY_ADAPTERS[fips]; return { fips, id: a.id, name: a.name, state: a.state, apnExample: fips === '06111' ? '037-0-012-125' : '2048-011-048', sources: a.sources.length, authority: a.authority }; }));
+});
+
 app.get('/api/project-zones', (req, res) => {
   try {
     const totalInvestment = PROJECT_ZONES.reduce((sum, zone) => {
@@ -7866,6 +8650,7 @@ app.get('/api/project-zones', (req, res) => {
     res.json({
       success: true,
       totalZones: PROJECT_ZONES.length,
+      properties: PROPERTIES.map(p => ({ id: p.id, name: p.name, zones: p.zones.length, boundarySegments: p.boundary.length })),
       totalInvestment: `$${totalInvestment.toLocaleString()}`,
       zones: PROJECT_ZONES,
       propertyLines: PERMANENT_PROPERTY_LINES.length,
@@ -7878,48 +8663,241 @@ app.get('/api/project-zones', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    status: 'healthy',
     timestamp: new Date().toISOString(),
     zones: PROJECT_ZONES.length,
-    propertyLines: PERMANENT_PROPERTY_LINES.length
+    propertyLines: PERMANENT_PROPERTY_LINES.length,
+    commit: process.env.VERCEL_GIT_COMMIT_SHA || null,
+    writes: storeConfigured() ? 'configured' : 'not_configured',
   });
 });
 
-// Mapping from project IDs to actual folder names
-const PROJECT_FOLDER_MAP = {
-  'agricultural-hub': 'Agricultural Hub',
-  'main-residence': 'Main Residence Compound',
-  'community-hub': 'Community Hub',
-  'retreat-village': 'Retreat Village',
-  'infrastructure': 'Infrastructure & Utilities',
-  'mcqueens-garage': "McQueen's Garage & Creative",
-  'ceremonial-infrastructure': 'Ceremonial Infrastructure',
-  'wellness-facilities': 'Wellness & Spa Facilities',
-  'mushroom-cultivation': 'Mushroom Cultivation',
-  'beekeeping-program': 'Beekeeping & Honey Production',
-  'events-gatherings-hub': 'Events & Gatherings Hub',
-  'livestock-program': 'Livestock & Dairy Program',
-  'livestock-dairy': 'Livestock & Dairy Program',
-  'creative-workshop-center': 'Creative Workshop & Art Creation Center',
-  'glamping-creek-village': 'Creek-Side Glamping & Lodging Village',
-  'gatelodge-operations-hub': 'Sulphur Mountain Gatelodge (Operations ADU)',
-  'tropical-dome-greenhouse': 'Tropical Dome House',
-  'sulphur-mountain-sanctuary': 'Sulphur Mountain Sanctuary The Living Landscape',
-  'farmstead-produce-stand': 'Farmstead Produce Stand & Online Hub'
-};
+// ============================================================================
+//  GIT-BACKED DATA (V0.31): the research list and the uploads live in the repo
+//  (lib/store.js). Every write needs the PIN; without EDIT_PIN + GITHUB_TOKEN
+//  on Vercel the routes answer 501 and the clients keep working locally.
+// ============================================================================
+const EMPTY_UPLOADS = { images: {}, docs: {} };
+const uploadsNow = async () => { const u = await readJson(UPLOADS_PATH, EMPTY_UPLOADS, 60000); return u && u.images ? u : EMPTY_UPLOADS; };
+// properties with the uploaded documents merged into their docs list
+function withUploadedDocs(props, uploads) {
+  const docs = (uploads && uploads.docs) || {};
+  return props.map((p) => (docs[p.id] && docs[p.id].length ? Object.assign({}, p, { docs: (p.docs || []).concat(docs[p.id].map((d) => ({ label: d.label, file: d.file, uploaded: true }))) }) : p));
+}
+// the research list: parcels anyone with the PIN has saved, shared across every browser
+app.get('/api/research', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const j = await readJson(RESEARCH_PATH, { items: [] }, 30000);
+  res.json({ items: (j && j.items) || [], synced: storeConfigured() });
+});
+app.post('/api/research', async (req, res) => {
+  try {
+    const { pin, op, item, items, apn, note } = req.body || {};
+    if (!storeConfigured()) return res.status(501).json({ ok: false, error: 'not_configured' });
+    if (!pinOk(pin)) return res.status(401).json({ ok: false, error: 'bad_pin' });
+    const okItem = (it) => it && typeof it.apn === 'string' && it.apn.length < 40 && Array.isArray(it.center) && it.center.length === 2;
+    const strip = (it) => ({ apn: it.apn, county: it.county || null, situs: it.situs || null, acreage: typeof it.acreage === 'number' ? it.acreage : null, center: [Number(it.center[0]), Number(it.center[1])], bbox: it.bbox || null, rings: Array.isArray(it.rings) ? it.rings : null, savedAt: it.savedAt || new Date().toISOString(), note: typeof it.note === 'string' ? it.note.slice(0, 2000) : undefined });
+    let msg = 'research: update';
+    const r = await updateJson(RESEARCH_PATH, (cur) => {
+      const list = (cur && Array.isArray(cur.items) ? cur.items : []).slice();
+      if (op === 'add' && okItem(item)) { const i = list.findIndex((x) => x.apn === item.apn); const v = strip(item); if (i >= 0) list[i] = Object.assign({}, list[i], v, { savedAt: list[i].savedAt }); else list.unshift(v); msg = 'research: save ' + item.apn; }
+      else if (op === 'merge' && Array.isArray(items)) { let n = 0; items.filter(okItem).forEach((it) => { if (!list.some((x) => x.apn === it.apn)) { list.push(strip(it)); n++; } }); msg = 'research: merge ' + n + ' parcel' + (n === 1 ? '' : 's'); }
+      else if (op === 'remove' && typeof apn === 'string') { const i = list.findIndex((x) => x.apn === apn); if (i >= 0) list.splice(i, 1); msg = 'research: remove ' + apn; }
+      else if (op === 'note' && typeof apn === 'string') { const it = list.find((x) => x.apn === apn); if (it) it.note = String(note || '').slice(0, 2000); msg = 'research: note on ' + apn; }
+      else throw Object.assign(new Error('bad_op'), { status: 400 });
+      return { items: list.slice(0, 200) };
+    }, msg);
+    res.json({ ok: true, items: r.data.items, commit: r.commit });
+  } catch (e) { res.status(e.status || 502).json({ ok: false, error: e.status ? e.message : 'github_error', message: String(e && e.message).slice(0, 300) }); }
+});
+// uploads: one photo (jpeg/png/webp, resized by the client) or one PDF per request, committed to
+// images/uploads/<pid>/<zid>/<cat>/ or docs/uploads/<pid>/ together with the manifest data/uploads.json
+const UPLOAD_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf' };
+app.post('/api/upload', async (req, res) => {
+  try {
+    const { pin, propertyId, zoneId, category, name, type, data, label } = req.body || {};
+    if (!storeConfigured()) return res.status(501).json({ ok: false, error: 'not_configured' });
+    if (!pinOk(pin)) return res.status(401).json({ ok: false, error: 'bad_pin' });
+    const prop = PROPERTIES.find((p) => p.id === propertyId);
+    if (!prop) return res.status(400).json({ ok: false, error: 'bad_property' });
+    const ext = UPLOAD_TYPES[type];
+    if (!ext || typeof data !== 'string') return res.status(400).json({ ok: false, error: 'bad_type' });
+    const buf = Buffer.from(data.replace(/^data:[^,]*,/, ''), 'base64');
+    if (!buf.length || buf.length > 4.2 * 1024 * 1024) return res.status(413).json({ ok: false, error: 'too_large' });
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15).replace('T', '-');
+    const files = [];
+    let manifest = JSON.parse(JSON.stringify(await readJson(UPLOADS_PATH, EMPTY_UPLOADS, 0)));
+    if (!manifest.images) manifest.images = {}; if (!manifest.docs) manifest.docs = {};
+    let path;
+    if (ext === 'pdf') {
+      path = 'docs/uploads/' + prop.id + '/' + stamp + '-' + slug(name) + '.pdf';
+      (manifest.docs[prop.id] = manifest.docs[prop.id] || []).push({ label: String(label || name || 'Document').slice(0, 120).replace(/\.pdf$/i, ''), file: path, uploadedAt: new Date().toISOString() });
+    } else {
+      const zid = zoneId === 'property' || (prop.zones || []).some((z) => z.id === zoneId) ? zoneId : null;
+      const cat = category === 'vision' ? 'vision' : 'current';
+      if (!zid) return res.status(400).json({ ok: false, error: 'bad_zone' });
+      path = 'images/uploads/' + prop.id + '/' + zid + '/' + cat + '/' + stamp + '-' + slug(name) + '.' + ext;
+      const byZone = (manifest.images[prop.id] = manifest.images[prop.id] || {});
+      const byCat = (byZone[zid] = byZone[zid] || {});
+      (byCat[cat] = byCat[cat] || []).push(path);
+    }
+    files.push({ path, content: buf });
+    files.push({ path: UPLOADS_PATH, content: JSON.stringify(manifest, null, 2) + '\n' });
+    const commit = await commitFiles(files, 'upload: ' + path.split('/').slice(1).join('/'));
+    remember(UPLOADS_PATH, manifest);
+    res.json({ ok: true, path, url: '/' + path, commit });
+  } catch (e) { res.status(502).json({ ok: false, error: 'github_error', message: String(e && e.message).slice(0, 300) }); }
+});
+// ============================================================================
+//  TITLE EVIDENCE (V0.32): a purchased property report (PDF) imported for one
+//  APN → data/title/<apn10>.json (lib/title-report.js parses it; the PDF itself
+//  is not stored — the repository is public). The record then shows the owner
+//  of record, loans, liens, taxes and permits for that parcel, dated.
+// ============================================================================
+// the register of sources (data/sources.json): where every kind of parcel fact comes from and on what terms
+app.get('/api/sources', async (req, res) => {
+  res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+  try { const j = JSON.parse(readFileSync(join(__dirname, 'data', 'sources.json'), 'utf8')); res.json(j); }
+  catch (e) { res.status(500).json({ error: 'sources_unavailable' }); }
+});
+// the watch log (data/watch.json): per watched APN the roll sentinel, the last check and the dated changes — no names
+app.get('/api/watch', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  let local = null, remote = null;
+  try { local = JSON.parse(readFileSync(join(__dirname, WATCH_PATH), 'utf8')); } catch (e) { local = null; }
+  try { remote = await readJson(WATCH_PATH, null, 300000); } catch (e) { remote = null; }
+  const pick = [local, remote].filter((w) => w && w.parcels).sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))[0] || EMPTY_WATCH;
+  const apn = req.query.apn ? String(req.query.apn).replace(/[^0-9]/g, '') : null;
+  if (apn) { const e = (pick.parcels || {})[apn]; return e ? res.json(Object.assign({ apn10: apn }, e)) : res.status(404).json({ error: 'not_watched', apn10: apn }); }
+  res.json(pick);
+});
+app.get('/api/title/:apn', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const ev = await loadEvidence(String(req.params.apn || ''));
+  if (!ev) return res.status(404).json({ ok: false, error: 'no_evidence', path: evidencePath(req.params.apn) });
+  res.json({ ok: true, evidence: ev });
+});
+app.post('/api/title-report', async (req, res) => {
+  try {
+    const { pin, apn, name, data } = req.body || {};
+    if (!storeConfigured()) return res.status(501).json({ ok: false, error: 'not_configured' });
+    if (!pinOk(pin)) return res.status(401).json({ ok: false, error: 'bad_pin' });
+    if (typeof data !== 'string') return res.status(400).json({ ok: false, error: 'bad_type' });
+    const buf = Buffer.from(data.replace(/^data:[^,]*,/, ''), 'base64');
+    if (!buf.length || buf.length > 8 * 1024 * 1024) return res.status(413).json({ ok: false, error: 'too_large' });
+    if (buf.subarray(0, 5).toString() !== '%PDF-') return res.status(400).json({ ok: false, error: 'bad_type' });
+    let ev;
+    try { ev = await parsePdf(buf); } catch (e) { return res.status(422).json({ ok: false, error: 'not_a_known_report', message: 'The PDF is not a property report this reader knows (PropertyChecker today).' }); }
+    if (apn && ev.apn10 !== String(apn).replace(/[^0-9]/g, '')) return res.status(409).json({ ok: false, error: 'apn_mismatch', reportApn: ev.apn });
+    ev.importedAt = new Date().toISOString();
+    ev.importedFrom = slug(name || 'report');
+    const path = evidencePath(ev.apn10);
+    const commit = await commitFiles([{ path, content: JSON.stringify(ev, null, 2) + '\n' }], 'title: import ' + ((ev.source || {}).provider || 'property') + ' report for ' + ev.apn);
+    remember(path, ev);
+    dossierForget(ev.apn10);
+    res.json({ ok: true, apn: ev.apn, path, commit, evidence: { provider: (ev.source || {}).provider || null, preparedOn: (ev.source || {}).preparedOn || null, importedAt: ev.importedAt, owner: (ev.owner || {}).names || [], loans: (ev.loans || []).length, liens: (ev.liens || []).length, permits: (ev.permits || []).length } });
+  } catch (e) { res.status(502).json({ ok: false, error: 'github_error', message: String(e && e.message).slice(0, 300) }); }
+});
+
+// Save the icon layout to git. The editor posts { pin, positions } here;
+// with a valid PIN the layout is committed to data/zone-positions.json on
+// GitHub (which auto-redeploys the site) and applied in-memory immediately.
+// Requires two Vercel env vars: EDIT_PIN and GITHUB_TOKEN (fine-grained PAT
+// with Contents read/write on this repo). GITHUB_REPO overrides the default.
+app.post('/api/save-positions', async (req, res) => {
+  try {
+    const { pin, positions } = req.body || {};
+    const EDIT_PIN = process.env.EDIT_PIN;
+    const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+    const GITHUB_REPO = process.env.GITHUB_REPO || 'SacredRebel/EcoVillage-map';
+
+    if (!EDIT_PIN || !GITHUB_TOKEN) {
+      return res.status(501).json({ ok: false, error: 'not_configured' });
+    }
+    if (!pin || String(pin) !== String(EDIT_PIN)) {
+      return res.status(401).json({ ok: false, error: 'bad_pin' });
+    }
+    if (!positions || typeof positions !== 'object') {
+      return res.status(400).json({ ok: false, error: 'bad_body' });
+    }
+
+    // Validate against known properties/zones and apply in-memory
+    const clean = {};
+    for (const p of PROPERTIES) {
+      const zones = positions[p.id];
+      if (!zones || typeof zones !== 'object') continue;
+      clean[p.id] = {};
+      for (const z of p.zones) {
+        const pos = zones[z.id];
+        if (Array.isArray(pos) && pos.length === 2 && isFinite(pos[0]) && isFinite(pos[1])) {
+          const lat = Math.round(pos[0] * 1e6) / 1e6;
+          const lng = Math.round(pos[1] * 1e6) / 1e6;
+          clean[p.id][z.id] = [lat, lng];
+          z.position = [lat, lng];
+        }
+      }
+    }
+
+    // Commit to GitHub via the Contents API
+    const filePath = 'data/zone-positions.json';
+    const apiBase = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + filePath;
+    const ghHeaders = {
+      'Authorization': 'Bearer ' + GITHUB_TOKEN,
+      'Accept': 'application/vnd.github+json',
+      'User-Agent': 'ojai-map-server',
+      'X-GitHub-Api-Version': '2022-11-28'
+    };
+    let sha;
+    const getResp = await fetch(apiBase + '?ref=main', { headers: ghHeaders });
+    if (getResp.ok) {
+      const info = await getResp.json();
+      sha = info.sha;
+    }
+    const content = Buffer.from(JSON.stringify(clean, null, 2) + '\n').toString('base64');
+    const putResp = await fetch(apiBase, {
+      method: 'PUT',
+      headers: { ...ghHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: '📍 Save icon layout from the map editor',
+        content: content,
+        sha: sha,
+        branch: 'main'
+      })
+    });
+    if (!putResp.ok) {
+      const detail = await putResp.text();
+      return res.status(502).json({ ok: false, error: 'github_error', status: putResp.status, detail: String(detail).slice(0, 300) });
+    }
+    const result = await putResp.json();
+    res.json({ ok: true, commit: result.commit && result.commit.sha });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'server_error', message: String(e && e.message) });
+  }
+});
+
+// Mapping from project IDs to actual folder names under images/ — empty until
+// zones and photo folders are added for the Howard Property.
+const PROJECT_FOLDER_MAP = {};
 
 // API endpoint to get images for a specific zone
 // Uses configuration file (image-urls.js) with direct URLs from Supabase
 // Supports subcategories for zones like infrastructure, main-residence, retreat-village
-app.get('/api/images/:zoneId/:category', async (req, res) => {
+app.get('/api/images/:propertyId/:zoneId/:category', async (req, res) => {
   try {
-    const { zoneId, category } = req.params;
+    const { propertyId, zoneId, category } = req.params;
     const categoryLower = category.toLowerCase();
     
-    // Get images from configuration
-    const zoneImages = IMAGE_URLS[zoneId] || {};
+    // Get images from configuration, plus anything uploaded through the editor (data/uploads.json)
+    const zoneImages = (IMAGE_URLS[propertyId] || {})[zoneId] || {};
     let categoryData = zoneImages[categoryLower];
+    const up = (((await uploadsNow()).images || {})[propertyId] || {})[zoneId];
+    const uploaded = (up && up[categoryLower]) || [];
+    if (uploaded.length) {
+      if (categoryData && typeof categoryData === 'object' && !Array.isArray(categoryData)) categoryData = Object.assign({}, categoryData, { Uploaded: (categoryData.Uploaded || []).concat(uploaded) });
+      else categoryData = (Array.isArray(categoryData) ? categoryData : []).concat(uploaded);
+    }
     
     // Check if category data has subcategories (is an object with subcategory keys)
     let hasSubcategories = false;
@@ -7937,8 +8915,8 @@ app.get('/api/images/:zoneId/:category', async (req, res) => {
       images = categoryData;
     }
     
-    // Aggressive caching for images (1 year) since URLs contain content hash
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    // short cache: uploads can add to this list at any time
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
     res.setHeader('Access-Control-Allow-Origin', '*');
     
     res.json({
@@ -7977,14 +8955,11 @@ app.use((err, req, res, next) => {
 // Start server with comprehensive error handling (only if not in Vercel serverless environment)
 if (process.env.VERCEL !== '1') {
   const server = app.listen(PORT, '0.0.0.0', () => {
-    const totalInvestment = PROJECT_ZONES.reduce((sum, zone) => {
-      return sum + parseBudget(zone.budget);
-    }, 0);
-    console.log('🚀 EcoVillageBuilder Interactive Map Server');
+    console.log('🚀 Howard Property Interactive Map Server');
     console.log(`🌐 Server running on port ${PORT}`);
-    console.log(`📊 Serving ${PROJECT_ZONES.length} project zones ($${(totalInvestment/1000000).toFixed(2)}M total investment)`);
+    console.log(`📊 Serving ${PROJECT_ZONES.length} zones across ${PROPERTIES.length} properties`);
     console.log(`🔲 ${PERMANENT_PROPERTY_LINES.length} permanent property boundary lines`);
-    console.log('✨ Ready for investor presentations and interactive exploration');
+    console.log('✨ Ready for interactive exploration');
   });
 
   server.on('error', (error) => {
@@ -7998,7 +8973,7 @@ if (process.env.VERCEL !== '1') {
 
   // Graceful shutdown handling
   process.on('SIGINT', () => {
-    console.log('🛑 Shutting down EcoVillageBuilder server gracefully...');
+    console.log('🛑 Shutting down Howard Property server gracefully...');
     server.close(() => {
       console.log('✅ Server shutdown complete');
       process.exit(0);

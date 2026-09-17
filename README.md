@@ -1,152 +1,99 @@
-# 🌿 Sulphur Mountain Eco-Village Interactive Map - V1.0
+# 🗺️ Ojai Valley Properties — Interactive Development Map
 
-**Production-Ready Interactive Investment Platform**
+**Multi-property platform** — one interactive map, multiple properties in the Ojai Valley: the **Howard Property** (1320 Baldwin Rd), the **Sulphur Mountain Eco-Village** (11962 Sulphur Mountain Rd), **Keri's Property** (14209 De La Garrigue Rd), **Cher's Property** (10622 Encino Dr, Oak View), **Black Mountain Ranch** (8434 Ojai Santa Paula Rd — the 63-parcel Lemuria Headquarters), and the **Rose Valley Property** (7343 Rose Valley Rd — a 40-acre for-sale inholding surrounded by Los Padres National Forest).
 
-## 📋 Overview
+## How it works
 
-Interactive web application showcasing 18 regenerative development zones across a 10-acre eco-village property in Ojai Valley, California. Built for investor presentations, partner onboarding, and public engagement.
+The map opens on an **overview** showing every property with its glowing rainbow boundary and name chip. Click a chip (or zoom in) to fly into a property — each property's project icons fade in as you approach that property's own zoom level.
 
-- **Total Investment**: $3M
-- **18 Project Zones**: Agriculture, Housing, Events, Infrastructure
-- **Interactive Features**: Click zones for detailed project pages, image galleries, financials
-- **Mobile Optimized**: Touch gestures, responsive design, fast loading
+**Current ⇄ Vision:** the pill toggle at the top of the map switches the whole platform between **Today** (what exists — real parcels, real photos, factual panels) and **✨ Vision** (the Lemuria Life overlay — golden branding, vision projects, vision galleries, and each property's future identity). The choice is remembered per visitor. Click any icon for the full project page; click a boundary for that property's details panel.
 
----
+| Property | Projects | Size | Status |
+|---|---|---|---|
+| 🏔️ Howard Property | 4 today · 13 in vision | ~44 acres | Proposal draft |
+| 🌿 Sulphur Mountain Eco-Village | 4 today · 18 in vision | ~10 acres | Lemuria Pilot |
+| 🌸 Keri's Property | 3 places | ~34 acres | Starting points |
+| 🌹 Cher's Property | 2 places | 2 acres | Starting points |
+| ⛰️ Black Mountain Ranch | 9 today · 15 in vision · 63 parcels | 3,380 county acres | Lemuria Headquarters |
+| 🌄 Rose Valley | Boundary + panel | 40 acres | For sale — $810K acquisition target |
 
-## 🚀 Quick Start
+Sulphur Mountain photos load directly from the [EcoVillage-map repo](https://github.com/SacredRebel/EcoVillage-map) via raw.githubusercontent.com — no image copies in this repo.
 
-### Local Development
+## Adding a new property
+
+1. Create `properties/<name>.js` exporting a property object: `{ id, name, shortLabel, labelChip, center, zoom, footerTitle, footerInfo, cta, panel: { title, html }, boundary: [segments], zones: [zones] }` (copy `properties/howard.js` as the template).
+2. Register it in `server-complete.js`: add the import and append to `PROPERTIES`.
+3. Add an entry in `image-urls.js` under the property's id for photos.
+
+That's it — boundaries, panels, icons, admin tools, and the overview all pick it up automatically.
+
+## Position Editor (currently enabled)
+
+Click the **⚙️ button** (top right) to open the Position Editor — it stays open while you work:
+
+1. **Pick a property** — the map flies there (buttons appear automatically for every property)
+2. **Start Editing** — ALL of that property's icons unlock at once with a glowing pulse; drag any of them (the map still pans/zooms; icon taps won't open panels while editing). A live list shows everything you've moved, and **Reset This Property** undoes the session.
+3. **🔒 Save Layout for Everyone** — commits the layout straight to git (`data/zone-positions.json`) and Vercel redeploys with it baked in. First save asks for the Edit PIN (then remembers it on that device). **📋 Capture / Export** stays as a backup path.
+
+### How saving works (git-backed)
+
+`data/zone-positions.json` is the live source of truth for icon positions — the server applies it over the built-in defaults at boot. The Save button POSTs to `/api/save-positions`, which verifies the PIN and commits the new file to GitHub via the Contents API, so **every layout change is a git commit** and the site auto-redeploys.
+
+One-time setup (Vercel → project → Settings → Environment Variables):
+
+| Variable | Value |
+|---|---|
+| `EDIT_PIN` | any PIN you choose — the editor asks for it on first save |
+| `GITHUB_TOKEN` | fine-grained PAT, this repo only, **Contents: Read & write** |
+
+Until those are set, the Save button politely says saving isn't configured and the Capture → paste-to-Claude path still works.
+
+## Quick Start
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
-
-# Server runs on http://localhost:5001
+# → http://localhost:5001
 ```
 
-### Environment Setup
+No env vars, no build step.
 
-Create `.env` file:
-```
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_key
-```
-
----
-
-## 📁 Project Structure
+## Structure
 
 ```
-├── server-complete.js          # Main server & map application
-├── image-urls.js               # Image gallery configuration
-├── package.json                # Dependencies
-├── .env                        # Environment variables
-└── public/                     # Static assets
+├── server-complete.js            # App: Express + embedded Leaflet frontend
+├── properties/
+│   ├── howard.js                 # Howard Property (zones, boundary, panel, CTA)
+│   ├── sulphur-mountain.js       # Sulphur Mountain Eco-Village
+│   ├── keris-property.js         # Keri's Property
+│   ├── chers-property.js         # Cher's Property
+│   └── black-mountain-ranch.js   # Black Mountain Ranch (generated — see bmr/)
+├── bmr/                          # Ranch county-parcel data + generator (+ vision.mjs: Lemuria zones)
+├── data/zone-positions.json      # Saved icon layout (git-backed source of truth)
+├── images/                       # Photo uploads — one folder per property & project
+├── image-urls.js                 # Photo manifests, namespaced by property id
+├── api/index.js                  # Vercel serverless entry
+└── vercel.json
 ```
 
----
+## Uploading photos
 
-## 🎯 Key Features
+Drop images into `images/<property>/<project>/current/` (photos of how it looks today) or `.../vision/` (renders & inspiration for what it will become). Property-wide gallery photos go in `images/<property>/property/current/`. Any format is fine (jpg/png/webp). After uploading, the files get listed in `image-urls.js` to appear in the map's galleries. Full folder tree + details: [`images/README.md`](images/README.md). (Sulphur Mountain photos stay in the EcoVillage-map repo.)
 
-### Interactive Map
-- Satellite imagery with zone markers
-- Click zones to view detailed project pages
-- Rainbow boundary visualization
-- Mobile touch gestures
+## Roadmap
 
-### Project Pages
-- Comprehensive project details
-- Revenue projections & ROI
-- Development timelines
-- Image galleries (Current & Vision)
-- Investment opportunities
-
-### Mobile Experience
-- Swipe gestures for navigation
-- Responsive layouts
-- Optimized image loading
-- Touch-friendly controls
+1. ✅ Howard layout + real county boundary
+2. ✅ 13 Howard proposal zones + reposition mode
+3. ✅ Multi-property merge (Sulphur Mountain on the same map)
+4. ✅ Keri's + Cher's properties · icon positions locked in git
+5. ✅ Black Mountain Ranch — all 63 county parcels drawn as individual lot territories (63rd confirmed by owner)
+6. ✅ 63rd parcel (APN 035-0-020-010, 610 ac North Ridge) confirmed and on the map
+7. ✅ V0.9 — Current ⇄ Vision toggle · Lemuria HQ vision layer (6 zones) · first vision galleries
+8. ✅ V0.10 — Rose Valley Property added (for-sale acquisition target, real county boundary)
+9. ✅ V0.11 — Today ⇄ Vision curated per property: what exists now vs what Lemuria builds (zones can carry a different name & story per mode)
+10. ⬜ Photo galleries (upload to `images/`, wire into `image-urls.js`)
+11. ⬜ Custom UI theme · hide admin tools for public release
 
 ---
 
-## 🔧 Tech Stack
-
-- **Backend**: Node.js + Express
-- **Frontend**: Vanilla JavaScript + Leaflet.js
-- **Images**: Supabase Storage CDN
-- **Hosting**: Vercel/Railway compatible
-
----
-
-## 📊 Project Zones
-
-1. Agricultural Hub
-2. Main Residence Compound
-3. Retreat Village
-4. McQueen's Garage & Creative Workshop
-5. Mushroom Cultivation
-6. Beekeeping Program
-7. Events & Gatherings Hub
-8. Tropical Dome Greenhouse
-9. Farmstead Hub & Store
-10. Wellness & Healing Center
-11. Infrastructure & Utilities
-12. Sacred Ceremonial Spaces
-13. Livestock & Nursery
-14. Container Campus & Studios
-15. Off-Grid Energy Systems
-16. Water Management
-17. Trails & Recreational Zones
-18. Phase 3+ Future Development
-
----
-
-## 👥 Team Contact
-
-- **Mark Panics**: markeduardpancis@gmail.com
-- **Paul Muresan**: paulmuresan77@gmail.com
-- **Johnatan Braniff**: jbraniff1117@gmail.com
-
-**Website**: https://sulphurmountainroad.vercel.app/
-
----
-
-## 📝 Version History
-
-### V1.0 - November 4, 2025
-- ✅ Production-ready release
-- ✅ 18 fully documented project zones
-- ✅ Mobile optimized
-- ✅ Admin tools hidden for public
-- ✅ Clean codebase
-- ✅ Fast image loading
-- ✅ Smooth user experience
-
----
-
-## 🔒 License
-
-All rights reserved © 2025 Sulphur Mountain Eco-Village
-
----
-
-## 🌍 Deployment
-
-### Vercel
-```bash
-vercel --prod
-```
-
-### Railway
-```bash
-railway up
-```
-
-Server auto-detects environment and configures accordingly.
-
----
-
-**Built with ❤️ for regenerative living**
+© 2026 Ojai Valley Properties

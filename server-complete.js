@@ -9033,6 +9033,13 @@ function cleanStructures(list) {
       s.altitudeM = clampNum(raw.altitudeM, -200, 200, 0);
       s.rotationDeg = Math.round(clampNum(raw.rotationDeg, -360, 360, 0));
       s.scale = clampNum(raw.scale, 0.01, 100, 1);
+      // a model you can go into carries its own floors and walls (V0.50); and it may say what
+      // standing thing it replaces, by the kind the today layer draws it as
+      if (raw.enter === true) s.enter = true;
+      if (Array.isArray(raw.clears)) {
+        const clears = raw.clears.map((k) => String(k)).filter((k) => /^[a-z0-9][a-z0-9-]{0,39}$/.test(k)).slice(0, 20);
+        if (clears.length) s.clears = clears;
+      }
     }
     if (status !== 'model' && (!s.outline || s.outline.length < 3)) return { error: id + ': a site or a massing block needs an outline' };
     out.push(s);

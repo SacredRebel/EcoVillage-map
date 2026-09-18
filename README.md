@@ -56,6 +56,11 @@ The [walkable world](https://github.com/SacredRebel/spatial-map) edits a propert
 |---|---|
 | `PACK_REPOS` | `sulphur-mountain=SacredRebel/sulphur-mountain-world` (default; comma-separate more) |
 | `PACK_GITHUB_TOKEN` | optional — a PAT with Contents: Read & write on the pack repos. When absent, `GITHUB_TOKEN` is used, which then needs the pack repos in its repository access. |
+| `BUILDER_PIN` | optional — the PIN that makes a **builder** in the world (every tool; saves become proposals). `EDIT_PIN` makes an **admin**. |
+
+### Roles and proposals (`/api/pack/role`, `/api/pack/proposals`)
+
+`POST /api/pack/role {pin}` says what a PIN is worth: `admin` (`EDIT_PIN`) or `builder` (`BUILDER_PIN`). `POST /api/pack/proposals {pin, pack, note, edits, structures}` takes a builder's or an admin's changes — pack edit features and structure rows (or `{id, remove: true}`) for that pack's property — validates every one, and commits the proposal as `data/proposals/<pack>/<id>.json` here, so who proposed what is git history. An admin's proposal is applied at once; a builder's waits. `GET /api/pack/proposals?pack=` lists them; `POST /api/pack/proposals/:id/decide {pin, pack, decision: approve|reject, note}` (admin) applies or marks one. Applying merges the edits into the pack's `edits.geojson` and the structure changes into `data/structures.json` (same id replaces, new id appends, `remove` drops).
 
 ## Quick Start
 

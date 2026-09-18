@@ -9227,6 +9227,231 @@ app.post('/api/pack/edits', async (req, res) => {
   }
 });
 
+// ---- roles and proposals -------------------------------------------------------------------------
+// The world has three roles. A MEMBER walks and reads. A BUILDER has every tool, and what a builder
+// saves is a PROPOSAL that waits here for an admin. An ADMIN's proposal is applied at once, and an
+// admin decides the others. The PINs live in the environment (EDIT_PIN is the admin's, BUILDER_PIN
+// the builders'); the world only ever sends the PIN it was given.
+//
+// A proposal is one JSON file in this repository, data/proposals/<pack>/<id>.json — committed as
+// it is made, so the record of who proposed what is git history — carrying the pack's edit
+// features and the structure changes together. Applying one merges the features into the pack's
+// edits.geojson (the pack repository) and the structure changes into data/structures.json (here),
+// with the same rules the world uses to draw them: an id the list already has replaces that row,
+// a new id is appended, `remove: true` drops it.
+function roleForPin(pin) {
+  const p = pin == null ? '' : String(pin);
+  if (!p) return null;
+  if (process.env.EDIT_PIN && p === String(process.env.EDIT_PIN)) return 'admin';
+  if (process.env.BUILDER_PIN && p === String(process.env.BUILDER_PIN)) return 'builder';
+  return null;
+}
+
+app.post('/api/pack/role', (req, res) => {
+  if (!process.env.EDIT_PIN) return res.status(501).json({ ok: false, error: 'not_configured' });
+  const role = roleForPin((req.body || {}).pin);
+  if (!role) return res.status(401).json({ ok: false, error: 'bad_pin' });
+  res.set('Cache-Control', 'no-store');
+  res.json({ ok: true, role });
+});
+
+const GH_API = 'https://api.github.com/repos/';
+function ghHeadersFor(token) {
+  return { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'User-Agent': 'ojai-map-server', 'X-GitHub-Api-Version': '2022-11-28' };
+}
+/** read a file from a repository: { sha, text } or null when it is not there; throws on any other failure */
+async function ghRead(repo, path, token) {
+  const r = await fetch(GH_API + repo + '/contents/' + path + '?ref=main', { headers: ghHeadersFor(token) });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error('github ' + r.status + ' reading ' + path + ': ' + (await r.text()).slice(0, 200));
+  const info = await r.json();
+  return { sha: info.sha, text: Buffer.from(String(info.content || ''), 'base64').toString('utf8') };
+}
+/** write a file to a repository as Sacred Rebel; returns the commit sha */
+async function ghWrite(repo, path, text, message, token, sha) {
+  const who = { name: 'Sacred Rebel', email: 'paulmuresan77@gmail.com' };
+  const body = { message, content: Buffer.from(text).toString('base64'), branch: 'main', committer: who, author: who };
+  if (sha) body.sha = sha;
+  const r = await fetch(GH_API + repo + '/contents/' + path, { method: 'PUT', headers: { ...ghHeadersFor(token), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('github ' + r.status + ' writing ' + path + ': ' + (await r.text()).slice(0, 200));
+  const j = await r.json();
+  return j.commit && j.commit.sha;
+}
+
+/** merge edit features into a pack's edits.geojson and commit it */
+async function applyPackEdits(repo, clean, token, why) {
+  if (!clean.length) return null;
+  const cur = await ghRead(repo, 'edits.geojson', token);
+  let doc = { type: 'FeatureCollection', name: 'edits', features: [] };
+  if (cur) {
+    try { const parsed = JSON.parse(cur.text); if (parsed && Array.isArray(parsed.features)) doc = Object.assign({ type: 'FeatureCollection', name: 'edits' }, parsed); }
+    catch (e) { throw new Error('the pack\'s edits.geojson is not valid JSON'); }
+  }
+  const byId = new Map(doc.features.map((f, i) => [String(f && f.properties && f.properties.id), i]));
+  let replaced = 0;
+  for (const f of clean) {
+    const at = byId.get(f.properties.id);
+    if (at !== undefined) { doc.features[at] = f; replaced++; }
+    else { byId.set(f.properties.id, doc.features.length); doc.features.push(f); }
+  }
+  const sha = await ghWrite(repo, 'edits.geojson', JSON.stringify(doc, null, 1) + '\n', why, token, cur && cur.sha);
+  return { commit: sha, replaced, total: doc.features.length };
+}
+
+/** merge structure changes into data/structures.json here and commit it */
+async function applyStructureChanges(changes, token, why) {
+  if (!changes.length) return null;
+  const repo = process.env.GITHUB_REPO || 'SacredRebel/EcoVillage-map';
+  const cur = await ghRead(repo, 'data/structures.json', token);
+  let doc = { note: 'Designed structures — the Vision half of the map.', structures: [] };
+  if (cur) { try { doc = JSON.parse(cur.text); } catch (e) { throw new Error('data/structures.json is not valid JSON'); } }
+  if (!Array.isArray(doc.structures)) doc.structures = [];
+  let replaced = 0, removed = 0, added = 0;
+  for (const c of changes) {
+    const at = doc.structures.findIndex(s => s && s.id === c.id);
+    if (c.remove) { if (at >= 0) { doc.structures.splice(at, 1); removed++; } continue; }
+    const row = Object.assign({}, c); delete row.remove;
+    if (at >= 0) { doc.structures[at] = row; replaced++; } else { doc.structures.push(row); added++; }
+  }
+  const check = cleanStructures(doc.structures);
+  if (check.error) throw new Error('the merged registry is not valid: ' + check.error);
+  doc.structures = check.structures;
+  const sha = await ghWrite(repo, 'data/structures.json', JSON.stringify(doc, null, 2) + '\n', why, token, cur && cur.sha);
+  try { STRUCTURES_CACHE = null; } catch (e) { /* no cache */ }
+  return { commit: sha, replaced, removed, added, total: doc.structures.length };
+}
+
+/** one structure change, checked: a row the registry would accept for this pack's property, or a removal */
+function cleanStructureChange(c, i, pack) {
+  if (!c || typeof c !== 'object') return `structure ${i}: not an object`;
+  const id = String(c.id || '');
+  if (!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id)) return `structure ${i}: bad id`;
+  if (c.remove === true) return { id, pid: pack, remove: true };
+  const one = cleanStructures([Object.assign({}, c, { id })]);
+  if (one.error) return `structure ${i}: ${one.error}`;
+  const row = one.structures[0];
+  if (row.pid !== pack) return `structure ${i}: belongs to ${row.pid}, not to this pack`;
+  return row;
+}
+
+const PROPOSAL_STATUS = new Set(['pending', 'approved', 'rejected']);
+const proposalPath = (pack, id) => 'data/proposals/' + pack + '/' + id + '.json';
+
+app.post('/api/pack/proposals', async (req, res) => {
+  try {
+    const { pin, pack, note, edits, structures } = req.body || {};
+    const TOKEN = process.env.GITHUB_TOKEN;
+    if (!process.env.EDIT_PIN || !TOKEN) return res.status(501).json({ ok: false, error: 'not_configured' });
+    const role = roleForPin(pin);
+    if (!role) return res.status(401).json({ ok: false, error: 'bad_pin' });
+    const repos = packRepos();
+    const repo = typeof pack === 'string' ? repos[pack] : undefined;
+    if (!repo) return res.status(404).json({ ok: false, error: 'unknown_pack' });
+    const E = Array.isArray(edits) ? edits : [], S = Array.isArray(structures) ? structures : [];
+    if (!E.length && !S.length) return res.status(400).json({ ok: false, error: 'no_changes' });
+    if (E.length > PACK_MAX_FEATURES || S.length > 100) return res.status(400).json({ ok: false, error: 'too_many' });
+    const cleanE = [], cleanS = [];
+    for (let i = 0; i < E.length; i++) { const c = cleanPackFeature(E[i], i); if (typeof c === 'string') return res.status(400).json({ ok: false, error: 'bad_feature', detail: c }); cleanE.push(c); }
+    for (let i = 0; i < S.length; i++) { const c = cleanStructureChange(S[i], i, pack); if (typeof c === 'string') return res.status(400).json({ ok: false, error: 'bad_structure', detail: c }); cleanS.push(c); }
+
+    const id = 'p-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+    const proposal = {
+      id, pack, by: role, note: packText(note) || '', at: new Date().toISOString(), status: 'pending',
+      edits: cleanE, structures: cleanS
+    };
+    const summary = [cleanE.length ? cleanE.length + ' edit' + (cleanE.length === 1 ? '' : 's') : '', cleanS.length ? cleanS.length + ' structure' + (cleanS.length === 1 ? '' : 's') : ''].filter(Boolean).join(', ');
+    let applied = null;
+    if (role === 'admin') {
+      // the admin's own proposal is decided by making it: applied now, recorded as approved
+      applied = await applyProposal(proposal, repos, TOKEN);
+      proposal.status = 'approved';
+      proposal.decided_at = new Date().toISOString();
+      proposal.decided_by = 'admin';
+    }
+    const msg = (role === 'admin' ? 'Applied from the world: ' : 'Proposed from the world: ') + summary + (proposal.note ? '\n\n' + proposal.note : '') +
+      '\n\nProposal ' + id + (role === 'admin' ? ', made and applied by an admin.' : ', by a builder, waiting for an admin.');
+    const commit = await ghWrite(process.env.GITHUB_REPO || 'SacredRebel/EcoVillage-map', proposalPath(pack, id), JSON.stringify(proposal, null, 1) + '\n', msg, TOKEN);
+    res.json({ ok: true, id, applied: role === 'admin', status: proposal.status, count: cleanE.length + cleanS.length, commit: applied && applied.pack ? applied.pack.commit : commit, result: applied });
+  } catch (e) {
+    const m = String(e && e.message);
+    res.status(/^github /.test(m) ? 502 : 500).json({ ok: false, error: /^github /.test(m) ? 'github_error' : 'server_error', detail: m.slice(0, 300) });
+  }
+});
+
+/** apply a proposal: the pack's edits first (the write most likely to be refused), then the structures */
+async function applyProposal(p, repos, token) {
+  const repo = repos[p.pack];
+  const packToken = process.env.PACK_GITHUB_TOKEN || token;
+  const why = 'Edits from the world (proposal ' + p.id + ')\n\n' + p.edits.length + ' edit' + (p.edits.length === 1 ? '' : 's') + (p.note ? ': ' + p.note : '') + '\nThe record is untouched; these are the owner\'s corrections on top of it.';
+  const packResult = await applyPackEdits(repo, p.edits, packToken, why);
+  const structResult = await applyStructureChanges(p.structures, token, 'Structures from the world (proposal ' + p.id + ')' + (p.note ? '\n\n' + p.note : ''));
+  return { pack: packResult, structures: structResult };
+}
+
+/** the proposals as deployed with this build: pending ones first, newest first */
+app.get('/api/pack/proposals', (req, res) => {
+  try {
+    const pack = String(req.query.pack || '').trim();
+    if (!pack || !packRepos()[pack]) return res.status(404).json({ ok: false, error: 'unknown_pack' });
+    const dir = join(__dirname, 'data', 'proposals', pack);
+    let files = [];
+    try { files = readdirSync(dir).filter(f => f.endsWith('.json')); } catch (e) { files = []; }
+    const list = [];
+    for (const f of files) {
+      try {
+        const p = JSON.parse(readFileSync(join(dir, f), 'utf8'));
+        list.push({ id: p.id, by: p.by, note: p.note, at: p.at, status: p.status, edits: (p.edits || []).length, structures: (p.structures || []).length, decided_at: p.decided_at, decided_by: p.decided_by });
+      } catch (e) { /* a file that is not a proposal */ }
+    }
+    list.sort((a, b) => (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || String(b.at).localeCompare(String(a.at)));
+    res.set('Cache-Control', 'no-store');
+    res.json({ ok: true, pack, proposals: list });
+  } catch (e) { res.status(500).json({ ok: false, error: 'server_error' }); }
+});
+
+app.get('/api/pack/proposals/:id', (req, res) => {
+  try {
+    const pack = String(req.query.pack || '').trim();
+    const id = String(req.params.id || '');
+    if (!pack || !packRepos()[pack]) return res.status(404).json({ ok: false, error: 'unknown_pack' });
+    if (!/^p-[a-z0-9]+-[a-z0-9]+$/.test(id)) return res.status(400).json({ ok: false, error: 'bad_id' });
+    const p = JSON.parse(readFileSync(join(__dirname, 'data', 'proposals', pack, id + '.json'), 'utf8'));
+    res.set('Cache-Control', 'no-store');
+    res.json({ ok: true, proposal: p });
+  } catch (e) { res.status(404).json({ ok: false, error: 'not_found' }); }
+});
+
+/** an admin decides: approve applies it, reject only marks it; either way the file records who and when */
+app.post('/api/pack/proposals/:id/decide', async (req, res) => {
+  try {
+    const { pin, pack, decision, note } = req.body || {};
+    const TOKEN = process.env.GITHUB_TOKEN;
+    if (!process.env.EDIT_PIN || !TOKEN) return res.status(501).json({ ok: false, error: 'not_configured' });
+    if (roleForPin(pin) !== 'admin') return res.status(roleForPin(pin) ? 403 : 401).json({ ok: false, error: roleForPin(pin) ? 'admin_only' : 'bad_pin' });
+    const repos = packRepos();
+    if (typeof pack !== 'string' || !repos[pack]) return res.status(404).json({ ok: false, error: 'unknown_pack' });
+    const id = String(req.params.id || '');
+    if (!/^p-[a-z0-9]+-[a-z0-9]+$/.test(id)) return res.status(400).json({ ok: false, error: 'bad_id' });
+    if (decision !== 'approve' && decision !== 'reject') return res.status(400).json({ ok: false, error: 'bad_decision' });
+    const repo = process.env.GITHUB_REPO || 'SacredRebel/EcoVillage-map';
+    const cur = await ghRead(repo, proposalPath(pack, id), TOKEN);
+    if (!cur) return res.status(404).json({ ok: false, error: 'not_found' });
+    const p = JSON.parse(cur.text);
+    if (!PROPOSAL_STATUS.has(p.status) || p.status !== 'pending') return res.status(409).json({ ok: false, error: 'already_decided', status: p.status });
+    let result = null;
+    if (decision === 'approve') result = await applyProposal(p, repos, TOKEN);
+    p.status = decision === 'approve' ? 'approved' : 'rejected';
+    p.decided_at = new Date().toISOString();
+    p.decided_by = 'admin';
+    if (packText(note)) p.decision_note = packText(note);
+    const commit = await ghWrite(repo, proposalPath(pack, id), JSON.stringify(p, null, 1) + '\n', (decision === 'approve' ? 'Approved' : 'Rejected') + ' proposal ' + id + (p.decision_note ? '\n\n' + p.decision_note : ''), TOKEN, cur.sha);
+    res.json({ ok: true, id, status: p.status, commit, result });
+  } catch (e) {
+    const m = String(e && e.message);
+    res.status(/^github /.test(m) ? 502 : 500).json({ ok: false, error: /^github /.test(m) ? 'github_error' : 'server_error', detail: m.slice(0, 300) });
+  }
+});
+
 // Mapping from project IDs to actual folder names under images/ — empty until
 // zones and photo folders are added for the Howard Property.
 const PROJECT_FOLDER_MAP = {};

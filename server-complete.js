@@ -9452,6 +9452,133 @@ app.post('/api/pack/proposals/:id/decide', async (req, res) => {
   }
 });
 
+// ---- the magic box's agent: POST /api/agent ------------------------------------------------------
+// A builder or admin standing at a magic box in the world talks to this. It answers, and it
+// PROPOSES — in the map's own grammar, as metres east and north of the box: a block of a size, a
+// fence, a marker, trees taken down, a tree planted. It never applies anything; the world shows
+// each proposal as a card and the person takes it or leaves it, and a taken one becomes an
+// ordinary unsaved edit there. So the agent can do nothing a builder could not do by hand.
+//
+// With ANTHROPIC_API_KEY set the agent is Claude, given these five tools and nothing else. Without
+// it, a small parser answers plain commands ("a shed 6 by 4", "clear the trees within 10 m") and
+// says so, so the box works on day one and the key can come later.
+const AGENT_MODEL = process.env.AGENT_MODEL || 'claude-sonnet-4-5';
+const AGENT_TOOLS = [
+  { name: 'place_block', description: 'Propose a rectangular block (a massing volume to judge size and fit) at some metres east and north of the box, turned to a compass heading.',
+    input_schema: { type: 'object', properties: { name: { type: 'string' }, width_m: { type: 'number' }, depth_m: { type: 'number' }, height_m: { type: 'number' }, east_m: { type: 'number' }, north_m: { type: 'number' }, heading_deg: { type: 'number' } }, required: ['name', 'width_m', 'depth_m', 'height_m'] } },
+  { name: 'draw_line', description: 'Propose a fence, a path or a road as a sequence of points in metres east and north of the box.',
+    input_schema: { type: 'object', properties: { kind: { type: 'string', enum: ['fence', 'path', 'road'] }, name: { type: 'string' }, points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 2 } }, required: ['kind', 'name', 'points'] } },
+  { name: 'place_marker', description: 'Propose a named marker at some metres east and north of the box.',
+    input_schema: { type: 'object', properties: { name: { type: 'string' }, east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['name'] } },
+  { name: 'remove_trees', description: 'Propose that the recorded trees within a radius of a point be marked gone.',
+    input_schema: { type: 'object', properties: { radius_m: { type: 'number' }, east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['radius_m'] } },
+  { name: 'plant_tree', description: 'Propose a tree of a height at some metres east and north of the box.',
+    input_schema: { type: 'object', properties: { height_m: { type: 'number' }, east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['height_m'] } }
+];
+
+const clampN = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
+
+/** a tool call from the model, or a parsed command, into one action the world understands; null when it is not one */
+function agentAction(name, a) {
+  a = a || {};
+  const e = clampN(a.east_m, -500, 500, 0), n = clampN(a.north_m, -500, 500, 0);
+  switch (name) {
+    case 'place_block': return { type: 'block', name: packText(a.name) || 'block', w: clampN(a.width_m, 0.5, 200, 6), d: clampN(a.depth_m, 0.5, 200, 4), h: clampN(a.height_m, 0.5, 60, 3.5), e, n, heading: a.heading_deg == null ? undefined : clampN(a.heading_deg, -360, 720, 0) };
+    case 'draw_line': {
+      const kind = ['fence', 'path', 'road'].includes(a.kind) ? a.kind : 'fence';
+      const pts = (Array.isArray(a.points) ? a.points : []).slice(0, 200).map(p => [clampN(p && p.east_m, -500, 500, 0), clampN(p && p.north_m, -500, 500, 0)]);
+      return pts.length >= 2 ? { type: 'line', kind, name: packText(a.name) || kind, points: pts } : null;
+    }
+    case 'place_marker': return { type: 'marker', name: packText(a.name) || 'marker', e, n };
+    case 'remove_trees': return { type: 'remove_trees', radius_m: clampN(a.radius_m, 0.5, 50, 5), e, n };
+    case 'plant_tree': return { type: 'plant_tree', height_m: clampN(a.height_m, 0.5, 60, 6), e, n };
+    default: return null;
+  }
+}
+
+/** without a key: a few plain commands understood, and honesty about the rest */
+function agentStub(text) {
+  const t = String(text || '').toLowerCase();
+  const actions = [];
+  const noun = /(shed|house|cabin|deck|barn|studio|garage|greenhouse|dome|hall|workshop|block|structure|building|pad|platform)/.exec(t);
+  const size = /(\d+(?:\.\d+)?)\s*(?:m|meters?|metres?)?\s*(?:x|by|×)\s*(\d+(?:\.\d+)?)/.exec(t);
+  const high = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)?\s*(?:high|tall)/.exec(t);
+  const dir = (m) => ({ east: [1, 0], west: [-1, 0], north: [0, 1], south: [0, -1] }[m]);
+  const offset = (() => { const m = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)\s*(?:to the\s+)?(east|west|north|south)\b(?!.*then)/.exec(t); if (!m) return [0, 0]; const d = dir(m[2]); return [d[0] * Number(m[1]), d[1] * Number(m[1])]; })();
+  if (noun && size && !/(fence|path|road)/.test(t)) {
+    actions.push(agentAction('place_block', { name: noun[1], width_m: Number(size[1]), depth_m: Number(size[2]), height_m: high ? Number(high[1]) : 3.5, east_m: offset[0], north_m: offset[1] }));
+  }
+  const line = /(fence|path|road)/.exec(t);
+  if (line) {
+    const pts = [[0, 0]];
+    const re = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)\s*(?:to the\s+)?(east|west|north|south)\b/g;
+    let m, x = 0, y = 0;
+    while ((m = re.exec(t))) { const d = dir(m[2]); x += d[0] * Number(m[1]); y += d[1] * Number(m[1]); pts.push([x, y]); }
+    if (pts.length >= 2) actions.push(agentAction('draw_line', { kind: line[1], name: line[1], points: pts.map(([e, n]) => ({ east_m: e, north_m: n })) }));
+  }
+  const marker = /(?:marker|pin|mark)\b[^"“]*?(?:called|named)\s+["“]?([^"”.,]+)/.exec(String(text || ''));
+  if (marker) actions.push(agentAction('place_marker', { name: marker[1].trim(), east_m: offset[0], north_m: offset[1] }));
+  const clear = /(remove|clear|cut|take down|fell)\b.*\btrees?\b/.exec(t);
+  if (clear) { const r = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)/.exec(t); actions.push(agentAction('remove_trees', { radius_m: r ? Number(r[1]) : 10, east_m: 0, north_m: 0 })); }
+  const plant = /plant\b.*?\btrees?\b/.exec(t);
+  if (plant) { const h = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)/.exec(t); actions.push(agentAction('plant_tree', { height_m: h ? Number(h[1]) : 6, east_m: offset[0], north_m: offset[1] })); }
+  const clean = actions.filter(Boolean);
+  const said = clean.length
+    ? 'I am not connected to a model yet, but I understood that. Here is what I would lay out — take what you want.'
+    : 'I am not connected to a model yet (the atlas has no ANTHROPIC_API_KEY), so I only understand plain shapes: "a shed 6 by 4, 3 m high", "a fence 20 m east then 10 m north", "a marker called the well", "clear the trees within 10 m", "plant a 5 m tree".';
+  return { reply: said, actions: clean, stub: true };
+}
+
+app.post('/api/agent', async (req, res) => {
+  try {
+    const { pin, pack, box, heading, messages } = req.body || {};
+    if (!process.env.EDIT_PIN) return res.status(501).json({ ok: false, error: 'not_configured' });
+    if (!roleForPin(pin)) return res.status(401).json({ ok: false, error: 'bad_pin' });
+    const repos = packRepos();
+    if (typeof pack !== 'string' || !repos[pack]) return res.status(404).json({ ok: false, error: 'unknown_pack' });
+    if (!box || typeof box !== 'object' || !packCoord([Number(box.lng), Number(box.lat)])) return res.status(400).json({ ok: false, error: 'bad_box' });
+    const list = Array.isArray(messages) ? messages.slice(-24) : [];
+    const turns = [];
+    for (const m of list) {
+      if (!m || (m.role !== 'user' && m.role !== 'assistant') || typeof m.content !== 'string') continue;
+      const content = m.content.replace(/[\x00-\x08\x0b-\x1f]/g, ' ').slice(0, 2000);
+      if (!content.trim()) continue;
+      if (turns.length && turns[turns.length - 1].role === m.role) turns[turns.length - 1].content += '\n' + content;   // the API wants the roles to alternate
+      else turns.push({ role: m.role, content });
+    }
+    while (turns.length && turns[0].role !== 'user') turns.shift();
+    if (!turns.length || turns[turns.length - 1].role !== 'user') return res.status(400).json({ ok: false, error: 'no_message' });
+
+    const key = process.env.ANTHROPIC_API_KEY;
+    if (!key) {
+      const out = agentStub(turns[turns.length - 1].content);
+      return res.json(Object.assign({ ok: true }, out));
+    }
+    const property = PROPERTIES.find(p => p.id === pack);
+    const system = `You are the agent inside the walkable world of ${property ? property.name : pack}, a real property in Ventura County, California, drawn at real size from its survey, the county record and 2018 lidar. ` +
+      `The person is standing at a "magic box" they placed, named "${packText(box.name) || 'magic box'}", at latitude ${Number(box.lat).toFixed(6)}, longitude ${Number(box.lng).toFixed(6)}, facing ${Math.round(clampN(heading, 0, 360, 0))}° (0 is north, 90 east). ` +
+      `You may PROPOSE things with the tools, in metres east and north of the box; you never apply anything — the person sees each proposal as a card and takes it or leaves it, and only then does it become an unsaved edit they can undo or save. ` +
+      `Be brief and concrete: two or three sentences, then the tool calls. Use real, buildable sizes (a bedroom is about 4 × 4 m; a small cabin 6 × 4 m; a barn 12 × 8 m; a single-storey wall 3 m high). If something is unclear, ask one short question instead of guessing. ` +
+      `Never claim to have built, moved or changed anything; say what you propose. Do not invent facts about the land beyond what the person tells you.`;
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: AGENT_MODEL, max_tokens: 1024, system, tools: AGENT_TOOLS, messages: turns })
+    });
+    if (!r.ok) {
+      const detail = (await r.text()).slice(0, 300);
+      return res.status(502).json({ ok: false, error: 'agent_error', status: r.status, detail });
+    }
+    const j = await r.json();
+    const blocks = Array.isArray(j.content) ? j.content : [];
+    const reply = blocks.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+    const actions = blocks.filter(b => b.type === 'tool_use').map(b => agentAction(b.name, b.input)).filter(Boolean).slice(0, 12);
+    res.json({ ok: true, reply: reply || (actions.length ? 'Here is what I propose.' : '…'), actions, stub: false, model: j.model || AGENT_MODEL });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'server_error', detail: String(e && e.message).slice(0, 300) });
+  }
+});
+
 // Mapping from project IDs to actual folder names under images/ — empty until
 // zones and photo folders are added for the Howard Property.
 const PROJECT_FOLDER_MAP = {};

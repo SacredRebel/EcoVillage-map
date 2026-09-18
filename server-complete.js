@@ -9088,10 +9088,14 @@ app.post('/api/save-structures', async (req, res) => {
 //   so a request cannot name a repository. The token is PACK_GITHUB_TOKEN, or GITHUB_TOKEN when the
 //   atlas's own token has been extended to the pack repositories.
 const PACK_OPS = new Set(['remove', 'move', 'add']);
-const PACK_LAYERS = new Set(['trees', 'vision', 'notes', 'lines', 'zones', 'terrain']);
+const PACK_LAYERS = new Set(['trees', 'vision', 'notes', 'lines', 'zones', 'terrain', 'build']);
 const PACK_ZONE_KINDS = new Set(['zone', 'garden', 'orchard', 'pasture', 'site', 'camp', 'water', 'keep', 'forest']);
 const PACK_TERRAIN_OPS = new Set(['flatten', 'raise', 'lower']);
 const PACK_LINE_KINDS = new Set(['fence', 'path', 'road']);
+// construction (spatial-map v0.9): a building is parts — a wall (LineString), a floor or a roof (Polygon)
+const PACK_BUILD_KINDS = new Set(['wall', 'floor', 'roof']);
+const PACK_MATERIALS = new Set(['plaster', 'lime', 'wood', 'timber', 'stone', 'earth', 'adobe', 'concrete', 'glass', 'metal', 'tile', 'thatch', 'shingle', 'living']);
+const PACK_ROOF_FORMS = new Set(['flat', 'shed', 'gable', 'hip', 'vault']);
 // the county: nothing outside Ventura County's box is a place on one of these properties
 const PACK_BOUNDS = { west: -119.75, south: 33.95, east: -118.55, north: 34.95 };
 const PACK_MAX_FEATURES = 200, PACK_MAX_POINTS = 400, PACK_MAX_TEXT = 120;
@@ -9117,7 +9121,7 @@ function cleanPackFeature(f, i) {
   const p = f.properties, g = f.geometry;
   const op = p.op, layer = p.layer;
   if (!PACK_OPS.has(op)) return `feature ${i}: op must be remove, move or add`;
-  if (!PACK_LAYERS.has(layer)) return `feature ${i}: layer must be trees, vision, notes, lines, zones or terrain`;
+  if (!PACK_LAYERS.has(layer)) return `feature ${i}: layer must be trees, vision, notes, lines, zones, terrain or build`;
   const id = packText(p.id);
   if (!id || !/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/.test(id)) return `feature ${i}: id must be a short slug`;
   let geometry;
@@ -9178,6 +9182,52 @@ function cleanPackFeature(f, i) {
     const lngs = ring.map(c => c[0]), lats = ring.map(c => c[1]);
     const mx = 111320 * Math.cos(lats[0] * Math.PI / 180), my = 110574;
     if ((Math.max(...lngs) - Math.min(...lngs)) * mx > 300 || (Math.max(...lats) - Math.min(...lats)) * my > 300) return `feature ${i}: a shaping spans at most 300 m`;
+  } else if (layer === 'build') {
+    // a part of a building: added with its kind and its sizes, or taken down by target
+    if (op === 'move') return `feature ${i}: a part is added or removed, not moved (a moved part is added again with the same id)`;
+    if (op === 'remove') {
+      if (geometry.type !== 'Point') return `feature ${i}: a part is taken down at a point`;
+      out.target = packText(p.target); if (!out.target || !/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/.test(out.target)) return `feature ${i}: taking a part down needs target, the id of the part`;
+      if (p.what) out.what = packText(p.what);
+      return { type: 'Feature', properties: out, geometry };
+    }
+    if (!PACK_BUILD_KINDS.has(p.kind)) return `feature ${i}: a part is a wall, a floor or a roof`;
+    out.kind = p.kind;
+    if (PACK_MATERIALS.has(p.material)) out.material = p.material;
+    if (p.structure) out.structure = packText(p.structure).slice(0, 60);
+    const span = (coords) => { const lngs = coords.map(c => c[0]), lats = coords.map(c => c[1]); const mx = 111320 * Math.cos(lats[0] * Math.PI / 180); return Math.max((Math.max(...lngs) - Math.min(...lngs)) * mx, (Math.max(...lats) - Math.min(...lats)) * 110574); };
+    if (p.kind === 'wall') {
+      if (geometry.type !== 'LineString') return `feature ${i}: a wall is a LineString along its centre`;
+      if (span(geometry.coordinates) > 200) return `feature ${i}: a wall spans at most 200 m`;
+      out.height_m = num('height_m', 0.3, 12); if (out.height_m === undefined) return `feature ${i}: a wall needs height_m (0.3 to 12)`;
+      const th = num('thick_m', 0.05, 1.5); out.thick_m = th === undefined ? 0.25 : th;
+      const b = num('base_m', -5, 30); if (b !== undefined && b !== 0) out.base_m = b;
+      if (p.smooth === true) out.smooth = true;
+      const openings = [];
+      for (const o of (Array.isArray(p.openings) ? p.openings : []).slice(0, 20)) {
+        if (!o || typeof o !== 'object') continue;
+        const kind = o.kind === 'window' ? 'window' : 'door';
+        const at = Number(o.at_m), width = Number(o.width_m), sill = kind === 'door' ? 0 : Number(o.sill_m), head = Number(o.head_m);
+        if (![at, width, sill, head].every(Number.isFinite) || at < 0 || width < 0.3 || width > 10 || sill < 0 || head <= sill + 0.2 || head > out.height_m) continue;
+        openings.push({ kind, at_m: Math.round(at * 100) / 100, width_m: Math.round(width * 100) / 100, sill_m: Math.round(sill * 100) / 100, head_m: Math.round(head * 100) / 100 });
+      }
+      out.openings = openings;
+    } else {
+      if (geometry.type !== 'Polygon') return `feature ${i}: a ${p.kind} is a Polygon`;
+      if (span(geometry.coordinates[0]) > 200) return `feature ${i}: a ${p.kind} spans at most 200 m`;
+      if (p.kind === 'floor') {
+        const l = num('level_m', -5, 30); out.level_m = l === undefined ? 0 : l;
+        const th = num('thick_m', 0.05, 1); out.thick_m = th === undefined ? 0.2 : th;
+      } else {
+        out.form = PACK_ROOF_FORMS.has(p.form) ? p.form : 'gable';
+        const e = num('eaves_m', 0.5, 30); out.eaves_m = e === undefined ? 3 : e;
+        const pd = num('pitch_deg', 0, 60); out.pitch_deg = pd === undefined ? 25 : pd;
+        const ov = num('overhang_m', 0, 3); out.overhang_m = ov === undefined ? 0.5 : ov;
+        const rd = num('ridge_deg', 0, 360); if (rd !== undefined) out.ridge_deg = rd;
+        if (p.gable_walls === false) out.gable_walls = false;
+        if (PACK_MATERIALS.has(p.gable_material)) out.gable_material = p.gable_material;
+      }
+    }
   }
   return { type: 'Feature', properties: out, geometry };
 }
@@ -9478,7 +9528,7 @@ app.post('/api/pack/proposals/:id/decide', async (req, res) => {
 // each proposal as a card and the person takes it or leaves it, and a taken one becomes an
 // ordinary unsaved edit there. So the agent can do nothing a builder could not do by hand.
 //
-// With ANTHROPIC_API_KEY set the agent is Claude, given these five tools and nothing else. Without
+// With ANTHROPIC_API_KEY set the agent is Claude, given these eleven tools and nothing else. Without
 // it, a small parser answers plain commands ("a shed 6 by 4", "clear the trees within 10 m") and
 // says so, so the box works on day one and the key can come later.
 const AGENT_MODEL = process.env.AGENT_MODEL || 'claude-sonnet-4-5';
@@ -9496,7 +9546,15 @@ const AGENT_TOOLS = [
   { name: 'draw_zone', description: 'Propose a territory — a named area for a use (garden, orchard, pasture, site, camp, water, keep, forest, or zone) — as a ring of at least three points in metres east and north of the box.',
     input_schema: { type: 'object', properties: { name: { type: 'string' }, kind: { type: 'string', enum: ['zone', 'garden', 'orchard', 'pasture', 'site', 'camp', 'water', 'keep', 'forest'] }, points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 3 } }, required: ['name', 'points'] } },
   { name: 'shape_ground', description: 'Propose shaping the ground inside a ring of at least three points (metres east and north of the box): flatten it to a level pad, or raise or lower it by so many metres, with a bank of edge_m that eases back into the hill.',
-    input_schema: { type: 'object', properties: { op: { type: 'string', enum: ['flatten', 'raise', 'lower'] }, height_m: { type: 'number' }, edge_m: { type: 'number' }, points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 3 } }, required: ['op', 'points'] } }
+    input_schema: { type: 'object', properties: { op: { type: 'string', enum: ['flatten', 'raise', 'lower'] }, height_m: { type: 'number' }, edge_m: { type: 'number' }, points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 3 } }, required: ['op', 'points'] } },
+  { name: 'build_room', description: 'Propose a whole room at once — a floor, a closed wall with a door in the side facing the heading, and a roof — so many metres wide and deep, so high, at some metres east and north of the box, turned to a compass heading. Use this for a cabin, a studio, a shed, a bedroom, a hall.',
+    input_schema: { type: 'object', properties: { name: { type: 'string' }, width_m: { type: 'number' }, depth_m: { type: 'number' }, height_m: { type: 'number' }, wall_material: { type: 'string', enum: ['plaster', 'lime', 'wood', 'timber', 'stone', 'earth', 'adobe', 'concrete', 'glass', 'metal'] }, roof_form: { type: 'string', enum: ['flat', 'shed', 'gable', 'hip', 'vault'] }, door: { type: 'boolean' }, east_m: { type: 'number' }, north_m: { type: 'number' }, heading_deg: { type: 'number' } }, required: ['name', 'width_m', 'depth_m', 'height_m'] } },
+  { name: 'build_wall', description: 'Propose one wall along a line of points in metres east and north of the box, of a height and a thickness and a material; smooth bends it into a curve through the points (for organic, bio-mimetic forms); door_at_m cuts a door so many metres along it.',
+    input_schema: { type: 'object', properties: { points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 2 }, height_m: { type: 'number' }, thick_m: { type: 'number' }, material: { type: 'string' }, smooth: { type: 'boolean' }, structure: { type: 'string' }, door_at_m: { type: 'number' } }, required: ['points', 'height_m'] } },
+  { name: 'build_floor', description: 'Propose a floor (a slab, a deck, an upper storey) over a ring of at least three points in metres east and north of the box, at a level above the ground, in a material.',
+    input_schema: { type: 'object', properties: { points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 3 }, level_m: { type: 'number' }, material: { type: 'string' }, structure: { type: 'string' } }, required: ['points'] } },
+  { name: 'build_roof', description: 'Propose a roof over a ring of at least three points in metres east and north of the box: its form (flat, shed, gable, hip, vault), the height of its eaves above the ground, its pitch in degrees, its material.',
+    input_schema: { type: 'object', properties: { points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 3 }, form: { type: 'string', enum: ['flat', 'shed', 'gable', 'hip', 'vault'] }, eaves_m: { type: 'number' }, pitch_deg: { type: 'number' }, material: { type: 'string' }, structure: { type: 'string' } }, required: ['points', 'eaves_m'] } }
 ];
 
 const clampN = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
@@ -9524,6 +9582,29 @@ function agentAction(name, a) {
       const op = PACK_TERRAIN_OPS.has(a.op) ? a.op : 'flatten';
       return pts.length >= 3 ? { type: 'terrain', op, height_m: clampN(a.height_m, 0.1, 20, 1), edge_m: clampN(a.edge_m, 0, 40, 3), points: pts } : null;
     }
+    case 'build_room': return { type: 'room', name: packText(a.name) || 'room', w: clampN(a.width_m, 1, 40, 5), d: clampN(a.depth_m, 1, 40, 4), h: clampN(a.height_m, 1, 12, 2.7), wall: PACK_MATERIALS.has(a.wall_material) ? a.wall_material : 'plaster', roof: PACK_ROOF_FORMS.has(a.roof_form) ? a.roof_form : 'gable', door: a.door !== false, e, n, heading: a.heading_deg == null ? undefined : clampN(a.heading_deg, -360, 720, 0) };
+    case 'build_wall': {
+      const pts = (Array.isArray(a.points) ? a.points : []).slice(0, 200).map(p => [clampN(p && p.east_m, -500, 500, 0), clampN(p && p.north_m, -500, 500, 0)]);
+      if (pts.length < 2) return null;
+      const out = { type: 'wall', points: pts, height_m: clampN(a.height_m, 0.3, 12, 2.7), thick_m: clampN(a.thick_m, 0.05, 1.5, 0.25), material: PACK_MATERIALS.has(a.material) ? a.material : 'plaster', smooth: a.smooth === true };
+      if (packText(a.structure)) out.structure = packText(a.structure).slice(0, 60);
+      if (a.door_at_m != null && Number.isFinite(Number(a.door_at_m))) out.door_at_m = clampN(a.door_at_m, 0.5, 500, 1);
+      return out;
+    }
+    case 'build_floor': {
+      const pts = (Array.isArray(a.points) ? a.points : []).slice(0, 200).map(p => [clampN(p && p.east_m, -500, 500, 0), clampN(p && p.north_m, -500, 500, 0)]);
+      if (pts.length < 3) return null;
+      const out = { type: 'floor', points: pts, level_m: clampN(a.level_m, -5, 30, 0), material: PACK_MATERIALS.has(a.material) ? a.material : 'wood' };
+      if (packText(a.structure)) out.structure = packText(a.structure).slice(0, 60);
+      return out;
+    }
+    case 'build_roof': {
+      const pts = (Array.isArray(a.points) ? a.points : []).slice(0, 200).map(p => [clampN(p && p.east_m, -500, 500, 0), clampN(p && p.north_m, -500, 500, 0)]);
+      if (pts.length < 3) return null;
+      const out = { type: 'roof', points: pts, form: PACK_ROOF_FORMS.has(a.form) ? a.form : 'gable', eaves_m: clampN(a.eaves_m, 0.5, 30, 3), pitch_deg: clampN(a.pitch_deg, 0, 60, 25), material: PACK_MATERIALS.has(a.material) ? a.material : 'tile' };
+      if (packText(a.structure)) out.structure = packText(a.structure).slice(0, 60);
+      return out;
+    }
     default: return null;
   }
 }
@@ -9538,7 +9619,22 @@ function agentStub(text) {
   const dir = (m) => ({ east: [1, 0], west: [-1, 0], north: [0, 1], south: [0, -1] }[m]);
   const offset = (() => { const m = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)\s*(?:to the\s+)?(east|west|north|south)\b(?!.*then)/.exec(t); if (!m) return [0, 0]; const d = dir(m[2]); return [d[0] * Number(m[1]), d[1] * Number(m[1])]; })();
   const groundVerb = /(flatten|level|raise|lower|cut|fill)\b/.test(t);
-  if (noun && size && !groundVerb && !/(fence|path|road)/.test(t)) {
+  // a room-like noun with a size is built as a room — floor, walls, a door, a roof; "block" or "massing" is a block
+  const roomish = /(room|cabin|studio|shed|bedroom|hall|kitchen|workshop|hut|cottage|house|barn|garage|greenhouse|annex|office)/.exec(t);
+  const wallish = /\bwalls?\b/.test(t) && !roomish;
+  if (roomish && size && !groundVerb && !/(fence|path|road)/.test(t) && !/\b(block|massing)\b/.test(t)) {
+    const material = /(plaster|lime|wood|timber|stone|earth|adobe|concrete|glass|metal)/.exec(t);
+    const roof = /(flat|shed|gable|hip|vault)\s*(?:roof)?/.exec(t.replace(/\bshed\b(?!\s*roof)/, ''));
+    actions.push(agentAction('build_room', { name: roomish[1], width_m: Number(size[1]), depth_m: Number(size[2]), height_m: high ? Number(high[1]) : 2.7, wall_material: material ? material[1] : 'plaster', roof_form: roof ? roof[1] : 'gable', door: !/no door/.test(t), east_m: offset[0], north_m: offset[1] }));
+  } else if (wallish) {
+    // a wall so many metres in a direction, then another: from the box, like a fence
+    const pts = [[0, 0]];
+    const re = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)\s*(?:to the\s+)?(east|west|north|south)\b/g;
+    let m, x = 0, y = 0;
+    while ((m = re.exec(t))) { const d = dir(m[2]); x += d[0] * Number(m[1]); y += d[1] * Number(m[1]); pts.push([x, y]); }
+    const material = /(plaster|lime|wood|timber|stone|earth|adobe|concrete|glass|metal)/.exec(t);
+    if (pts.length >= 2) actions.push(agentAction('build_wall', { points: pts.map(([e, n]) => ({ east_m: e, north_m: n })), height_m: high ? Number(high[1]) : 2.7, material: material ? material[1] : 'plaster', smooth: /curv|smooth|round/.test(t), door_at_m: /door/.test(t) ? Math.abs(x || y) / 2 : undefined }));
+  } else if (noun && size && !groundVerb && !/(fence|path|road)/.test(t)) {
     actions.push(agentAction('place_block', { name: noun[1], width_m: Number(size[1]), depth_m: Number(size[2]), height_m: high ? Number(high[1]) : 3.5, east_m: offset[0], north_m: offset[1] }));
   }
   const line = /(fence|path|road)/.exec(t);
@@ -9571,7 +9667,7 @@ function agentStub(text) {
   const clean = actions.filter(Boolean);
   const said = clean.length
     ? 'I am not connected to a model yet, but I understood that. Here is what I would lay out — take what you want.'
-    : 'I am not connected to a model yet (the atlas has no ANTHROPIC_API_KEY), so I only understand plain shapes: "a shed 6 by 4, 3 m high", "a fence 20 m east then 10 m north", "a marker called the well", "clear the trees within 10 m", "plant a 5 m tree", "flatten a pad 12 by 10", "an orchard 30 by 20 called the north orchard".';
+    : 'I am not connected to a model yet (the atlas has no ANTHROPIC_API_KEY), so I only understand plain shapes: "a cabin 6 by 4, 3 m high, in adobe with a vault roof", "a stone wall 10 m east with a door", "a block 12 by 8", "a fence 20 m east then 10 m north", "a marker called the well", "clear the trees within 10 m", "plant a 5 m tree", "flatten a pad 12 by 10", "an orchard 30 by 20 called the north orchard".';
   return { reply: said, actions: clean, stub: true };
 }
 
@@ -9604,7 +9700,7 @@ app.post('/api/agent', async (req, res) => {
     const system = `You are the agent inside the walkable world of ${property ? property.name : pack}, a real property in Ventura County, California, drawn at real size from its survey, the county record and 2018 lidar. ` +
       `The person is standing at a "magic box" they placed, named "${packText(box.name) || 'magic box'}", at latitude ${Number(box.lat).toFixed(6)}, longitude ${Number(box.lng).toFixed(6)}, facing ${Math.round(clampN(heading, 0, 360, 0))}° (0 is north, 90 east). ` +
       `You may PROPOSE things with the tools, in metres east and north of the box; you never apply anything — the person sees each proposal as a card and takes it or leaves it, and only then does it become an unsaved edit they can undo or save. ` +
-      `Be brief and concrete: two or three sentences, then the tool calls. Use real, buildable sizes (a bedroom is about 4 × 4 m; a small cabin 6 × 4 m; a barn 12 × 8 m; a single-storey wall 3 m high). If something is unclear, ask one short question instead of guessing. ` +
+      `Be brief and concrete: two or three sentences, then the tool calls. Use real, buildable sizes (a bedroom is about 4 × 4 m; a small cabin 6 × 4 m; a barn 12 × 8 m; a single-storey wall 2.7 m high, a door 0.9 m wide and 2.1 m high). For a building, prefer build_room (a floor, walls with a door, a roof) over a bare block; for organic, curved, bio-mimetic forms use build_wall with smooth and five or more points, and a vault roof. If something is unclear, ask one short question instead of guessing. ` +
       `Never claim to have built, moved or changed anything; say what you propose. Do not invent facts about the land beyond what the person tells you.`;
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

@@ -48,6 +48,15 @@ One-time setup (Vercel → project → Settings → Environment Variables):
 
 Until those are set, the Save button politely says saving isn't configured and the Capture → paste-to-Claude path still works.
 
+### The world's edits (`POST /api/pack/edits`)
+
+The [walkable world](https://github.com/SacredRebel/spatial-map) edits a property through its **data pack** (e.g. [sulphur-mountain-world](https://github.com/SacredRebel/sulphur-mountain-world)), never the record: a tree marked gone, a project's post moved, a marker, a fence. It sends `{ pin, pack, features }` here; the atlas checks the PIN, validates every feature against the pack's small edit grammar (`op` remove/move/add × `layer` trees/vision/notes/lines, geometry inside the county), merges them into the pack's `edits.geojson` and commits it as Sacred Rebel. Which packs can be written is a server-side list, so a request can never name a repository:
+
+| Variable | Value |
+|---|---|
+| `PACK_REPOS` | `sulphur-mountain=SacredRebel/sulphur-mountain-world` (default; comma-separate more) |
+| `PACK_GITHUB_TOKEN` | optional — a PAT with Contents: Read & write on the pack repos. When absent, `GITHUB_TOKEN` is used, which then needs the pack repos in its repository access. |
+
 ## Quick Start
 
 ```bash

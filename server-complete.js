@@ -9076,6 +9076,157 @@ app.post('/api/save-structures', async (req, res) => {
   }
 });
 
+// ---- the world's edits: POST /api/pack/edits -----------------------------------------------------
+// The walkable world (spatial-map) edits a property through its data pack, never the record: a
+// tree marked gone, a project's post moved, a marker, a fence. Each edit is one GeoJSON feature of
+// the pack's edits layer, and this is the only way they reach the pack's repository. The world
+// sends the PIN and the features; this checks the PIN, validates every feature against the small
+// vocabulary the pack accepts, and commits the merged edits.geojson as the atlas — the token never
+// leaves the server and the world never learns which repository holds the pack.
+//
+//   Which packs can be written is a SERVER-SIDE list (env PACK_REPOS: "id=owner/repo,id2=owner/repo2"),
+//   so a request cannot name a repository. The token is PACK_GITHUB_TOKEN, or GITHUB_TOKEN when the
+//   atlas's own token has been extended to the pack repositories.
+const PACK_OPS = new Set(['remove', 'move', 'add']);
+const PACK_LAYERS = new Set(['trees', 'vision', 'notes', 'lines']);
+const PACK_LINE_KINDS = new Set(['fence', 'path', 'road']);
+// the county: nothing outside Ventura County's box is a place on one of these properties
+const PACK_BOUNDS = { west: -119.75, south: 33.95, east: -118.55, north: 34.95 };
+const PACK_MAX_FEATURES = 200, PACK_MAX_POINTS = 400, PACK_MAX_TEXT = 120;
+
+function packRepos() {
+  const spec = process.env.PACK_REPOS || 'sulphur-mountain=SacredRebel/sulphur-mountain-world';
+  const out = {};
+  for (const part of spec.split(',')) {
+    const [id, repo] = part.split('=').map(x => (x || '').trim());
+    if (id && /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo || '')) out[id] = repo;
+  }
+  return out;
+}
+
+const packCoord = c => Array.isArray(c) && c.length >= 2 && Number.isFinite(c[0]) && Number.isFinite(c[1])
+  && c[0] >= PACK_BOUNDS.west && c[0] <= PACK_BOUNDS.east && c[1] >= PACK_BOUNDS.south && c[1] <= PACK_BOUNDS.north;
+// eslint-disable-next-line no-control-regex
+const packText = v => (typeof v === 'string' ? v.replace(/[\x00-\x1f]/g, ' ').trim().slice(0, PACK_MAX_TEXT) : undefined);
+
+/** one feature, checked and reduced to what the pack accepts; a string is the reason it was refused */
+function cleanPackFeature(f, i) {
+  if (!f || f.type !== 'Feature' || !f.properties || !f.geometry) return `feature ${i}: not a Feature`;
+  const p = f.properties, g = f.geometry;
+  const op = p.op, layer = p.layer;
+  if (!PACK_OPS.has(op)) return `feature ${i}: op must be remove, move or add`;
+  if (!PACK_LAYERS.has(layer)) return `feature ${i}: layer must be trees, vision, notes or lines`;
+  const id = packText(p.id);
+  if (!id || !/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/.test(id)) return `feature ${i}: id must be a short slug`;
+  let geometry;
+  if (g.type === 'Point') {
+    if (!packCoord(g.coordinates)) return `feature ${i}: point outside the county`;
+    geometry = { type: 'Point', coordinates: [+g.coordinates[0], +g.coordinates[1]] };
+  } else if (g.type === 'LineString') {
+    if (!Array.isArray(g.coordinates) || g.coordinates.length < 2 || g.coordinates.length > PACK_MAX_POINTS || !g.coordinates.every(packCoord)) return `feature ${i}: line must be 2 to ${PACK_MAX_POINTS} points in the county`;
+    geometry = { type: 'LineString', coordinates: g.coordinates.map(c => [+c[0], +c[1]]) };
+  } else if (g.type === 'Polygon') {
+    const ring = Array.isArray(g.coordinates) && g.coordinates[0];
+    if (!Array.isArray(ring) || ring.length < 4 || ring.length > PACK_MAX_POINTS || !ring.every(packCoord)) return `feature ${i}: polygon must be one ring of 4 to ${PACK_MAX_POINTS} points in the county`;
+    geometry = { type: 'Polygon', coordinates: [ring.map(c => [+c[0], +c[1]])] };
+  } else return `feature ${i}: geometry must be a Point, LineString or Polygon`;
+
+  const out = { id, op, layer, by: 'owner', authority: 'owner', via: packText(p.via) || 'world' };
+  const day = packText(p.reported);
+  out.reported = day && /^\d{4}-\d\d-\d\d$/.test(day) ? day : new Date().toISOString().slice(0, 10);
+  const num = (k, lo, hi) => { const v = Number(p[k]); return Number.isFinite(v) && v >= lo && v <= hi ? v : undefined; };
+  if (layer === 'trees') {
+    if (op === 'move') return `feature ${i}: trees are removed or added, not moved`;
+    if (op === 'remove') {
+      if (geometry.type === 'Point') { out.radius_m = num('radius_m', 0.1, 50); if (out.radius_m === undefined) return `feature ${i}: a tree removal at a point needs radius_m (0.1 to 50)`; }
+      else if (geometry.type === 'Polygon') { const b = num('buffer_m', 0, 100); if (b !== undefined) out.buffer_m = b; }
+      else return `feature ${i}: a tree removal is a point or a polygon`;
+      if (p.what) out.what = packText(p.what);
+    } else {
+      if (geometry.type !== 'Point') return `feature ${i}: a tree is added at a point`;
+      out.height_m = num('height_m', 0.5, 60); if (out.height_m === undefined) return `feature ${i}: an added tree needs height_m (0.5 to 60)`;
+      const c = num('crown_m', 0.3, 40); if (c !== undefined) out.crown_m = c;
+    }
+  } else if (layer === 'vision') {
+    if (op === 'add') return `feature ${i}: projects are placed on the atlas, not added from the world`;
+    if (geometry.type !== 'Point') return `feature ${i}: a project edit is a point`;
+    out.target = packText(p.target); if (!out.target || !/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/.test(out.target)) return `feature ${i}: a project edit needs target, the id of the project on the atlas`;
+  } else if (layer === 'notes') {
+    if (op !== 'add' || geometry.type !== 'Point') return `feature ${i}: a marker is added at a point`;
+    out.name = packText(p.name); if (!out.name) return `feature ${i}: a marker needs a name`;
+  } else if (layer === 'lines') {
+    if (op !== 'add' || geometry.type !== 'LineString') return `feature ${i}: a line is added as a LineString`;
+    if (!PACK_LINE_KINDS.has(p.kind)) return `feature ${i}: a line is a fence, a path or a road`;
+    out.kind = p.kind;
+    out.name = packText(p.name) || p.kind;
+  }
+  return { type: 'Feature', properties: out, geometry };
+}
+
+app.post('/api/pack/edits', async (req, res) => {
+  try {
+    const { pin, pack, features } = req.body || {};
+    const EDIT_PIN = process.env.EDIT_PIN;
+    const TOKEN = process.env.PACK_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    if (!EDIT_PIN || !TOKEN) return res.status(501).json({ ok: false, error: 'not_configured' });
+    if (!pin || String(pin) !== String(EDIT_PIN)) return res.status(401).json({ ok: false, error: 'bad_pin' });
+    const repos = packRepos();
+    const repo = typeof pack === 'string' ? repos[pack] : undefined;
+    if (!repo) return res.status(404).json({ ok: false, error: 'unknown_pack' });
+    if (!Array.isArray(features) || !features.length) return res.status(400).json({ ok: false, error: 'no_features' });
+    if (features.length > PACK_MAX_FEATURES) return res.status(400).json({ ok: false, error: 'too_many', detail: `at most ${PACK_MAX_FEATURES} edits per save` });
+    const clean = [];
+    for (let i = 0; i < features.length; i++) {
+      const c = cleanPackFeature(features[i], i);
+      if (typeof c === 'string') return res.status(400).json({ ok: false, error: 'bad_feature', detail: c });
+      clean.push(c);
+    }
+
+    const apiBase = 'https://api.github.com/repos/' + repo + '/contents/edits.geojson';
+    const ghHeaders = { 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/vnd.github+json', 'User-Agent': 'ojai-map-server', 'X-GitHub-Api-Version': '2022-11-28' };
+    let sha, current = { type: 'FeatureCollection', name: 'edits', features: [] };
+    const getResp = await fetch(apiBase + '?ref=main', { headers: ghHeaders });
+    if (getResp.ok) {
+      const info = await getResp.json();
+      sha = info.sha;
+      try {
+        const parsed = JSON.parse(Buffer.from(String(info.content || ''), 'base64').toString('utf8'));
+        if (parsed && Array.isArray(parsed.features)) current = Object.assign({ type: 'FeatureCollection', name: 'edits' }, parsed);
+      } catch (e) { return res.status(502).json({ ok: false, error: 'pack_unreadable', detail: 'the pack\'s edits.geojson is not valid JSON' }); }
+    } else if (getResp.status !== 404) {
+      return res.status(502).json({ ok: false, error: 'github_error', status: getResp.status, detail: (await getResp.text()).slice(0, 300) });
+    }
+    // merge: an edit with an id the layer already has replaces it; the rest are appended in order
+    const byId = new Map(current.features.map((f, i) => [String(f && f.properties && f.properties.id), i]));
+    let replaced = 0;
+    for (const f of clean) {
+      const at = byId.get(f.properties.id);
+      if (at !== undefined) { current.features[at] = f; replaced++; }
+      else { byId.set(f.properties.id, current.features.length); current.features.push(f); }
+    }
+    const content = Buffer.from(JSON.stringify(current, null, 1) + '\n').toString('base64');
+    const n = clean.length;
+    const kinds = {};
+    for (const f of clean) { const k = `${f.properties.op} ${f.properties.layer}`; kinds[k] = (kinds[k] || 0) + 1; }
+    const summary = Object.entries(kinds).map(([k, v]) => `${v} ${k}`).join(', ');
+    const message = `Edits from the world: ${summary}\n\n${n} edit${n === 1 ? '' : 's'} made in the walkable world and saved through the atlas` +
+      (replaced ? ` (${replaced} replacing an earlier edit with the same id)` : '') + `.\nThe record is untouched; these are the owner's corrections on top of it.`;
+    const putResp = await fetch(apiBase, {
+      method: 'PUT',
+      headers: { ...ghHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, content, sha, branch: 'main', committer: { name: 'Sacred Rebel', email: 'paulmuresan77@gmail.com' }, author: { name: 'Sacred Rebel', email: 'paulmuresan77@gmail.com' } })
+    });
+    if (!putResp.ok) {
+      const detail = await putResp.text();
+      return res.status(502).json({ ok: false, error: 'github_error', status: putResp.status, detail: String(detail).slice(0, 300) });
+    }
+    const result = await putResp.json();
+    res.json({ ok: true, count: n, replaced, total: current.features.length, commit: result.commit && result.commit.sha, repo });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'server_error', message: String(e && e.message) });
+  }
+});
+
 // Mapping from project IDs to actual folder names under images/ — empty until
 // zones and photo folders are added for the Howard Property.
 const PROJECT_FOLDER_MAP = {};

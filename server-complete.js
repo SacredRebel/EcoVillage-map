@@ -9088,7 +9088,9 @@ app.post('/api/save-structures', async (req, res) => {
 //   so a request cannot name a repository. The token is PACK_GITHUB_TOKEN, or GITHUB_TOKEN when the
 //   atlas's own token has been extended to the pack repositories.
 const PACK_OPS = new Set(['remove', 'move', 'add']);
-const PACK_LAYERS = new Set(['trees', 'vision', 'notes', 'lines']);
+const PACK_LAYERS = new Set(['trees', 'vision', 'notes', 'lines', 'zones', 'terrain']);
+const PACK_ZONE_KINDS = new Set(['zone', 'garden', 'orchard', 'pasture', 'site', 'camp', 'water', 'keep', 'forest']);
+const PACK_TERRAIN_OPS = new Set(['flatten', 'raise', 'lower']);
 const PACK_LINE_KINDS = new Set(['fence', 'path', 'road']);
 // the county: nothing outside Ventura County's box is a place on one of these properties
 const PACK_BOUNDS = { west: -119.75, south: 33.95, east: -118.55, north: 34.95 };
@@ -9115,7 +9117,7 @@ function cleanPackFeature(f, i) {
   const p = f.properties, g = f.geometry;
   const op = p.op, layer = p.layer;
   if (!PACK_OPS.has(op)) return `feature ${i}: op must be remove, move or add`;
-  if (!PACK_LAYERS.has(layer)) return `feature ${i}: layer must be trees, vision, notes or lines`;
+  if (!PACK_LAYERS.has(layer)) return `feature ${i}: layer must be trees, vision, notes, lines, zones or terrain`;
   const id = packText(p.id);
   if (!id || !/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/.test(id)) return `feature ${i}: id must be a short slug`;
   let geometry;
@@ -9159,6 +9161,23 @@ function cleanPackFeature(f, i) {
     if (!PACK_LINE_KINDS.has(p.kind)) return `feature ${i}: a line is a fence, a path or a road`;
     out.kind = p.kind;
     out.name = packText(p.name) || p.kind;
+  } else if (layer === 'zones') {
+    if (op !== 'add' || geometry.type !== 'Polygon') return `feature ${i}: a territory is added as a Polygon`;
+    out.kind = PACK_ZONE_KINDS.has(p.kind) ? p.kind : 'zone';
+    out.name = packText(p.name) || out.kind;
+    if (typeof p.colour === 'string' && /^#[0-9a-f]{6}$/i.test(p.colour)) out.colour = p.colour;
+  } else if (layer === 'terrain') {
+    if (op !== 'add' || geometry.type !== 'Polygon') return `feature ${i}: the ground is shaped inside a Polygon`;
+    if (!PACK_TERRAIN_OPS.has(p.terrain_op)) return `feature ${i}: terrain_op must be flatten, raise or lower`;
+    out.terrain_op = p.terrain_op;
+    if (p.terrain_op === 'flatten') { const to = num('to_m', -100, 3000); if (to !== undefined) out.to_m = to; }
+    else { out.height_m = num('height_m', 0.1, 20); if (out.height_m === undefined) return `feature ${i}: raising or lowering needs height_m (0.1 to 20)`; }
+    const e = num('edge_m', 0, 40); out.edge_m = e === undefined ? 3 : e;
+    // a shaping is at most a hectare or so: the ring's bounding box
+    const ring = geometry.coordinates[0];
+    const lngs = ring.map(c => c[0]), lats = ring.map(c => c[1]);
+    const mx = 111320 * Math.cos(lats[0] * Math.PI / 180), my = 110574;
+    if ((Math.max(...lngs) - Math.min(...lngs)) * mx > 300 || (Math.max(...lats) - Math.min(...lats)) * my > 300) return `feature ${i}: a shaping spans at most 300 m`;
   }
   return { type: 'Feature', properties: out, geometry };
 }
@@ -9473,7 +9492,11 @@ const AGENT_TOOLS = [
   { name: 'remove_trees', description: 'Propose that the recorded trees within a radius of a point be marked gone.',
     input_schema: { type: 'object', properties: { radius_m: { type: 'number' }, east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['radius_m'] } },
   { name: 'plant_tree', description: 'Propose a tree of a height at some metres east and north of the box.',
-    input_schema: { type: 'object', properties: { height_m: { type: 'number' }, east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['height_m'] } }
+    input_schema: { type: 'object', properties: { height_m: { type: 'number' }, east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['height_m'] } },
+  { name: 'draw_zone', description: 'Propose a territory — a named area for a use (garden, orchard, pasture, site, camp, water, keep, forest, or zone) — as a ring of at least three points in metres east and north of the box.',
+    input_schema: { type: 'object', properties: { name: { type: 'string' }, kind: { type: 'string', enum: ['zone', 'garden', 'orchard', 'pasture', 'site', 'camp', 'water', 'keep', 'forest'] }, points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 3 } }, required: ['name', 'points'] } },
+  { name: 'shape_ground', description: 'Propose shaping the ground inside a ring of at least three points (metres east and north of the box): flatten it to a level pad, or raise or lower it by so many metres, with a bank of edge_m that eases back into the hill.',
+    input_schema: { type: 'object', properties: { op: { type: 'string', enum: ['flatten', 'raise', 'lower'] }, height_m: { type: 'number' }, edge_m: { type: 'number' }, points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 3 } }, required: ['op', 'points'] } }
 ];
 
 const clampN = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
@@ -9492,6 +9515,15 @@ function agentAction(name, a) {
     case 'place_marker': return { type: 'marker', name: packText(a.name) || 'marker', e, n };
     case 'remove_trees': return { type: 'remove_trees', radius_m: clampN(a.radius_m, 0.5, 50, 5), e, n };
     case 'plant_tree': return { type: 'plant_tree', height_m: clampN(a.height_m, 0.5, 60, 6), e, n };
+    case 'draw_zone': {
+      const pts = (Array.isArray(a.points) ? a.points : []).slice(0, 200).map(p => [clampN(p && p.east_m, -500, 500, 0), clampN(p && p.north_m, -500, 500, 0)]);
+      return pts.length >= 3 ? { type: 'zone', name: packText(a.name) || 'zone', kind: PACK_ZONE_KINDS.has(a.kind) ? a.kind : 'zone', points: pts } : null;
+    }
+    case 'shape_ground': {
+      const pts = (Array.isArray(a.points) ? a.points : []).slice(0, 200).map(p => [clampN(p && p.east_m, -150, 150, 0), clampN(p && p.north_m, -150, 150, 0)]);
+      const op = PACK_TERRAIN_OPS.has(a.op) ? a.op : 'flatten';
+      return pts.length >= 3 ? { type: 'terrain', op, height_m: clampN(a.height_m, 0.1, 20, 1), edge_m: clampN(a.edge_m, 0, 40, 3), points: pts } : null;
+    }
     default: return null;
   }
 }
@@ -9505,7 +9537,8 @@ function agentStub(text) {
   const high = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)?\s*(?:high|tall)/.exec(t);
   const dir = (m) => ({ east: [1, 0], west: [-1, 0], north: [0, 1], south: [0, -1] }[m]);
   const offset = (() => { const m = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)\s*(?:to the\s+)?(east|west|north|south)\b(?!.*then)/.exec(t); if (!m) return [0, 0]; const d = dir(m[2]); return [d[0] * Number(m[1]), d[1] * Number(m[1])]; })();
-  if (noun && size && !/(fence|path|road)/.test(t)) {
+  const groundVerb = /(flatten|level|raise|lower|cut|fill)\b/.test(t);
+  if (noun && size && !groundVerb && !/(fence|path|road)/.test(t)) {
     actions.push(agentAction('place_block', { name: noun[1], width_m: Number(size[1]), depth_m: Number(size[2]), height_m: high ? Number(high[1]) : 3.5, east_m: offset[0], north_m: offset[1] }));
   }
   const line = /(fence|path|road)/.exec(t);
@@ -9520,12 +9553,25 @@ function agentStub(text) {
   if (marker) actions.push(agentAction('place_marker', { name: marker[1].trim(), east_m: offset[0], north_m: offset[1] }));
   const clear = /(remove|clear|cut|take down|fell)\b.*\btrees?\b/.exec(t);
   if (clear) { const r = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)/.exec(t); actions.push(agentAction('remove_trees', { radius_m: r ? Number(r[1]) : 10, east_m: 0, north_m: 0 })); }
+  const rect = (w, d, cx, cy) => [[cx - w / 2, cy - d / 2], [cx + w / 2, cy - d / 2], [cx + w / 2, cy + d / 2], [cx - w / 2, cy + d / 2]].map(([e, n]) => ({ east_m: e, north_m: n }));
+  const ground = /(flatten|level|raise|lower|cut|fill)\b/.exec(t);
+  if (ground && size) {
+    const op = /raise|fill/.test(ground[1]) ? 'raise' : /lower|cut/.test(ground[1]) ? 'lower' : 'flatten';
+    const by = /(?:by|of)\s*(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)/.exec(t);
+    actions.push(agentAction('shape_ground', { op, height_m: by ? Number(by[1]) : 1, points: rect(Number(size[1]), Number(size[2]), offset[0], offset[1]) }));
+  }
+  const zone = /(garden|orchard|pasture|site|camp|water|keep|forest|zone|territory|area)\b/.exec(t);
+  if (zone && size && !noun && !ground && !/(fence|path|road)/.test(t)) {
+    const kind = PACK_ZONE_KINDS.has(zone[1]) ? zone[1] : 'zone';
+    const named = /(?:called|named)\s+["“]?([^"”.,]+)/.exec(String(text || ''));
+    actions.push(agentAction('draw_zone', { name: named ? named[1].trim() : kind, kind, points: rect(Number(size[1]), Number(size[2]), offset[0], offset[1]) }));
+  }
   const plant = /plant\b.*?\btrees?\b/.exec(t);
   if (plant) { const h = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)/.exec(t); actions.push(agentAction('plant_tree', { height_m: h ? Number(h[1]) : 6, east_m: offset[0], north_m: offset[1] })); }
   const clean = actions.filter(Boolean);
   const said = clean.length
     ? 'I am not connected to a model yet, but I understood that. Here is what I would lay out — take what you want.'
-    : 'I am not connected to a model yet (the atlas has no ANTHROPIC_API_KEY), so I only understand plain shapes: "a shed 6 by 4, 3 m high", "a fence 20 m east then 10 m north", "a marker called the well", "clear the trees within 10 m", "plant a 5 m tree".';
+    : 'I am not connected to a model yet (the atlas has no ANTHROPIC_API_KEY), so I only understand plain shapes: "a shed 6 by 4, 3 m high", "a fence 20 m east then 10 m north", "a marker called the well", "clear the trees within 10 m", "plant a 5 m tree", "flatten a pad 12 by 10", "an orchard 30 by 20 called the north orchard".';
   return { reply: said, actions: clean, stub: true };
 }
 

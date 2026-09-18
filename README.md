@@ -50,7 +50,7 @@ Until those are set, the Save button politely says saving isn't configured and t
 
 ### The world's edits (`POST /api/pack/edits`)
 
-The [walkable world](https://github.com/SacredRebel/spatial-map) edits a property through its **data pack** (e.g. [sulphur-mountain-world](https://github.com/SacredRebel/sulphur-mountain-world)), never the record: a tree marked gone, a project's post moved, a marker, a fence. It sends `{ pin, pack, features }` here; the atlas checks the PIN, validates every feature against the pack's small edit grammar (`op` remove/move/add × `layer` trees/vision/notes/lines, geometry inside the county), merges them into the pack's `edits.geojson` and commits it as Sacred Rebel. Which packs can be written is a server-side list, so a request can never name a repository:
+The [walkable world](https://github.com/SacredRebel/spatial-map) edits a property through its **data pack** (e.g. [sulphur-mountain-world](https://github.com/SacredRebel/sulphur-mountain-world)), never the record: a tree marked gone, a project's post moved, a marker, a fence. It sends `{ pin, pack, features }` here; the atlas checks the PIN, validates every feature against the pack's small edit grammar (`op` remove/move/add × `layer` trees/vision/notes/lines/zones/terrain, geometry inside the county, a shaping at most 300 m across), merges them into the pack's `edits.geojson` and commits it as Sacred Rebel. Which packs can be written is a server-side list, so a request can never name a repository:
 
 | Variable | Value |
 |---|---|
@@ -60,7 +60,7 @@ The [walkable world](https://github.com/SacredRebel/spatial-map) edits a propert
 
 ### The magic box's agent (`/api/agent`)
 
-A builder or admin at a magic box in the world sends `{pin, pack, box, heading, messages}` here. With `ANTHROPIC_API_KEY` set (and optionally `AGENT_MODEL`, default `claude-sonnet-4-5`) the agent is Claude, given five tools and nothing else — `place_block`, `draw_line`, `place_marker`, `remove_trees`, `plant_tree`, all in metres east and north of the box — and its tool calls come back as *proposals* the world shows as cards; nothing is applied here. Without the key a small parser answers plain commands ("a shed 6 by 4, 3 m high", "a fence 20 m east then 10 m north") and says it is not connected to a model.
+A builder or admin at a magic box in the world sends `{pin, pack, box, heading, messages}` here. With `ANTHROPIC_API_KEY` set (and optionally `AGENT_MODEL`, default `claude-sonnet-4-5`) the agent is Claude, given seven tools and nothing else — `place_block`, `draw_line`, `place_marker`, `remove_trees`, `plant_tree`, `draw_zone`, `shape_ground`, all in metres east and north of the box — and its tool calls come back as *proposals* the world shows as cards; nothing is applied here. Without the key a small parser answers plain commands ("a shed 6 by 4, 3 m high", "a fence 20 m east then 10 m north") and says it is not connected to a model.
 
 ### Roles and proposals (`/api/pack/role`, `/api/pack/proposals`)
 

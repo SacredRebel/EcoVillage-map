@@ -68,7 +68,7 @@
         [-119.155485, 34.433078],
         [-119.155521, 34.433076]
       ],
-      "model": "https://spatial-map.vercel.app/models/oak-leaf-massing.glb",
+      "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/oak-leaf-massing.glb",
       "position": [-119.15536, 34.4331],
       "altitudeM": 0.3,
       "rotationDeg": 0,

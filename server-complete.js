@@ -9026,7 +9026,11 @@ function cleanStructures(list) {
     if (status === 'massing') s.heightFt = clampNum(raw.heightFt, 1, 300, 20);
     if (status === 'model') {
       const model = raw.model == null ? null : String(raw.model);
-      if (model !== null && !/^\/models\/[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.(glb|gltf)$/.test(model)) return { error: id + ': a model must be a .glb in /models' };
+      // a model is a .glb in this app's /models, or one another of ours serves whole by https —
+      // the engine builds the Oak Leaf at its own deploy and the registry points across (V0.50)
+      if (model !== null
+        && !/^\/models\/[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.(glb|gltf)$/.test(model)
+        && !/^https:\/\/[A-Za-z0-9.-]{1,80}\/[A-Za-z0-9._/-]{1,200}\.(glb|gltf)$/.test(model)) return { error: id + ': a model must be a .glb in /models or a full https URL to one' };
       s.model = model;
       if (!Array.isArray(raw.position) || !inBox(Number(raw.position[0]), Number(raw.position[1]))) return { error: id + ': a model needs a position inside the county' };
       s.position = [round6(Number(raw.position[0])), round6(Number(raw.position[1]))];

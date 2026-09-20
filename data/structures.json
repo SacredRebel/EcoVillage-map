@@ -247,7 +247,20 @@
    "enter": true,
    "clears": [
     "house"
-   ]
+   ],
+   "zone": "main-residence",
+   "phase": 1,
+   "phaseSpan": [
+    1,
+    3
+   ],
+   "costUSD": {
+    "low": 420000,
+    "high": 700000
+   },
+   "costBasis": "estimate",
+   "costSource": "$420,000 - $700,000",
+   "timeline": "Phase 1-3 (16 months)"
   },
   {
    "id": "retreat-village",
@@ -283,7 +296,17 @@
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
-   "clears": []
+   "clears": [],
+   "zone": "retreat-village",
+   "phase": 1,
+   "phaseSpan": [
+    1,
+    3
+   ],
+   "costUSD": null,
+   "costBasis": "placeholder",
+   "costSource": "P1: $70K-$80K | P2: $20K+ (flexible)",
+   "timeline": "Phase 1-3 (12-18 months)"
   },
   {
    "id": "glamping-creek",
@@ -319,7 +342,20 @@
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
-   "clears": []
+   "clears": [],
+   "zone": "glamping-creek-village",
+   "phase": 1,
+   "phaseSpan": [
+    1,
+    2
+   ],
+   "costUSD": {
+    "low": 20000,
+    "high": 30000
+   },
+   "costBasis": "estimate",
+   "costSource": "$20,000 - $30,000",
+   "timeline": "Phase 1-2 (4+ months)"
   },
   {
    "id": "the-barn",
@@ -355,7 +391,20 @@
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
-   "clears": []
+   "clears": [],
+   "zone": "gatelodge-operations-hub",
+   "phase": 1,
+   "phaseSpan": [
+    1,
+    1
+   ],
+   "costUSD": {
+    "low": 25000,
+    "high": 40000
+   },
+   "costBasis": "estimate",
+   "costSource": "$25,000-$40,000 (estimated)",
+   "timeline": "Phase 1 (0-12 months)"
   },
   {
    "id": "agricultural-hub",
@@ -391,7 +440,20 @@
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
-   "clears": []
+   "clears": [],
+   "zone": "agricultural-hub",
+   "phase": 1,
+   "phaseSpan": [
+    1,
+    3
+   ],
+   "costUSD": {
+    "low": 35000,
+    "high": 40000
+   },
+   "costBasis": "estimate",
+   "costSource": "$35,000 - $40,000",
+   "timeline": "Phase 1-3"
   },
   {
    "id": "tropical-dome",
@@ -427,7 +489,240 @@
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
+   "clears": [],
+   "zone": "tropical-dome-greenhouse",
+   "phase": 1,
+   "phaseSpan": [
+    1,
+    1
+   ],
+   "costUSD": {
+    "low": 30000,
+    "high": 30000
+   },
+   "costBasis": "estimate",
+   "costSource": "$30,000 (estimated with Phase 1 investment)",
+   "timeline": "Phase 1 (6+ months to start)"
+  },
+  {
+   "id": "site-grounds",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Site Grounds",
+   "note": "Drive, parking, paths. Ramps ≤8% on long climbs; human stairs (170 mm) on the short oak climb. check-paths asserts building riser 180 mm and engine backstop 0.55 m.",
+   "outline": [
+    [
+     -119.1578,
+     34.4321
+    ],
+    [
+     -119.1552,
+     34.4321
+    ],
+    [
+     -119.1552,
+     34.4333
+    ],
+    [
+     -119.1578,
+     34.4333
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/site-grounds.glb",
+   "position": [
+    -119.156345,
+    34.432675
+   ],
+   "altitudeM": 0.0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
    "clears": []
+  },
+  {
+   "id": "creek",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Creek",
+   "note": "Wet-season creek: bed walkable, water visual only, banks solids. Origin at ford on path to glamping. Bed cut 0.75 m below local grade, verified per station.",
+   "outline": [
+    [
+     -119.1569919,
+     34.4323959
+    ],
+    [
+     -119.1560879,
+     34.4323959
+    ],
+    [
+     -119.1560879,
+     34.4326401
+    ],
+    [
+     -119.1569919,
+     34.4326401
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/creek.glb",
+   "position": [
+    -119.156485,
+    34.432554
+   ],
+   "altitudeM": 0.0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": [],
+   "zone": "glamping-creek-village"
+  },
+  {
+   "id": "community-hub",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Community Hub",
+   "note": "Programme ~48 (foyer 20 standing + two rooms ×14 seated). Egress load 102 from area×factor; doors from egress (min 1.8 — over-provision vs 1.43 calc).",
+   "outline": [
+    [
+     -119.1554785,
+     34.4327584
+    ],
+    [
+     -119.1552803,
+     34.4327584
+    ],
+    [
+     -119.1552803,
+     34.4328285
+    ],
+    [
+     -119.1554785,
+     34.4328285
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/community-hub.glb",
+   "position": [
+    -119.155387,
+    34.432771
+   ],
+   "altitudeM": 0.0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": [],
+   "zone": "community-hub",
+   "phase": 1,
+   "phaseSpan": [
+    1,
+    2
+   ],
+   "costUSD": {
+    "low": 20000,
+    "high": 30000
+   },
+   "costBasis": "estimate",
+   "costSource": "$20,000 - $30,000",
+   "timeline": "Phase 1-2 (3+ months)"
+  },
+  {
+   "id": "events-gatherings-hub",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Events & Gatherings Hub",
+   "note": "Seated assembly: egress load and design capacity both 125 (176/1.4). Doors sized from egress: 125×28 mm = 3.5 m → 1.8+1.8.",
+   "outline": [
+    [
+     -119.1551576,
+     34.4333796
+    ],
+    [
+     -119.1549724,
+     34.4333796
+    ],
+    [
+     -119.1549724,
+     34.4335072
+    ],
+    [
+     -119.1551576,
+     34.4335072
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/events-gatherings-hub.glb",
+   "position": [
+    -119.155065,
+    34.433394
+   ],
+   "altitudeM": 0.0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": [],
+   "zone": "events-gatherings-hub",
+   "phase": 1,
+   "phaseSpan": [
+    1,
+    3
+   ],
+   "costUSD": {
+    "low": 20000,
+    "high": 30000
+   },
+   "costBasis": "estimate",
+   "costSource": "$20,000 - $30,000",
+   "timeline": "Phase 1-3 (12+ months)"
+  },
+  {
+   "id": "wellness-facilities",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Wellness Facilities",
+   "note": "Programme ~14 (4 rooms ×2 + corridor 6). Egress load 96 from area×factor; doors at min 1.8 (over-provision vs 1.34 calc).",
+   "outline": [
+    [
+     -119.1551219,
+     34.4329192
+    ],
+    [
+     -119.1550021,
+     34.4329192
+    ],
+    [
+     -119.1550021,
+     34.4330486
+    ],
+    [
+     -119.1551219,
+     34.4330486
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/wellness-facilities.glb",
+   "position": [
+    -119.155062,
+    34.43293
+   ],
+   "altitudeM": 0.0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": [],
+   "zone": "wellness-facilities",
+   "phase": 1,
+   "phaseSpan": [
+    1,
+    3
+   ],
+   "costUSD": {
+    "low": 65000,
+    "high": 100000
+   },
+   "costBasis": "estimate",
+   "costSource": "$65,000 - $100,000",
+   "timeline": "Phase 1-3 (12+ months)"
   }
  ]
 }

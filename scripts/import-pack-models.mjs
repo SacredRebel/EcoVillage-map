@@ -37,8 +37,40 @@ const PACKS = {
 
 const REGISTRY = new URL('../data/structures.json', import.meta.url);
 
-/** the pack sets these — a rebuild upstream must reach the world */
-const FROM_PACK = ['model', 'position', 'altitudeM', 'rotationDeg', 'outline'];
+/**
+ * Registry rows that were named before the pack existed, and whose names did not converge.
+ *
+ *   The pack calls the house `oak-leaf-massing`; the registry has called it `sulphur-oak-house`
+ *   since before there was a pack. Without this map an import creates a SECOND row for the same
+ *   building — two houses on one knoll, both real as far as the world is concerned.
+ */
+const ALIASES = { 'oak-leaf-massing': 'sulphur-oak-house' };
+
+/**
+ * The only field the pack OWNS.
+ *
+ *   The first version of this script also overwrote position, altitude, rotation and outline on
+ *   every run, on the reasoning that those are facts about the built thing. That was wrong, and
+ *   the Oak Leaf proved it: the pack proposed a 4-point bounding box of 2,767 m2 where the
+ *   registry held a deliberately shaped 56-point outline of 1,064 m2. Importing it would have
+ *   cleared 1,700 m2 more ground — including the recorded oaks that the oak lounge and the sacred
+ *   garden exist to stand under. The registry's own note says not to clear them.
+ *
+ *   An outline is two things at once: where a building sits, and WHICH TREES DIE. The second is a
+ *   judgement, and judgements are the registry's. Placement is the same — the pack knows where its
+ *   model's origin is, the registry decides where on the earth that origin goes. The manifest's
+ *   own header agrees: "Agent C never writes the registry."
+ *
+ *   So the pack owns the FILE, and proposes everything else. A proposal that differs from what is
+ *   recorded is REPORTED, not applied.
+ */
+const FROM_PACK = ['model'];
+
+/** the pack proposes these; the registry sets them once and a human changes them after that */
+const PROPOSED = ['position', 'altitudeM', 'rotationDeg', 'outline'];
+
+/** a proposal further than this from the record is worth a human's attention, in metres */
+const DIVERGENCE_M = 1.0;
 
 const args = process.argv.slice(2);
 const pid = args[args.indexOf('--pid') + 1];
@@ -57,7 +89,7 @@ if (manifest.schema !== 1) throw new Error(`models.json schema ${manifest.schema
 const doc = JSON.parse(await readFile(REGISTRY, 'utf8'));
 const byId = new Map(doc.structures.map(r => [r.id, r]));
 
-const created = [], updated = [], unchanged = [], problems = [];
+const created = [], updated = [], unchanged = [], problems = [], proposals = [];
 
 for (const m of manifest.models) {
   // the manifest says how big the file is; if the file disagrees, the manifest has drifted from what
@@ -79,24 +111,55 @@ for (const m of manifest.models) {
     outline: m.footprint
   };
 
-  const row = byId.get(m.id);
+  const rowId = ALIASES[m.id] || m.id;
+  const row = byId.get(rowId);
   if (!row) {
     doc.structures.push({
-      id: m.id, pid, mode: 'vision', status: 'model',
+      id: rowId, pid, mode: 'vision', status: 'model',
       name: m.name || `${title(m.id)} — massing`,
       note: m.note || '',
       outline: fresh.outline, model: fresh.model, position: fresh.position,
       altitudeM: fresh.altitudeM, rotationDeg: fresh.rotationDeg,
       scale: 1, enter: true, clears: []
     });
-    created.push(m.id);
+    created.push(rowId);
     continue;
   }
 
+  // what the pack owns, applied
   const moved = FROM_PACK.filter(k => JSON.stringify(row[k]) !== JSON.stringify(fresh[k]));
-  if (!moved.length) { unchanged.push(m.id); continue; }
   for (const k of moved) row[k] = fresh[k];
-  updated.push(`${m.id} (${moved.join(', ')})`);
+
+  // what the pack proposes, reported — never applied over a decision already made
+  const area = (ring) => {
+    let s = 0;
+    for (let i = 0; i < ring.length; i++) {
+      const [x1, y1] = ring[i], [x2, y2] = ring[(i + 1) % ring.length];
+      s += x1 * y2 - x2 * y1;
+    }
+    return Math.abs(s) / 2 * 91818.2 * 110540;
+  };
+  for (const k of PROPOSED) {
+    if (JSON.stringify(row[k]) === JSON.stringify(fresh[k])) continue;
+    if (k === 'position') {
+      const d = Math.hypot((fresh.position[0] - row.position[0]) * 91818.2,
+                           (fresh.position[1] - row.position[1]) * 110540);
+      if (d >= DIVERGENCE_M) proposals.push(`${rowId}: pack would move it ${d.toFixed(1)} m`);
+    } else if (k === 'altitudeM') {
+      const d = Math.abs(fresh.altitudeM - row.altitudeM);
+      if (d >= 0.05) proposals.push(`${rowId}: pack would change altitude by ${d.toFixed(2)} m`);
+    } else if (k === 'outline') {
+      const was = area(row.outline), now = area(fresh.outline);
+      if (Math.abs(now - was) >= 1) proposals.push(`${rowId}: pack proposes a ${fresh.outline.length}-point `
+        + `outline of ${Math.round(now).toLocaleString()} m2 over the recorded ${row.outline.length}-point `
+        + `${Math.round(was).toLocaleString()} m2 (${now > was ? '+' : ''}${Math.round(now - was).toLocaleString()} m2 CLEARED)`);
+    } else {
+      proposals.push(`${rowId}: pack proposes ${k} ${JSON.stringify(fresh[k])}, recorded ${JSON.stringify(row[k])}`);
+    }
+  }
+
+  if (!moved.length) { unchanged.push(rowId); continue; }
+  updated.push(`${rowId} (${moved.join(', ')})`);
 }
 
 doc.updatedAt = new Date().toISOString().slice(0, 10);
@@ -105,7 +168,9 @@ const report = [
   created.length   ? `created:   ${created.join(', ')}` : null,
   updated.length   ? `updated:   ${updated.join('; ')}` : null,
   unchanged.length ? `unchanged: ${unchanged.join(', ')}` : null,
-  problems.length  ? `PROBLEMS:\n  ${problems.join('\n  ')}` : null
+  problems.length  ? `PROBLEMS:\n  ${problems.join('\n  ')}` : null,
+  proposals.length ? `\nTHE PACK PROPOSES CHANGES THAT WERE NOT APPLIED — a human decides these:\n  `
+    + proposals.join('\n  ') : null
 ].filter(Boolean).join('\n');
 console.log(report || 'nothing in the manifest');
 console.log(`\nregistry: ${doc.structures.length} rows` + (dry ? ' (dry run — nothing written)' : ''));

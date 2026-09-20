@@ -1,82 +1,433 @@
 {
-  "schema": 1,
-  "note": "Designed structures — the Vision half of the map. These are what is PROPOSED for the land, never what stands on it (the county's own footprints are data/footprints.json and show only in Today mode). A structure moves through three states: 'site' is a reserved ground outline with nothing built on it, 'massing' extrudes that outline to a designed height, and 'model' places a real .glb through the three.js custom layer. Adding a building is a row here plus, for a model, a .glb under public/models or a full URL to one the engine serves — never a code change. A model with enter: true carries its own floors and walls (extras.walk) and the world lets you in; clears names the kinds of the standing record that come down for it.",
-  "updatedAt": "2026-09-19",
-  "structures": [
-    {
-      "id": "sulphur-oak-house",
-      "pid": "sulphur-mountain",
-      "mode": "vision",
-      "status": "model",
-      "name": "The Oak Leaf — massing",
-      "note": "The house proposed for the knoll, at real size: four leaf lobes round the river-stone chimney that stands here today — kitchen and master reaching north, lounge and suites south — the great room under the tall one, a loft over it, three suites cut into the south bank with the parking court below, the pool and the fire terrace on the north side, the drive out to the street. The model's origin is the chimney; its main floor is the top of the knoll at 425.9 m. The outline is the BUILT ground only — the oak lounge and the sacred garden's stepping stones are deliberately left outside it, because the recorded oaks standing there are the point of those two places and the map must not clear them. A massing, not a design: the shape at the right size on the right ground, to be walked round and argued with. Made by scripts/massing/oak-leaf.py in the engine repository, built at its deploy and served beside the world.",
-      "outline": [
-        [-119.155521, 34.433076],
-        [-119.155529, 34.433005],
-        [-119.155522, 34.432998],
-        [-119.155525, 34.432988],
-        [-119.155604, 34.432985],
-        [-119.155603, 34.43292],
-        [-119.155525, 34.43292],
-        [-119.15552, 34.432987],
-        [-119.155388, 34.432986],
-        [-119.155378, 34.432975],
-        [-119.155379, 34.432909],
-        [-119.155344, 34.432907],
-        [-119.155342, 34.432976],
-        [-119.155329, 34.432989],
-        [-119.15531, 34.433029],
-        [-119.155239, 34.433005],
-        [-119.155187, 34.433007],
-        [-119.155192, 34.433031],
-        [-119.155214, 34.433063],
-        [-119.155243, 34.433086],
-        [-119.155271, 34.4331],
-        [-119.155238, 34.433114],
-        [-119.155207, 34.433138],
-        [-119.155183, 34.433172],
-        [-119.155175, 34.433196],
-        [-119.155208, 34.433202],
-        [-119.155277, 34.433191],
-        [-119.155278, 34.433227],
-        [-119.155288, 34.433236],
-        [-119.155268, 34.433256],
-        [-119.15526, 34.433281],
-        [-119.155268, 34.433307],
-        [-119.15529, 34.433325],
-        [-119.155311, 34.433332],
-        [-119.155333, 34.433332],
-        [-119.155361, 34.433321],
-        [-119.155376, 34.433307],
-        [-119.155383, 34.433272],
-        [-119.155375, 34.433255],
-        [-119.155356, 34.433237],
-        [-119.155361, 34.433231],
-        [-119.15543, 34.433233],
-        [-119.155434, 34.433321],
-        [-119.155637, 34.43332],
-        [-119.155636, 34.433214],
-        [-119.155459, 34.433213],
-        [-119.155452, 34.433201],
-        [-119.155442, 34.433196],
-        [-119.155446, 34.433188],
-        [-119.155491, 34.433194],
-        [-119.155523, 34.433188],
-        [-119.155518, 34.433162],
-        [-119.155496, 34.433128],
-        [-119.155446, 34.433098],
-        [-119.155485, 34.433078],
-        [-119.155521, 34.433076]
-      ],
-      "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/oak-leaf-massing.glb",
-      "position": [-119.15536, 34.4331],
-      "altitudeM": 0.3,
-      "rotationDeg": 0,
-      "scale": 1,
-      "enter": true,
-      "clears": [
-        "house"
-      ]
-    }
-  ]
+ "schema": 1,
+ "note": "Designed structures — the Vision half of the map. These are what is PROPOSED for the land, never what stands on it (the county's own footprints are data/footprints.json and show only in Today mode). A structure moves through three states: 'site' is a reserved ground outline with nothing built on it, 'massing' extrudes that outline to a designed height, and 'model' places a real .glb through the three.js custom layer. Adding a building is a row here plus, for a model, a .glb under public/models or a full URL to one the engine serves — never a code change. A model with enter: true carries its own floors and walls (extras.walk) and the world lets you in; clears names the kinds of the standing record that come down for it.",
+ "updatedAt": "2026-09-20",
+ "structures": [
+  {
+   "id": "sulphur-oak-house",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "The Oak Leaf — massing",
+   "note": "The house proposed for the knoll, at real size: four leaf lobes round the river-stone chimney that stands here today — kitchen and master reaching north, lounge and suites south — the great room under the tall one, a loft over it, three suites cut into the south bank with the parking court below, the pool and the fire terrace on the north side, the drive out to the street. The model's origin is the chimney; its main floor is the top of the knoll at 425.9 m. The outline is the BUILT ground only — the oak lounge and the sacred garden's stepping stones are deliberately left outside it, because the recorded oaks standing there are the point of those two places and the map must not clear them. A massing, not a design: the shape at the right size on the right ground, to be walked round and argued with. Made by scripts/oak-leaf.py in the pack repository and published with it — the world loads the built file rather than building one at deploy. Rebuilt 2026-09-20 from 51,348 triangles to 4,830, uncompressed: the same building generated sparse rather than decimated, verified by an identical bounding box and an identical set of floor and solid names.",
+   "outline": [
+    [
+     -119.155521,
+     34.433076
+    ],
+    [
+     -119.155529,
+     34.433005
+    ],
+    [
+     -119.155522,
+     34.432998
+    ],
+    [
+     -119.155525,
+     34.432988
+    ],
+    [
+     -119.155604,
+     34.432985
+    ],
+    [
+     -119.155603,
+     34.43292
+    ],
+    [
+     -119.155525,
+     34.43292
+    ],
+    [
+     -119.15552,
+     34.432987
+    ],
+    [
+     -119.155388,
+     34.432986
+    ],
+    [
+     -119.155378,
+     34.432975
+    ],
+    [
+     -119.155379,
+     34.432909
+    ],
+    [
+     -119.155344,
+     34.432907
+    ],
+    [
+     -119.155342,
+     34.432976
+    ],
+    [
+     -119.155329,
+     34.432989
+    ],
+    [
+     -119.15531,
+     34.433029
+    ],
+    [
+     -119.155239,
+     34.433005
+    ],
+    [
+     -119.155187,
+     34.433007
+    ],
+    [
+     -119.155192,
+     34.433031
+    ],
+    [
+     -119.155214,
+     34.433063
+    ],
+    [
+     -119.155243,
+     34.433086
+    ],
+    [
+     -119.155271,
+     34.4331
+    ],
+    [
+     -119.155238,
+     34.433114
+    ],
+    [
+     -119.155207,
+     34.433138
+    ],
+    [
+     -119.155183,
+     34.433172
+    ],
+    [
+     -119.155175,
+     34.433196
+    ],
+    [
+     -119.155208,
+     34.433202
+    ],
+    [
+     -119.155277,
+     34.433191
+    ],
+    [
+     -119.155278,
+     34.433227
+    ],
+    [
+     -119.155288,
+     34.433236
+    ],
+    [
+     -119.155268,
+     34.433256
+    ],
+    [
+     -119.15526,
+     34.433281
+    ],
+    [
+     -119.155268,
+     34.433307
+    ],
+    [
+     -119.15529,
+     34.433325
+    ],
+    [
+     -119.155311,
+     34.433332
+    ],
+    [
+     -119.155333,
+     34.433332
+    ],
+    [
+     -119.155361,
+     34.433321
+    ],
+    [
+     -119.155376,
+     34.433307
+    ],
+    [
+     -119.155383,
+     34.433272
+    ],
+    [
+     -119.155375,
+     34.433255
+    ],
+    [
+     -119.155356,
+     34.433237
+    ],
+    [
+     -119.155361,
+     34.433231
+    ],
+    [
+     -119.15543,
+     34.433233
+    ],
+    [
+     -119.155434,
+     34.433321
+    ],
+    [
+     -119.155637,
+     34.43332
+    ],
+    [
+     -119.155636,
+     34.433214
+    ],
+    [
+     -119.155459,
+     34.433213
+    ],
+    [
+     -119.155452,
+     34.433201
+    ],
+    [
+     -119.155442,
+     34.433196
+    ],
+    [
+     -119.155446,
+     34.433188
+    ],
+    [
+     -119.155491,
+     34.433194
+    ],
+    [
+     -119.155523,
+     34.433188
+    ],
+    [
+     -119.155518,
+     34.433162
+    ],
+    [
+     -119.155496,
+     34.433128
+    ],
+    [
+     -119.155446,
+     34.433098
+    ],
+    [
+     -119.155485,
+     34.433078
+    ],
+    [
+     -119.155521,
+     34.433076
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/oak-leaf-massing.glb",
+   "position": [
+    -119.15536,
+    34.4331
+   ],
+   "altitudeM": 0.3,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": [
+    "house"
+   ]
+  },
+  {
+   "id": "retreat-village",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Retreat Village — massing",
+   "note": "Eight seeded cabins round a shared path; oriented to the south-west view, never a grid.",
+   "outline": [
+    [
+     -119.1558379,
+     34.43205
+    ],
+    [
+     -119.1554316,
+     34.43205
+    ],
+    [
+     -119.1554316,
+     34.4322997
+    ],
+    [
+     -119.1558379,
+     34.4322997
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/retreat-village.glb",
+   "position": [
+    -119.155628,
+    34.432173
+   ],
+   "altitudeM": 0.0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": []
+  },
+  {
+   "id": "glamping-creek",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Glamping Creek — massing",
+   "note": "Five seeded tipís along the creek path; sit 1.4 m below the ridge village. Trees between pads are outside the footprint.",
+   "outline": [
+    [
+     -119.1565941,
+     34.4324299
+    ],
+    [
+     -119.1561044,
+     34.4324299
+    ],
+    [
+     -119.1561044,
+     34.4325468
+    ],
+    [
+     -119.1565941,
+     34.4325468
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/glamping-creek.glb",
+   "position": [
+    -119.15654,
+    34.432479
+   ],
+   "altitudeM": -1.4,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": []
+  },
+  {
+   "id": "the-barn",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "The Barn — massing",
+   "note": "Working barn at the gate; loft over the north third. Lidar roof here is smaller — programme-sized massing.",
+   "outline": [
+    [
+     -119.1567955,
+     34.4330802
+    ],
+    [
+     -119.1566605,
+     34.4330802
+    ],
+    [
+     -119.1566605,
+     34.4332466
+    ],
+    [
+     -119.1567955,
+     34.4332466
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/the-barn.glb",
+   "position": [
+    -119.156728,
+    34.433082
+   ],
+   "altitudeM": 0.0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": []
+  },
+  {
+   "id": "agricultural-hub",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Agricultural Hub — massing",
+   "note": "Open shed with posts plus enclosed potting wing; nursery yard outside footprint.",
+   "outline": [
+    [
+     -119.1560724,
+     34.4334753
+    ],
+    [
+     -119.1558148,
+     34.4334753
+    ],
+    [
+     -119.1558148,
+     34.4335517
+    ],
+    [
+     -119.1560724,
+     34.4335517
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/agricultural-hub.glb",
+   "position": [
+    -119.155982,
+    34.433478
+   ],
+   "altitudeM": 0.0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": []
+  },
+  {
+   "id": "tropical-dome",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Tropical Dome — massing",
+   "note": "Low-segment dome: 12 meridians × 3 bands; door is an omitted bay. Whole model 364 tris — no sphere tessellation, no meshopt.",
+   "outline": [
+    [
+     -119.1568251,
+     34.4328862
+    ],
+    [
+     -119.1567009,
+     34.4328862
+    ],
+    [
+     -119.1567009,
+     34.4329893
+    ],
+    [
+     -119.1568251,
+     34.4329893
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/tropical-dome.glb",
+   "position": [
+    -119.156763,
+    34.432888
+   ],
+   "altitudeM": 0.0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": []
+  }
+ ]
 }

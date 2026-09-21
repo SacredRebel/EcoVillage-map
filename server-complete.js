@@ -9893,6 +9893,216 @@ app.post('/api/agent', async (req, res) => {
   }
 });
 
+// ---- photo → 3D: /api/image3d ---------------------------------------------------------------------
+// A builder or admin turns a photo into a textured 3D model to place in the world. The world never
+// holds the 3D service's key: it sends the photo here, the atlas starts the job with the key from
+// the environment, and the world polls for it. The finished GLB sits on the provider's asset host,
+// which sends no CORS headers, so the browser cannot fetch it; the world asks for it here instead,
+// in parts that each fit under Vercel's ~4.5 MB response limit, and joins them.
+//
+// Meshy (MESHY_API_KEY) is the one provider wired today. Tripo (TRIPO_API_KEY) is a planned second
+// provider and is not wired yet: it is listed when its key is set, but it cannot start a job.
+const IMAGE3D_KEYS = { meshy: 'MESHY_API_KEY', tripo: 'TRIPO_API_KEY' };
+const MESHY_API = 'https://api.meshy.ai/openapi/v1/image-to-3d';
+const IMAGE3D_MAX_IMAGE = 4000000;     // characters of data URI; it keeps the request under Vercel's body limit
+const IMAGE3D_MAX_PART = 3500000;      // bytes per part; it keeps each response under Vercel's body limit
+const IMAGE3D_TIMEOUT_MS = 25000;      // one budget for all of a request's outbound calls, under the function's 30 s
+const IMAGE3D_TASK = /^[A-Za-z0-9-]{8,80}$/;
+const MESHY_STATUS = { PENDING: 'pending', IN_PROGRESS: 'running', SUCCEEDED: 'done', FAILED: 'failed', CANCELED: 'failed' };
+// A warm instance remembers where each finished model lives, so fetching its parts does not ask
+// Meshy about the task every time. The cap keeps that memory small; the oldest entry goes first.
+const image3dGlbs = new Map();
+function image3dRemember(task, url) {
+  image3dGlbs.delete(task);
+  image3dGlbs.set(task, url);
+  while (image3dGlbs.size > 200) image3dGlbs.delete(image3dGlbs.keys().next().value);
+}
+function image3dProviders() {
+  return Object.keys(IMAGE3D_KEYS).filter(p => String(process.env[IMAGE3D_KEYS[p]] || '').trim());
+}
+function meshyKey() { return String(process.env.MESHY_API_KEY || '').trim(); }
+// Each outbound call gets what is left of the request's budget, so two calls in a row still end
+// before Vercel stops the function and the world gets a clear answer instead of a bare 504.
+function image3dSignal(deadline) { return AbortSignal.timeout(Math.max(1, deadline - Date.now())); }
+// Error text can quote a header value (a key pasted with a stray newline makes fetch reject it by
+// value), so anything that goes back to the world has the key cut out first.
+function image3dRedact(text) {
+  let t = String(text == null ? '' : text);
+  for (const k of [process.env.MESHY_API_KEY, meshyKey()]) if (k && k.length >= 4) t = t.split(k).join('[key]');
+  return t;
+}
+// A short line about a provider failure: its status and the start of its message, never its headers.
+async function meshyFailure(r) {
+  let text = '';
+  try { text = await r.text(); } catch (e) { /* the body is optional */ }
+  let msg = text;
+  try { const j = JSON.parse(text); if (j && typeof j.message === 'string') msg = j.message; } catch (e) { /* not JSON */ }
+  return image3dRedact('meshy ' + r.status + ': ' + String(msg).replace(/\s+/g, ' ').trim().slice(0, 200));
+}
+// A thrown error here is nearly always the provider not answering in time or the connection dropping.
+function image3dThrown(res, e) {
+  if (res.headersSent) return;
+  const timedOut = e && (e.name === 'TimeoutError' || e.name === 'AbortError');
+  res.status(502).json({ ok: false, error: 'provider_error', message: timedOut ? 'timed out' : image3dRedact(e && e.message || e).slice(0, 200) });
+}
+/** one Meshy task: { task, glb } where glb is the finished model's https address or null; { error } when Meshy fails */
+async function meshyTask(task, deadline) {
+  const r = await fetch(MESHY_API + '/' + task, { headers: { 'Authorization': 'Bearer ' + meshyKey() }, signal: image3dSignal(deadline) });
+  if (!r.ok) return { error: await meshyFailure(r) };
+  const j = await r.json().catch(() => null);
+  if (!j || typeof j !== 'object') return { error: 'meshy ' + r.status + ': unreadable task' };
+  const glb = j.model_urls && typeof j.model_urls.glb === 'string' && /^https:\/\//.test(j.model_urls.glb) ? j.model_urls.glb : null;
+  if (j.status === 'SUCCEEDED' && glb) image3dRemember(task, glb);
+  return { task: j, glb };
+}
+/** the finished model's address: { url }, { notReady: true }, or { error } */
+async function meshyGlbUrl(task, deadline) {
+  const t = await meshyTask(task, deadline);
+  if (t.error) return t;
+  return t.task.status === 'SUCCEEDED' && t.glb ? { url: t.glb } : { notReady: true };
+}
+// The model's size comes from a one-byte ranged request, so the world knows how many parts to ask
+// for without anyone downloading the model twice. Null when the host will not say.
+async function glbSize(url, deadline) {
+  const r = await fetch(url, { headers: { 'Range': 'bytes=0-0' }, signal: image3dSignal(deadline) });
+  try {
+    if (r.status === 206) { const m = /\/(\d+)\s*$/.exec(r.headers.get('content-range') || ''); return m ? Number(m[1]) : null; }
+    const cl = r.headers.get('content-length');
+    return r.status === 200 && cl != null && Number(cl) > 0 ? Number(cl) : null;
+  } finally {
+    // Only the headers matter, and a host that ignores Range would otherwise send the whole model.
+    if (r.body) r.body.cancel().catch(() => {});
+  }
+}
+// One part of the model, bytes [from, to]. The host must answer 206 starting at `from`; a plain 200
+// is taken only when it is the whole file and fits in the part, so a host that ignores Range can
+// never push more than one part's worth through this function.
+async function glbPart(url, from, to, deadline) {
+  const r = await fetch(url, { headers: { 'Range': `bytes=${from}-${to}` }, signal: image3dSignal(deadline) });
+  const drop = (status, error) => { if (r.body) r.body.cancel().catch(() => {}); return { status, error }; };
+  if (r.status === 206) {
+    const m = /^bytes\s+(\d+)-(\d+)\//.exec(r.headers.get('content-range') || '');
+    if (!m || Number(m[1]) !== from || Number(m[2]) > to) return drop(206, 'asset host sent a different range');
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length !== Number(m[2]) - from + 1) return { status: 206, error: 'asset host sent a short part' };
+    return { buf };
+  }
+  if (r.status === 200 && from === 0) {
+    const cl = r.headers.get('content-length');
+    if (cl == null || Number(cl) > to + 1) return drop(200, 'asset host ignored the range');
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length > to + 1) return { status: 200, error: 'asset host ignored the range' };
+    return { buf };
+  }
+  return drop(r.status, 'asset host ' + r.status);
+}
+// The checks every call about an existing task shares: [status, error] for the first that fails, or null.
+function image3dTaskProblem(body) {
+  const { pin, provider, task } = body || {};
+  if (!process.env.EDIT_PIN) return [501, 'not_configured'];
+  if (!roleForPin(pin)) return [401, 'bad_pin'];
+  if (typeof task !== 'string' || !IMAGE3D_TASK.test(task)) return [400, 'bad_task'];
+  if (provider !== 'meshy') return [400, 'bad_provider'];
+  if (!meshyKey()) return [501, 'no_3d_key'];
+  return null;
+}
+
+app.get('/api/image3d/config', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ ok: true, providers: image3dProviders() });
+});
+
+app.post('/api/image3d', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const deadline = Date.now() + IMAGE3D_TIMEOUT_MS;
+    const { pin, image, kind: kindIn, name: nameIn, provider: asked } = req.body || {};
+    if (!process.env.EDIT_PIN) return res.status(501).json({ ok: false, error: 'not_configured' });
+    // Every check comes before the call to the provider, because each job spends credits.
+    if (!roleForPin(pin)) return res.status(401).json({ ok: false, error: 'bad_pin' });
+    if (typeof image !== 'string' || image.length > IMAGE3D_MAX_IMAGE || !/^data:image\/(jpeg|png);base64,/.test(image)) return res.status(400).json({ ok: false, error: 'bad_image' });
+    const kind = kindIn === 'building' ? 'building' : 'object';
+    const name = typeof nameIn === 'string' ? nameIn.replace(/[\x00-\x1f]/g, ' ').trim().slice(0, 80) : '';
+    const have = image3dProviders();
+    const provider = have.includes(asked) ? asked : have[0];
+    if (!provider) return res.status(501).json({ ok: false, error: 'no_3d_key' });
+    if (provider !== 'meshy') return res.status(501).json({ ok: false, error: 'provider_not_ready' });
+    // A building gets twice the triangles, because its walls and openings carry more of its shape.
+    const r = await fetch(MESHY_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + meshyKey() },
+      body: JSON.stringify({
+        image_url: image, ai_model: 'latest', should_texture: true, enable_pbr: true, should_remesh: true, topology: 'triangle',
+        target_polycount: kind === 'building' ? 60000 : 30000, auto_size: true, origin_at: 'bottom', target_formats: ['glb']
+      }),
+      signal: image3dSignal(deadline)
+    });
+    if (!r.ok) return res.status(502).json({ ok: false, error: 'provider_error', message: await meshyFailure(r) });
+    const j = await r.json().catch(() => null);
+    const task = j && typeof j.result === 'string' && IMAGE3D_TASK.test(j.result) ? j.result : null;
+    if (!task) return res.status(502).json({ ok: false, error: 'provider_error', message: 'meshy ' + r.status + ': no task id' });
+    res.json({ ok: true, provider: 'meshy', task, kind, name });
+  } catch (e) {
+    image3dThrown(res, e);
+  }
+});
+
+app.post('/api/image3d/status', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const deadline = Date.now() + IMAGE3D_TIMEOUT_MS;
+    const bad = image3dTaskProblem(req.body);
+    if (bad) return res.status(bad[0]).json({ ok: false, error: bad[1] });
+    const t = await meshyTask(req.body.task, deadline);
+    if (t.error) return res.status(502).json({ ok: false, error: 'provider_error', message: t.error });
+    const j = t.task;
+    const out = {
+      ok: true, status: MESHY_STATUS[j.status] || 'pending', progress: Math.round(clampN(j.progress, 0, 100, 0)),
+      thumb: typeof j.thumbnail_url === 'string' && j.thumbnail_url ? j.thumbnail_url : null,
+      error: j.task_error && typeof j.task_error.message === 'string' && j.task_error.message ? image3dRedact(j.task_error.message).slice(0, 300) : null
+    };
+    // A finished task with no GLB would leave the world waiting for a model that never comes.
+    if (j.status === 'SUCCEEDED' && !t.glb) Object.assign(out, { status: 'failed', error: out.error || 'the finished task has no GLB' });
+    // The size is a courtesy; if the host will not say, the world can ask again on its next poll.
+    if (j.status === 'SUCCEEDED' && t.glb) out.bytes = await glbSize(t.glb, deadline).catch(() => null);
+    res.json(out);
+  } catch (e) {
+    image3dThrown(res, e);
+  }
+});
+
+app.post('/api/image3d/part', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const deadline = Date.now() + IMAGE3D_TIMEOUT_MS;
+    const bad = image3dTaskProblem(req.body);
+    if (bad) return res.status(bad[0]).json({ ok: false, error: bad[1] });
+    const { task, from, to } = req.body;
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || from > to || to - from + 1 > IMAGE3D_MAX_PART) return res.status(400).json({ ok: false, error: 'bad_range' });
+    const missing = (found) => found.error
+      ? res.status(502).json({ ok: false, error: 'provider_error', message: found.error })
+      : res.status(409).json({ ok: false, error: 'not_ready' });
+    let url = image3dGlbs.get(task);
+    const remembered = !!url;
+    if (!url) { const found = await meshyGlbUrl(task, deadline); if (!found.url) return missing(found); url = found.url; }
+    let part = await glbPart(url, from, to, deadline);
+    // A remembered address may be a signed link that has since expired; ask Meshy for a fresh one, once.
+    if (part.error && remembered && part.status !== 416) {
+      image3dGlbs.delete(task);
+      const found = await meshyGlbUrl(task, deadline);
+      if (!found.url) return missing(found);
+      part = await glbPart(found.url, from, to, deadline);
+    }
+    // 416 means the part starts past the end of the model, which is the caller's arithmetic, not the host's fault.
+    if (part.status === 416) return res.status(400).json({ ok: false, error: 'bad_range' });
+    if (part.error) return res.status(502).json({ ok: false, error: 'provider_error', message: part.error });
+    res.set({ 'Content-Type': 'application/octet-stream', 'Content-Length': String(part.buf.length) });
+    res.end(part.buf);
+  } catch (e) {
+    image3dThrown(res, e);
+  }
+});
+
 // Mapping from project IDs to actual folder names under images/ — empty until
 // zones and photo folders are added for the Howard Property.
 const PROJECT_FOLDER_MAP = {};

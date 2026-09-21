@@ -9105,8 +9105,50 @@ const PACK_TERRAIN_OPS = new Set(['flatten', 'raise', 'lower']);
 const PACK_LINE_KINDS = new Set(['fence', 'path', 'road']);
 // construction (spatial-map v0.9): a building is parts — a wall (LineString), a floor or a roof (Polygon)
 const PACK_BUILD_KINDS = new Set(['wall', 'floor', 'roof']);
-const PACK_MATERIALS = new Set(['plaster', 'lime', 'wood', 'timber', 'stone', 'earth', 'adobe', 'concrete', 'glass', 'metal', 'tile', 'thatch', 'shingle', 'living']);
-const PACK_ROOF_FORMS = new Set(['flat', 'shed', 'gable', 'hip', 'vault']);
+const PACK_MATERIALS = new Set(['plaster', 'lime', 'wood', 'timber', 'stone', 'earth', 'adobe', 'concrete', 'glass', 'metal', 'tile', 'thatch', 'shingle', 'living',
+  // natural building (spatial-map v0.14): the infills, the frames, the finishes an organic building is made of
+  'cob', 'hempcrete', 'strawbale', 'rammed_earth', 'bamboo', 'steel']);
+// shell: the organic roof, a cushion over any outline (spatial-map world/shell.ts)
+const PACK_ROOF_FORMS = new Set(['flat', 'shed', 'gable', 'hip', 'vault', 'shell']);
+const PACK_ROOF_FINISHES = new Set(['solar', 'living', 'metal', 'thatch', 'tile', 'shingle']);
+const PACK_STRUCTURES = new Set(['steel', 'timber', 'bamboo', 'none']);
+const PACK_INFILLS = new Set(['cob', 'hempcrete', 'strawbale', 'rammed_earth', 'adobe', 'stone', 'plaster', 'wood', 'timber', 'glass']);
+const PACK_INSULATIONS = new Set(['hemp', 'wool', 'cork', 'strawbale', 'none']);
+const PACK_ORGANIC_FORMS = new Set(['fit', 'lobed', 'oval', 'leaf', 'shell']);
+
+/** what a part is made of — each name from its own short list, anything else dropped */
+function packAssembly(a) {
+  if (!a || typeof a !== 'object') return undefined;
+  const out = {};
+  if (PACK_STRUCTURES.has(a.structure)) out.structure = a.structure;
+  if (PACK_INFILLS.has(a.infill)) out.infill = a.infill;
+  if (PACK_INSULATIONS.has(a.insulation)) out.insulation = a.insulation;
+  if (PACK_STRUCTURES.has(a.roof_structure)) out.roof_structure = a.roof_structure;
+  return Object.keys(out).length ? out : undefined;
+}
+
+/**
+ * The numbers an organic building was grown from, kept on its floor so it can be grown again with
+ * one of them changed. Every number clamped to the range the generator accepts; the perimeter it
+ * was fitted inside kept as points in the county.
+ */
+function packOrganic(o) {
+  if (!o || typeof o !== 'object') return undefined;
+  const n = (k, lo, hi, d) => { const v = Number(o[k]); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; };
+  const per = (Array.isArray(o.perimeter) ? o.perimeter : []).slice(0, 200).filter(packCoord).map(c => [+c[0], +c[1]]);
+  if (per.length < 4) return undefined;
+  const out = {
+    form: PACK_ORGANIC_FORMS.has(o.form) ? o.form : 'fit', lobes: Math.round(n('lobes', 2, 12, 5)), depth: n('depth', 0, 0.6, 0.25), turn: n('turn', -360, 360, 0),
+    inset: n('inset', 0, 10, 0.3), height: n('height', 2.2, 9, 3.2), rise: n('rise', 0.3, 8, 2.4), overhang: n('overhang', 0, 3, 1.1), thick: n('thick', 0.12, 1, 0.45),
+    structure: PACK_STRUCTURES.has(o.structure) ? o.structure : 'steel', infill: PACK_INFILLS.has(o.infill) ? o.infill : 'cob',
+    insulation: PACK_INSULATIONS.has(o.insulation) ? o.insulation : 'hemp', roof: PACK_ROOF_FINISHES.has(o.roof) ? o.roof : 'solar',
+    solar: n('solar', 0, 1, 0.7), glazing: n('glazing', 0, 1, 0.5), facing: n('facing', 0, 360, 180), door: n('door', 0, 360, 90),
+    floor: PACK_MATERIALS.has(o.floor) ? o.floor : 'earth', pad: o.pad !== false, perimeter: per
+  };
+  const pad = packText(o.pad_id);
+  if (pad && /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/.test(pad)) out.pad_id = pad;
+  return out;
+}
 // the county: nothing outside Ventura County's box is a place on one of these properties
 const PACK_BOUNDS = { west: -119.75, south: 33.95, east: -118.55, north: 34.95 };
 const PACK_MAX_FEATURES = 200, PACK_MAX_POINTS = 400, PACK_MAX_TEXT = 120;
@@ -9188,6 +9230,7 @@ function cleanPackFeature(f, i) {
     if (p.terrain_op === 'flatten') { const to = num('to_m', -100, 3000); if (to !== undefined) out.to_m = to; }
     else { out.height_m = num('height_m', 0.1, 20); if (out.height_m === undefined) return `feature ${i}: raising or lowering needs height_m (0.1 to 20)`; }
     const e = num('edge_m', 0, 40); out.edge_m = e === undefined ? 3 : e;
+    if (p.structure) out.structure = packText(p.structure).slice(0, 60);
     // a shaping is at most a hectare or so: the ring's bounding box
     const ring = geometry.coordinates[0];
     const lngs = ring.map(c => c[0]), lats = ring.map(c => c[1]);
@@ -9223,12 +9266,14 @@ function cleanPackFeature(f, i) {
         openings.push({ kind, at_m: Math.round(at * 100) / 100, width_m: Math.round(width * 100) / 100, sill_m: Math.round(sill * 100) / 100, head_m: Math.round(head * 100) / 100 });
       }
       out.openings = openings;
+      const asm = packAssembly(p.assembly); if (asm) out.assembly = asm;
     } else {
       if (geometry.type !== 'Polygon') return `feature ${i}: a ${p.kind} is a Polygon`;
       if (span(geometry.coordinates[0]) > 200) return `feature ${i}: a ${p.kind} spans at most 200 m`;
       if (p.kind === 'floor') {
         const l = num('level_m', -5, 30); out.level_m = l === undefined ? 0 : l;
         const th = num('thick_m', 0.05, 1); out.thick_m = th === undefined ? 0.2 : th;
+        const org = packOrganic(p.organic); if (org) out.organic = org;
       } else {
         out.form = PACK_ROOF_FORMS.has(p.form) ? p.form : 'gable';
         const e = num('eaves_m', 0.5, 30); out.eaves_m = e === undefined ? 3 : e;
@@ -9237,6 +9282,11 @@ function cleanPackFeature(f, i) {
         const rd = num('ridge_deg', 0, 360); if (rd !== undefined) out.ridge_deg = rd;
         if (p.gable_walls === false) out.gable_walls = false;
         if (PACK_MATERIALS.has(p.gable_material)) out.gable_material = p.gable_material;
+        const rise = num('rise_m', 0.2, 12); if (rise !== undefined) out.rise_m = rise;
+        if (PACK_ROOF_FINISHES.has(p.finish)) out.finish = p.finish;
+        const sr = num('solar_ratio', 0, 1); if (sr !== undefined) out.solar_ratio = sr;
+        const sf = num('solar_facing_deg', 0, 360); if (sf !== undefined) out.solar_facing_deg = sf;
+        const asm = packAssembly(p.assembly); if (asm) out.assembly = asm;
       }
     }
   }
@@ -9564,8 +9614,27 @@ const AGENT_TOOLS = [
     input_schema: { type: 'object', properties: { points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 2 }, height_m: { type: 'number' }, thick_m: { type: 'number' }, material: { type: 'string' }, smooth: { type: 'boolean' }, structure: { type: 'string' }, door_at_m: { type: 'number' } }, required: ['points', 'height_m'] } },
   { name: 'build_floor', description: 'Propose a floor (a slab, a deck, an upper storey) over a ring of at least three points in metres east and north of the box, at a level above the ground, in a material.',
     input_schema: { type: 'object', properties: { points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 3 }, level_m: { type: 'number' }, material: { type: 'string' }, structure: { type: 'string' } }, required: ['points'] } },
+  { name: 'build_organic', description: 'Propose a whole ORGANIC (biomorphic) building fitted inside a perimeter: a smooth curved plan, walls with a door and glass to the view, a floor on a levelled pad, and a shell roof that droops past the walls — the whole building, eave included, stays inside the perimeter. When the person has MARKED ground, leave points out and it fits the mark. The form is the plan\'s shape language: fit (follow the perimeter), lobed (a flower of lobes), oval, leaf, shell (a nautilus curl). The make-up is real: structure (the frame: steel, timber, bamboo, none), infill (the walls: cob, hempcrete, strawbale, rammed_earth, adobe, stone, plaster, wood, timber, glass), insulation (hemp, wool, cork, strawbale, none), roof (the finish: solar, living, metal, thatch, tile, shingle). Use this for "a bio shape", "an organic house", "transform this area into…".',
+    input_schema: { type: 'object', properties: {
+      name: { type: 'string' }, form: { type: 'string', enum: ['fit', 'lobed', 'oval', 'leaf', 'shell'] }, lobes: { type: 'number', description: 'lobed: 2 to 12' }, depth: { type: 'number', description: 'lobed: 0 to 0.6, how deep the valleys between lobes; shell: how tight the curl' },
+      turn_deg: { type: 'number' }, wall_height_m: { type: 'number', description: '2.4 to 7, ground to eaves' }, roof_rise_m: { type: 'number', description: '0.4 to 6, crown above eaves' }, overhang_m: { type: 'number', description: '0 to 2.5' },
+      wall_thick_m: { type: 'number', description: 'cob 0.45, hempcrete 0.35, strawbale 0.5' },
+      structure: { type: 'string', enum: ['steel', 'timber', 'bamboo', 'none'] }, infill: { type: 'string', enum: ['cob', 'hempcrete', 'strawbale', 'rammed_earth', 'adobe', 'stone', 'plaster', 'wood', 'timber', 'glass'] },
+      insulation: { type: 'string', enum: ['hemp', 'wool', 'cork', 'strawbale', 'none'] }, roof: { type: 'string', enum: ['solar', 'living', 'metal', 'thatch', 'tile', 'shingle'] },
+      solar_share: { type: 'number', description: '0 to 1 of the sun-facing roof' }, glazing: { type: 'number', description: '0 to 1 of the wall facing the view' },
+      glass_faces_deg: { type: 'number', description: 'compass bearing the glass faces, 180 is south' }, door_deg: { type: 'number', description: 'compass bearing of the door from the middle' },
+      floor: { type: 'string', enum: ['earth', 'stone', 'wood', 'concrete', 'timber'] }, level_pad: { type: 'boolean' },
+      points: { type: 'array', description: 'the perimeter, metres east and north of the box; omit to use the marked ground', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] } }
+    }, required: [] } },
+  { name: 'modify_parts', description: 'Propose a change to parts that are ALREADY THERE — only ids listed as marked. Walls: set or change the height, bow them (bulge_m with bulge_dir left/right as the person looking sees it, or out/in from their building), thicken, change material, add windows or a door. Roofs: raise or lower the crown (rise_delta_m), change the finish. Use this for "make these walls higher", "curve it to the right", "add a window here".',
+    input_schema: { type: 'object', properties: {
+      ids: { type: 'array', items: { type: 'string' } }, height_m: { type: 'number' }, height_delta_m: { type: 'number' }, thick_m: { type: 'number' },
+      material: { type: 'string' }, bulge_m: { type: 'number' }, bulge_dir: { type: 'string', enum: ['left', 'right', 'out', 'in'] },
+      add_windows: { type: 'number' }, window_width_m: { type: 'number' }, window_sill_m: { type: 'number' }, window_head_m: { type: 'number' }, add_door: { type: 'boolean' },
+      rise_delta_m: { type: 'number' }, eaves_delta_m: { type: 'number' }, roof_finish: { type: 'string', enum: ['solar', 'living', 'metal', 'thatch', 'tile', 'shingle'] }
+    }, required: ['ids'] } },
   { name: 'build_roof', description: 'Propose a roof over a ring of at least three points in metres east and north of the box: its form (flat, shed, gable, hip, vault), the height of its eaves above the ground, its pitch in degrees, its material.',
-    input_schema: { type: 'object', properties: { points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 3 }, form: { type: 'string', enum: ['flat', 'shed', 'gable', 'hip', 'vault'] }, eaves_m: { type: 'number' }, pitch_deg: { type: 'number' }, material: { type: 'string' }, structure: { type: 'string' } }, required: ['points', 'eaves_m'] } }
+    input_schema: { type: 'object', properties: { points: { type: 'array', items: { type: 'object', properties: { east_m: { type: 'number' }, north_m: { type: 'number' } }, required: ['east_m', 'north_m'] }, minItems: 3 }, form: { type: 'string', enum: ['flat', 'shed', 'gable', 'hip', 'vault', 'shell'] }, eaves_m: { type: 'number' }, pitch_deg: { type: 'number' }, material: { type: 'string' }, structure: { type: 'string' } }, required: ['points', 'eaves_m'] } }
 ];
 
 const clampN = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
@@ -9609,6 +9678,38 @@ function agentAction(name, a) {
       if (packText(a.structure)) out.structure = packText(a.structure).slice(0, 60);
       return out;
     }
+    case 'build_organic': {
+      const spec = {};
+      if (PACK_ORGANIC_FORMS.has(a.form)) spec.form = a.form;
+      const put = (k, v, lo, hi) => { const x = Number(v); if (v != null && Number.isFinite(x)) spec[k] = Math.min(hi, Math.max(lo, x)); };
+      put('lobes', a.lobes, 2, 12); put('depth', a.depth, 0, 0.6); put('turn', a.turn_deg, -360, 360); put('height', a.wall_height_m, 2.2, 9);
+      put('rise', a.roof_rise_m, 0.3, 8); put('overhang', a.overhang_m, 0, 3); put('thick', a.wall_thick_m, 0.12, 1); put('solar', a.solar_share, 0, 1);
+      put('glazing', a.glazing, 0, 1); put('facing', a.glass_faces_deg, 0, 360); put('door', a.door_deg, 0, 360);
+      if (PACK_STRUCTURES.has(a.structure)) spec.structure = a.structure;
+      if (PACK_INFILLS.has(a.infill)) spec.infill = a.infill;
+      if (PACK_INSULATIONS.has(a.insulation)) spec.insulation = a.insulation;
+      if (PACK_ROOF_FINISHES.has(a.roof)) spec.roof = a.roof;
+      if (['earth', 'stone', 'wood', 'concrete', 'timber'].includes(a.floor)) spec.floor = a.floor;
+      if (a.level_pad === false) spec.pad = false;
+      const out = { type: 'organic', name: packText(a.name) || '', spec };
+      const pts = (Array.isArray(a.points) ? a.points : []).slice(0, 200).map(p => [clampN(p && p.east_m, -300, 300, 0), clampN(p && p.north_m, -300, 300, 0)]);
+      if (pts.length >= 3) out.points = pts;
+      return out;
+    }
+    case 'modify_parts': {
+      const ids = (Array.isArray(a.ids) ? a.ids : []).map(packText).filter(x => x && /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/.test(x)).slice(0, 40);
+      if (!ids.length) return null;
+      const out = { type: 'modify', ids };
+      const put = (k, v, lo, hi) => { const x = Number(v); if (v != null && Number.isFinite(x)) out[k] = Math.min(hi, Math.max(lo, x)); };
+      put('height_m', a.height_m, 0.3, 12); put('height_delta_m', a.height_delta_m, -6, 6); put('thick_m', a.thick_m, 0.05, 1.5);
+      put('bulge_m', a.bulge_m, -6, 6); put('add_windows', a.add_windows, 0, 12); put('window_width_m', a.window_width_m, 0.3, 6);
+      put('window_sill_m', a.window_sill_m, 0.05, 6); put('window_head_m', a.window_head_m, 0.5, 12); put('rise_delta_m', a.rise_delta_m, -6, 6); put('eaves_delta_m', a.eaves_delta_m, -6, 6);
+      if (['left', 'right', 'out', 'in'].includes(a.bulge_dir)) out.bulge_dir = a.bulge_dir;
+      if (PACK_MATERIALS.has(a.material)) out.material = a.material;
+      if (a.add_door === true) out.add_door = true;
+      if (PACK_ROOF_FINISHES.has(a.roof_finish)) out.roof_finish = a.roof_finish;
+      return Object.keys(out).length > 2 ? out : null;
+    }
     case 'build_roof': {
       const pts = (Array.isArray(a.points) ? a.points : []).slice(0, 200).map(p => [clampN(p && p.east_m, -500, 500, 0), clampN(p && p.north_m, -500, 500, 0)]);
       if (pts.length < 3) return null;
@@ -9621,9 +9722,48 @@ function agentAction(name, a) {
 }
 
 /** without a key: a few plain commands understood, and honesty about the rest */
-function agentStub(text) {
+function agentStub(text, mark) {
   const t = String(text || '').toLowerCase();
   const actions = [];
+  // marked ground: change the marked parts, or grow an organic building inside the mark
+  if (mark) {
+    const sel = Array.isArray(mark.selected) ? mark.selected : [];
+    const walls = sel.filter(p => p && p.kind === 'wall').map(p => String(p.id));
+    const roofs = sel.filter(p => p && p.kind === 'roof').map(p => String(p.id));
+    const by = /by\s+(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)/.exec(t);
+    const change = /\b(higher|taller|lower|shorter|raise|curv|bend|bow|window|door|thicker|thinner|make (it|them|these|this)|change|redesign)/.test(t);
+    if (sel.length && change) {
+      const m = { ids: walls.length ? walls : sel.map(p => String(p.id)) };
+      if (/\b(higher|taller|raise)\b/.test(t)) m.height_delta_m = by ? Number(by[1]) : 0.6;
+      if (/\b(lower|shorter)\b/.test(t)) m.height_delta_m = -(by ? Number(by[1]) : 0.5);
+      if (/\b(curv|bend|bow|round)/.test(t)) { m.bulge_m = /\bmore\b|\bvery\b/.test(t) ? 1.8 : 1.1; m.bulge_dir = /\bleft\b/.test(t) ? 'left' : /\bright\b/.test(t) ? 'right' : /\b(in|inward)\b/.test(t) ? 'in' : 'out'; }
+      const nw = /(?:add|put|cut|with)\s+(a|an|one|two|three|four|\d+)?\s*(?:more\s+)?(?:big\s+|large\s+|tall\s+)?windows?/.exec(t);
+      if (nw) m.add_windows = Number(nw[1]) || ({ a: 1, an: 1, one: 1, two: 2, three: 3, four: 4 })[nw[1] || 'a'] || 1;
+      if (/\b(add|put|cut)\s+(a|another)\s+door\b/.test(t)) m.add_door = true;
+      const mat = /\b(cob|hempcrete|strawbale|rammed earth|adobe|stone|plaster|lime|wood|timber|glass|concrete|bamboo)\b/.exec(t);
+      if (mat && /\b(make|change|turn|in|to)\b/.test(t)) m.material = mat[1].replace(' ', '_');
+      if (/\broof\b/.test(t) && /\b(higher|taller|raise|steeper)\b/.test(t) && roofs.length) { m.ids = roofs; m.rise_delta_m = by ? Number(by[1]) : 0.8; delete m.height_delta_m; }
+      const a = agentAction('modify_parts', m);
+      if (a) actions.push(a);
+    } else {
+      const pick = (re, v) => (re.test(t) ? v : undefined);
+      const spec = {
+        form: pick(/\bleaf\b/, 'leaf') || pick(/\b(oval|egg|seed|pebble)\b/, 'oval') || pick(/\b(nautilus|spiral|snail)\b/, 'shell') || pick(/\b(flower|petal|lobe[sd]?|clover|cells?)\b/, 'lobed'),
+        structure: pick(/\bsteel\b/, 'steel') || pick(/\b(timber|wood(en)?) frame\b/, 'timber') || pick(/\bbamboo\b/, 'bamboo'),
+        infill: pick(/\bcob\b/, 'cob') || pick(/\bhempcrete\b/, 'hempcrete') || pick(/\bstraw ?bale\b/, 'strawbale') || pick(/\brammed earth\b/, 'rammed_earth') || pick(/\badobe\b/, 'adobe'),
+        insulation: pick(/\bhemp\b(?!crete)/, 'hemp') || pick(/\bwool\b/, 'wool') || pick(/\bcork\b/, 'cork'),
+        roof: pick(/\bsolar\b/, 'solar') || pick(/\b(living|green|sedum) roof\b/, 'living') || pick(/\bthatch/, 'thatch')
+      };
+      const args = { name: '' };
+      if (spec.form) args.form = spec.form;
+      if (spec.structure) args.structure = spec.structure;
+      if (spec.infill) args.infill = spec.infill;
+      if (spec.insulation) args.insulation = spec.insulation;
+      if (spec.roof) args.roof = spec.roof;
+      actions.push(agentAction('build_organic', args));
+    }
+    return { reply: 'I am not connected to a model yet, but I read that in plain words — here is what I would do on the marked ground. Take it, then tune it with the sliders.', actions: actions.filter(Boolean), stub: true };
+  }
   const noun = /(shed|house|cabin|deck|barn|studio|garage|greenhouse|dome|hall|workshop|block|structure|building|pad|platform)/.exec(t);
   const size = /(\d+(?:\.\d+)?)\s*(?:m|meters?|metres?)?\s*(?:x|by|×)\s*(\d+(?:\.\d+)?)/.exec(t);
   const high = /(\d+(?:\.\d+)?)\s*(?:m|metres?|meters?)?\s*(?:high|tall)/.exec(t);
@@ -9684,8 +9824,21 @@ function agentStub(text) {
 
 app.post('/api/agent', async (req, res) => {
   try {
-    const { pin, pack, box, heading, messages } = req.body || {};
+    const { pin, pack, box, heading, messages, mark: markIn } = req.body || {};
     if (!process.env.EDIT_PIN) return res.status(501).json({ ok: false, error: 'not_configured' });
+    // marked ground, as the world describes it: the ring and the parts inside, in metres east/north of the box
+    const en = (q) => Array.isArray(q) && q.length >= 2 && Number.isFinite(+q[0]) && Number.isFinite(+q[1]) ? [Math.round(+q[0] * 10) / 10, Math.round(+q[1] * 10) / 10] : null;
+    const mark = markIn && typeof markIn === 'object' && Array.isArray(markIn.ring_en) ? {
+      ring_en: markIn.ring_en.slice(0, 200).map(en).filter(Boolean),
+      area_m2: clampN(markIn.area_m2, 0, 1e6, 0),
+      selected: (Array.isArray(markIn.selected) ? markIn.selected : []).slice(0, 24).filter(p => p && typeof p === 'object' && /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/.test(String(p.id || ''))).map(p => ({
+        id: String(p.id), kind: ['wall', 'floor', 'roof'].includes(p.kind) ? p.kind : 'part', structure: packText(p.structure) || undefined, material: PACK_MATERIALS.has(p.material) ? p.material : undefined,
+        height_m: Number.isFinite(+p.height_m) ? +p.height_m : undefined, thick_m: Number.isFinite(+p.thick_m) ? +p.thick_m : undefined, form: PACK_ROOF_FORMS.has(p.form) ? p.form : undefined,
+        smooth: p.smooth === true || undefined, openings: Array.isArray(p.openings) ? p.openings.slice(0, 20).map(o => ({ kind: o && o.kind === 'window' ? 'window' : 'door', at_m: Number(o && o.at_m) || 0, width_m: Number(o && o.width_m) || 0 })) : undefined,
+        points_en: (Array.isArray(p.points_en) ? p.points_en : []).slice(0, 60).map(en).filter(Boolean)
+      }))
+    } : null;
+    if (mark && mark.ring_en.length < 3) return res.status(400).json({ ok: false, error: 'bad_mark' });
     if (!roleForPin(pin)) return res.status(401).json({ ok: false, error: 'bad_pin' });
     const repos = packRepos();
     if (typeof pack !== 'string' || !repos[pack]) return res.status(404).json({ ok: false, error: 'unknown_pack' });
@@ -9704,7 +9857,7 @@ app.post('/api/agent', async (req, res) => {
 
     const key = process.env.ANTHROPIC_API_KEY;
     if (!key) {
-      const out = agentStub(turns[turns.length - 1].content);
+      const out = agentStub(turns[turns.length - 1].content, mark);
       return res.json(Object.assign({ ok: true }, out));
     }
     const property = PROPERTIES.find(p => p.id === pack);
@@ -9712,11 +9865,16 @@ app.post('/api/agent', async (req, res) => {
       `The person is standing at a "magic box" they placed, named "${packText(box.name) || 'magic box'}", at latitude ${Number(box.lat).toFixed(6)}, longitude ${Number(box.lng).toFixed(6)}, facing ${Math.round(clampN(heading, 0, 360, 0))}° (0 is north, 90 east). ` +
       `You may PROPOSE things with the tools, in metres east and north of the box; you never apply anything — the person sees each proposal as a card and takes it or leaves it, and only then does it become an unsaved edit they can undo or save. ` +
       `Be brief and concrete: two or three sentences, then the tool calls. Use real, buildable sizes (a bedroom is about 4 × 4 m; a small cabin 6 × 4 m; a barn 12 × 8 m; a single-storey wall 2.7 m high, a door 0.9 m wide and 2.1 m high). For a building, prefer build_room (a floor, walls with a door, a roof) over a bare block; for organic, curved, bio-mimetic forms use build_wall with smooth and five or more points, and a vault roof. If something is unclear, ask one short question instead of guessing. ` +
-      `Never claim to have built, moved or changed anything; say what you propose. Do not invent facts about the land beyond what the person tells you.`;
+      `Never claim to have built, moved or changed anything; say what you propose. Do not invent facts about the land beyond what the person tells you.` +
+      ` For organic, biomorphic, natural buildings use build_organic: it fits a whole building (smooth curved walls, door, glass to the view, floor on a levelled pad, shell roof) inside a perimeter, and its structure, infill, insulation and roof finish are real choices (steel, timber or bamboo frames; cob, hempcrete, straw bale, rammed earth or adobe walls; hemp, wool or cork insulation; solar, living, metal or thatch roofs). Sulphur Mountain looks south and west over the Ojai Valley: put glass to the view and solar on the south side unless told otherwise.` +
+      (mark ? ` The person has MARKED ground: a ring of ${mark.ring_en.length} points (metres east and north of the box, which is the mark's centre): ${JSON.stringify(mark.ring_en.slice(0, 80))}, about ${Math.round(mark.area_m2)} m². ` +
+        (mark.selected.length
+          ? `Inside it are these existing parts — change THESE with modify_parts, by id, when the person asks to change what is there: ${JSON.stringify(mark.selected)}. "Right" and "left" mean as the person looking at them sees it (they face ${Math.round(clampN(heading, 0, 360, 0))}°).`
+          : `Nothing is built inside it yet. To grow a building there use build_organic and leave points out — it fits the mark.`) : '');
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: AGENT_MODEL, max_tokens: 1024, system, tools: AGENT_TOOLS, messages: turns })
+      body: JSON.stringify({ model: AGENT_MODEL, max_tokens: 2048, system, tools: AGENT_TOOLS, messages: turns })
     });
     if (!r.ok) {
       const detail = (await r.text()).slice(0, 300);
@@ -9725,7 +9883,10 @@ app.post('/api/agent', async (req, res) => {
     const j = await r.json();
     const blocks = Array.isArray(j.content) ? j.content : [];
     const reply = blocks.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
-    const actions = blocks.filter(b => b.type === 'tool_use').map(b => agentAction(b.name, b.input)).filter(Boolean).slice(0, 12);
+    let actions = blocks.filter(b => b.type === 'tool_use').map(b => agentAction(b.name, b.input)).filter(Boolean).slice(0, 12);
+    // the model may only change what was marked: any other id is dropped, and a change left with none is dropped
+    const markedIds = new Set(mark ? mark.selected.map(p => p.id) : []);
+    actions = actions.map(a => a.type === 'modify' ? Object.assign({}, a, { ids: a.ids.filter(id => markedIds.has(id)) }) : a).filter(a => a.type !== 'modify' || a.ids.length);
     res.json({ ok: true, reply: reply || (actions.length ? 'Here is what I propose.' : '…'), actions, stub: false, model: j.model || AGENT_MODEL });
   } catch (e) {
     res.status(500).json({ ok: false, error: 'server_error', detail: String(e && e.message).slice(0, 300) });

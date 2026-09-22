@@ -202,8 +202,8 @@ const vis = await ev(() => {
     threeLoaded: !!document.querySelector('script[src*="three"]')
   };
 });
-check('vision: the designed-structure registry loads and draws a reserved site, not a building',
-  vis.n >= 1 && vis.site && vis.line && vis.ext && vis.extType === 'fill-extrusion' && /sulphur-oak-house:site:vision/.test(vis.registry), vis);
+check('vision: the designed-structure registry loads — 17 placed rows, the Oak Leaf as a model — with the site/massing layers standing by',
+  vis.n >= 17 && vis.site && vis.line && vis.ext && vis.extType === 'fill-extrusion' && /sulphur-oak-house:model:vision/.test(vis.registry), vis);
 // Today shows what stands, Vision shows what is proposed - never both at once
 await ev(() => { window.atlas.hud.setMode ? window.atlas.hud.setMode('vision') : (window.atlas.props.applyMode('vision'), window.atlas.models.applyMode('vision')); });
 await wait(400);
@@ -224,11 +224,12 @@ const vc = await ev(() => ({
   state: [...document.querySelectorAll('#insp-parcel .rows .r')].map(e => e.textContent).find(t => /State/.test(t)) || '',
   note: document.querySelector('#insp-parcel .note-p')?.textContent || ''
 }));
-check('vision: the card says the ground is reserved and nothing is designed on it yet',
-  /Oak House/.test(vc.title || '') && /VISION/.test(vc.strip || '') && /reserved/i.test(vc.state) && /sun study/.test(vc.note), vc);
-// three.js is a capability, not a cost: nothing is loaded until a model is actually placed
+check('vision: the card says a model of the Oak Leaf is placed here',
+  /Oak/.test(vc.title || '') && /VISION/.test(vc.strip || '') && /model is placed/i.test(vc.state), vc);
+// three.js is a capability, not a cost: it arrives as its own lazy chunk, pulled in only
+// because the registry actually places models — never rolled into the first bundle
 const chunks = await ev(() => performance.getEntriesByType('resource').map(r => r.name).filter(n => /three|GLTFLoader/i.test(n)).length);
-check('vision: three.js and the glTF loader stay unloaded while no model is placed', chunks === 0, { chunks });
+check('vision: three.js and the glTF loader load lazily as their own chunks for the placed models', chunks >= 1, { chunks });
 // the two cards above replaced the inspector's contents; put the lot card back for the fly test
 await ev(() => { const p = window.atlas.props.props.find(x => x.id === 'black-mountain-ranch'); const lot = p.lots[0]; window.atlas.props.selectLot(lot.id); window.atlas.props.onSelect('lot', { pid: p.id, lid: lot.id, apn: lot.apn, name: lot.name, acreage: lot.acreage }); return true; }); await wait(700);
 const zBefore = await ev(() => window.atlas.eng.map.getZoom()); const cBefore = await ev(() => window.atlas.eng.map.getCenter().lng);
@@ -332,6 +333,42 @@ await pg.click('.editor [data-ed="reset"]'); await wait(300);
 await pg.click('.editor [data-ed="stop"]'); await wait(300);
 const ed3 = await ev(() => ({ badges: document.querySelectorAll('.ed-badge').length }));
 check('editor: P opens it, Start shows 18 draggable badges and hides that property’s symbols, a drag lands in the moved list + capture JSON, Stop restores', ed1.open && ed1.badges === 18 && /sulphur-mountain/.test(ed1.filter) && ed2.moved === 1 && /"sulphur-mountain"/.test(ed2.out) && ed3.badges === 0, { ed1, ed2, ed3 });
+// ---- the placement studio (V0.51): pick, nudge to the inch, turn with the footprint, save ----
+await pg.keyboard.press('b'); await wait(400);
+const pl1 = await ev(() => { const p = document.querySelector('.placer'); window.atlas.hud.placer.select('sulphur-oak-house'); return { open: !!p && !p.hidden, rows: document.querySelectorAll('.pl-row').length }; });
+await wait(500);
+const pl2 = await ev(() => {
+  const st = window.atlas.models.structures.find(x => x.id === 'sulphur-oak-house');
+  return { handle: document.querySelectorAll('.place-handle').length, lng: st.position[0], lat: st.position[1], o0: st.outline[0].slice() };
+});
+await pg.keyboard.down('Alt'); await pg.keyboard.press('ArrowRight'); await pg.keyboard.up('Alt'); await wait(150);
+const pl3 = await ev(() => {
+  const st = window.atlas.models.structures.find(x => x.id === 'sulphur-oak-house');
+  return { lng: st.position[0], lat: st.position[1] };
+});
+const inchDeg = Math.abs(pl3.lng - pl2.lng);
+await wait(500);   // let the nudge re-render settle before touching the panel again
+const pl4 = await ev(() => {
+  const st = window.atlas.models.structures.find(x => x.id === 'sulphur-oak-house');
+  const before = st.outline[0].slice();
+  const inp = document.querySelector('.placer [data-pl="rot"]');
+  inp.value = '90'; inp.dispatchEvent(new Event('input', { bubbles: true }));
+  return { rot: st.rotationDeg, before, o0: st.outline[0].slice(), dirty: (document.querySelector('[data-pl="dirty"]')?.textContent || '') };
+});
+let savedBody = null;
+await pg.route('**/api/save-structures', async r => { savedBody = JSON.parse(r.request().postData() || '{}'); await r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true,"count":17}' }); });
+await ev(() => { localStorage.setItem('ojaiMapEditPin', 'test-pin'); return true; });
+await ev(() => { (document.querySelector('.placer [data-pl="save"]')).click(); return true; }); await wait(500);
+const pl5 = await ev(() => (document.querySelector('[data-pl="dirty"]')?.textContent || ''));
+await pg.unroute('**/api/save-structures');
+check('placement studio: B opens it over the 17 rows, picking shows the drag handle, Alt-arrow nudges about an inch, turning turns the footprint with the model, and Save posts the whole registry with the PIN',
+  pl1.open && pl1.rows >= 17 && pl2.handle === 1
+  && inchDeg > 5e-8 && inchDeg < 6e-7
+  && pl4.rot === 90 && (pl4.o0[0] !== pl4.before[0] || pl4.o0[1] !== pl4.before[1]) && /not saved yet/.test(pl4.dirty)
+  && savedBody && savedBody.pin === 'test-pin' && Array.isArray(savedBody.structures) && savedBody.structures.length >= 17
+  && /nothing waiting/.test(pl5),
+  { pl1, pl2, pl3, inchDeg, pl4: { rot: pl4.rot, o0: pl4.o0, dirty: pl4.dirty }, pl5, saved: savedBody ? { pin: savedBody.pin, n: savedBody.structures.length } : null });
+
 await pg.goto(BASE + '/?edit=0', { waitUntil: 'domcontentloaded', timeout: 30000 });
 await pg.waitForFunction(() => window.atlas && window.atlas.ready, { timeout: 40000 });
 check('editor gate: ?edit=0 turns it off again', (await ev(() => localStorage.getItem('atlasEditor'))) === null);

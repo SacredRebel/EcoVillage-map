@@ -1,7 +1,7 @@
 {
  "schema": 1,
  "note": "Designed structures — the Vision half of the map. These are what is PROPOSED for the land, never what stands on it (the county's own footprints are data/footprints.json and show only in Today mode). A structure moves through three states: 'site' is a reserved ground outline with nothing built on it, 'massing' extrudes that outline to a designed height, and 'model' places a real .glb through the three.js custom layer. Adding a building is a row here plus, for a model, a .glb under public/models or a full URL to one the engine serves — never a code change. A model with enter: true carries its own floors and walls (extras.walk) and the world lets you in; clears names the kinds of the standing record that come down for it.",
- "updatedAt": "2026-09-20",
+ "updatedAt": "2026-09-22",
  "structures": [
   {
    "id": "sulphur-oak-house",
@@ -292,7 +292,7 @@
     -119.155628,
     34.432173
    ],
-   "altitudeM": 0.0,
+   "altitudeM": 0,
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
@@ -387,7 +387,7 @@
     -119.156728,
     34.433082
    ],
-   "altitudeM": 0.0,
+   "altitudeM": 0,
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
@@ -436,7 +436,7 @@
     -119.155982,
     34.433478
    ],
-   "altitudeM": 0.0,
+   "altitudeM": 0,
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
@@ -485,7 +485,7 @@
     -119.156763,
     34.432888
    ],
-   "altitudeM": 0.0,
+   "altitudeM": 0,
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
@@ -534,7 +534,7 @@
     -119.156345,
     34.432675
    ],
-   "altitudeM": 0.0,
+   "altitudeM": 0,
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
@@ -570,7 +570,7 @@
     -119.156485,
     34.432554
    ],
-   "altitudeM": 0.0,
+   "altitudeM": 0,
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
@@ -607,7 +607,7 @@
     -119.155387,
     34.432771
    ],
-   "altitudeM": 0.0,
+   "altitudeM": 0,
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
@@ -656,7 +656,7 @@
     -119.155065,
     34.433394
    ],
-   "altitudeM": 0.0,
+   "altitudeM": 0,
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
@@ -705,7 +705,7 @@
     -119.155062,
     34.43293
    ],
-   "altitudeM": 0.0,
+   "altitudeM": 0,
    "rotationDeg": 0,
    "scale": 1,
    "enter": true,
@@ -723,6 +723,114 @@
    "costBasis": "estimate",
    "costSource": "$65,000 - $100,000",
    "timeline": "Phase 1-3 (12+ months)"
+  },
+  {
+   "id": "livestock-dairy",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Livestock & Dairy",
+   "note": "WORK: milk animals and hose the floor clean afterward. Cow door 3.0 m; wash-down floor.",
+   "outline": [
+    [
+     -119.1562236,
+     34.4327834
+    ],
+    [
+     -119.1560156,
+     34.4327834
+    ],
+    [
+     -119.1560156,
+     34.4328911
+    ],
+    [
+     -119.1562236,
+     34.4328911
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/livestock-dairy.glb",
+   "position": [
+    -119.156143,
+    34.432797
+   ],
+   "altitudeM": 0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": []
+  },
+  {
+   "id": "mushroom-cultivation",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Mushroom Cultivation",
+   "note": "WORK: grow mushrooms in controlled dark climate. Sealed opaque box; no windows.",
+   "outline": [
+    [
+     -119.1562648,
+     34.433465
+    ],
+    [
+     -119.1561712,
+     34.433465
+    ],
+    [
+     -119.1561712,
+     34.433531
+    ],
+    [
+     -119.1562648,
+     34.433531
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/mushroom-cultivation.glb",
+   "position": [
+    -119.156218,
+    34.433474
+   ],
+   "altitudeM": 0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": []
+  },
+  {
+   "id": "ceremonial-infrastructure",
+   "pid": "sulphur-mountain",
+   "mode": "vision",
+   "status": "model",
+   "name": "Ceremonial Infrastructure",
+   "note": "MASSING. 13 m open-air kiva, ring wall 0.45 m (steppable). Owner decision open-air — complete as built. No enterable interior.",
+   "outline": [
+    [
+     -119.1556528,
+     34.4324422
+    ],
+    [
+     -119.1555112,
+     34.4324422
+    ],
+    [
+     -119.1555112,
+     34.4325598
+    ],
+    [
+     -119.1556528,
+     34.4325598
+    ]
+   ],
+   "model": "https://raw.githubusercontent.com/SacredRebel/sulphur-mountain-world/main/models/ceremonial-infrastructure.glb",
+   "position": [
+    -119.155582,
+    34.432501
+   ],
+   "altitudeM": 0,
+   "rotationDeg": 0,
+   "scale": 1,
+   "enter": true,
+   "clears": []
   }
  ]
 }

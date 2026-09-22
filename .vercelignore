@@ -8,15 +8,24 @@
 #
 #   Keep in mind when adding a line: server-complete.js reads public/ and data/ at runtime and
 #   imports lib/, properties/ and image-urls.js, so none of those may be excluded.
+#
+#   EVERY DIRECTORY LINE IS ANCHORED WITH A LEADING SLASH, and it must stay that way. These
+#   patterns follow .gitignore rules, where a bare `v2/` matches a directory called v2 at ANY
+#   depth - so it also matched `public/v2/`, the BUILT atlas the server serves at `/`. From
+#   V0.44 (17 Sep 2026) until V0.52 every deployment therefore shipped without the atlas, and
+#   `/` quietly fell back to the classic Leaflet page: `serveV2` catches the missing file and
+#   serves `/classic` instead, so nothing errored and nothing in the logs said so. The sandbox
+#   cannot open *.vercel.app, which is why the tests never caught it either. `/v2/` excludes
+#   the SOURCE at the repository root and leaves the build alone.
 
-images/
-attached_assets/
-docs/
-tests/
-v2/
-bmr/
-brochures/
+/images/
+/attached_assets/
+/docs/
+/tests/
+/v2/
+/bmr/
+/brochures/
 *.py
 *.md
 !README.md
-.github/
+/.github/

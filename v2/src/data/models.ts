@@ -93,7 +93,7 @@ export class ModelLayer {
     const mc = maplibregl.MercatorCoordinate.fromLngLat({ lng: s.position[0], lat: s.position[1] }, g.z + (s.altitudeM ?? 0));
     o.userData.structure = s;
     o.userData.grounded = g.known;
-    o.userData.place = { x: mc.x, y: mc.y, z: mc.z ?? 0, unit: mc.meterInMercatorCoordinateUnits() * (s.scale ?? 1), rot: ((s.rotationDeg ?? 0) * Math.PI) / 180 };
+    o.userData.place = { x: mc.x, y: mc.y, z: mc.z ?? 0, unit: mc.meterInMercatorCoordinateUnits() * (s.scale ?? 1), rot: (-(s.rotationDeg ?? 0) * Math.PI) / 180 };
     this.eng.map.triggerRepaint();
   }
 

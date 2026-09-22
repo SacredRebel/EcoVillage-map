@@ -8692,12 +8692,19 @@ app.get('/api/footprints', (req, res) => {
 // footprints above, which are what stands there. Three states - a reserved site outline, a massing
 // block with a designed height, or a real glTF model placed through the atlas's three.js layer.
 // Adding a building is a row in data/structures.json plus, for a model, a file under public/models.
-app.get('/api/structures', (req, res) => {
+app.get('/api/structures', async (req, res) => {
   try {
-    const doc = JSON.parse(readFileSync(join(__dirname, 'data', 'structures.json'), 'utf8'));
+    // the live registry: the repo copy through the store (60 s cache), the bundled file as the
+    // fallback — so a placement-studio save shows up in about a minute with no redeploy (V0.51)
+    let bundled = null;
+    try { bundled = JSON.parse(readFileSync(join(__dirname, 'data', 'structures.json'), 'utf8')); } catch (e) { /* no bundled copy */ }
+    let doc = null;
+    try { doc = await readJson('data/structures.json', bundled, 60000); } catch (e) { doc = bundled; }
+    if (!doc || !Array.isArray(doc.structures)) doc = bundled;
+    if (!doc) return res.status(500).json({ error: 'Structure data unavailable.' });
     const pid = String(req.query.property || '').trim();
     const body = pid ? Object.assign({}, doc, { structures: doc.structures.filter((s) => s.pid === pid) }) : doc;
-    res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
     res.json(body);
   } catch (e) { res.status(500).json({ error: 'Structure data unavailable.' }); }
 });
@@ -8993,6 +9000,8 @@ const STRUCT_BOX = { west: -119.75, south: 33.85, east: -118.55, north: 34.95 };
 const inBox = (lng, lat) => isFinite(lng) && isFinite(lat) && lng >= STRUCT_BOX.west && lng <= STRUCT_BOX.east && lat >= STRUCT_BOX.south && lat <= STRUCT_BOX.north;
 const clampNum = (v, lo, hi, dflt) => { const n = Number(v); return isFinite(n) ? Math.min(hi, Math.max(lo, n)) : dflt; };
 const round6 = (n) => Math.round(n * 1e6) / 1e6;
+// 7 decimals ≈ 1 cm at this latitude — the studio promises placement to the inch (V0.51)
+const round7 = (n) => Math.round(n * 1e7) / 1e7;
 
 function cleanStructures(list) {
   if (!Array.isArray(list)) return { error: 'structures must be a list' };
@@ -9014,12 +9023,25 @@ function cleanStructures(list) {
     const s = { id, pid: String(raw.pid), mode, name: String(raw.name || id).slice(0, 120), status };
     if (raw.zid) s.zid = String(raw.zid).slice(0, 64);
     if (raw.note) s.note = String(raw.note).slice(0, 600);
+    // curation the studio does not edit still belongs to the row — a save must not strip it (V0.51)
+    if (raw.zone) s.zone = String(raw.zone).slice(0, 64);
+    if (raw.phase != null && isFinite(Number(raw.phase))) s.phase = Math.round(clampNum(raw.phase, 0, 9, 1));
+    if (Array.isArray(raw.phaseSpan) && raw.phaseSpan.length === 2 && isFinite(Number(raw.phaseSpan[0])) && isFinite(Number(raw.phaseSpan[1]))) {
+      s.phaseSpan = [Math.round(clampNum(raw.phaseSpan[0], 0, 9, 1)), Math.round(clampNum(raw.phaseSpan[1], 0, 9, 1))];
+    }
+    if (raw.costUSD === null) s.costUSD = null;
+    else if (raw.costUSD && typeof raw.costUSD === 'object' && isFinite(Number(raw.costUSD.low)) && isFinite(Number(raw.costUSD.high))) {
+      s.costUSD = { low: Number(raw.costUSD.low), high: Number(raw.costUSD.high) };
+    }
+    if (raw.costBasis) s.costBasis = String(raw.costBasis).slice(0, 40);
+    if (raw.costSource) s.costSource = String(raw.costSource).slice(0, 200);
+    if (raw.timeline) s.timeline = String(raw.timeline).slice(0, 120);
     if (raw.outline != null) {
       if (!Array.isArray(raw.outline) || raw.outline.length < 3 || raw.outline.length > 2000) return { error: id + ': an outline wants 3 to 2000 points' };
       const ring = [];
       for (const pt of raw.outline) {
         if (!Array.isArray(pt) || pt.length !== 2 || !inBox(Number(pt[0]), Number(pt[1]))) return { error: id + ': an outline point is off the map' };
-        ring.push([round6(Number(pt[0])), round6(Number(pt[1]))]);
+        ring.push([round7(Number(pt[0])), round7(Number(pt[1]))]);
       }
       s.outline = ring;
     }
@@ -9033,7 +9055,7 @@ function cleanStructures(list) {
         && !/^https:\/\/[A-Za-z0-9.-]{1,80}\/[A-Za-z0-9._/-]{1,200}\.(glb|gltf)$/.test(model)) return { error: id + ': a model must be a .glb in /models or a full https URL to one' };
       s.model = model;
       if (!Array.isArray(raw.position) || !inBox(Number(raw.position[0]), Number(raw.position[1]))) return { error: id + ': a model needs a position inside the county' };
-      s.position = [round6(Number(raw.position[0])), round6(Number(raw.position[1]))];
+      s.position = [round7(Number(raw.position[0])), round7(Number(raw.position[1]))];
       s.altitudeM = clampNum(raw.altitudeM, -200, 200, 0);
       s.rotationDeg = Math.round(clampNum(raw.rotationDeg, -360, 360, 0));
       s.scale = clampNum(raw.scale, 0.01, 100, 1);
@@ -9062,7 +9084,7 @@ app.post('/api/save-structures', async (req, res) => {
     const clean = cleanStructures(structures);
     if (clean.error) return res.status(400).json({ ok: false, error: 'bad_body', detail: clean.error });
 
-    const doc = { note: 'Designed structures — the Vision half of the map. Edited in the placement studio (B) and committed from there; a .glb lives in public/models and is referenced by path.', structures: clean.structures };
+    const doc = { schema: 1, note: 'Designed structures — the Vision half of the map. Edited in the placement studio (B) and committed from there; a .glb lives in public/models and is referenced by path.', updatedAt: new Date().toISOString().slice(0, 10), structures: clean.structures };
     const filePath = 'data/structures.json';
     const apiBase = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + filePath;
     const ghHeaders = { 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github+json', 'User-Agent': 'ojai-map-server', 'X-GitHub-Api-Version': '2022-11-28' };
@@ -9080,7 +9102,7 @@ app.post('/api/save-structures', async (req, res) => {
       return res.status(502).json({ ok: false, error: 'github_error', status: putResp.status, detail: String(detail).slice(0, 300) });
     }
     const result = await putResp.json();
-    try { STRUCTURES_CACHE = null; } catch (e) { /* no cache to clear */ }
+    try { remember('data/structures.json', doc); } catch (e) { /* cache is best-effort */ }
     res.json({ ok: true, count: clean.structures.length, commit: result.commit && result.commit.sha });
   } catch (e) {
     res.status(500).json({ ok: false, error: 'server_error', message: String(e && e.message) });

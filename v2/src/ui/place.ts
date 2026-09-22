@@ -19,7 +19,8 @@ const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&am
 const el = (h: string) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstElementChild as HTMLElement; };
 const R = 6378137, D2R = Math.PI / 180;
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'structure';
-const round6 = (n: number) => Number(n.toFixed(6));
+// 7 decimals ≈ 1 cm on the ground — the studio places to the inch (V0.51)
+const round6 = (n: number) => Number(n.toFixed(7));
 
 export interface Asset { path: string; name: string; bytes: number }
 
@@ -30,9 +31,10 @@ function centroid(ring: [number, number][]): [number, number] {
   return [x / ring.length, y / ring.length];
 }
 
-/** turn a ring about its own centre, in metres rather than degrees, so it does not shear */
-function rotateRing(ring: [number, number][], deg: number): [number, number][] {
-  const [cx, cy] = centroid(ring), a = deg * D2R, cos = Math.cos(a), sin = Math.sin(a);
+/** turn a ring about a centre (its own by default), in metres rather than degrees, so it does not
+ *  shear. Positive deg turns CLOCKWISE seen from above — the same compass sense as rotationDeg. */
+function rotateRing(ring: [number, number][], deg: number, centre?: [number, number]): [number, number][] {
+  const [cx, cy] = centre ?? centroid(ring), a = -deg * D2R, cos = Math.cos(a), sin = Math.sin(a);
   const mx = R * Math.cos(cy * D2R) * D2R;
   return ring.map(([lng, lat]) => {
     const dx = (lng - cx) * mx, dy = (lat - cy) * R * D2R;
@@ -54,6 +56,7 @@ export class Placer {
     this.root.className = 'placer';
     this.root.hidden = true;
     container.appendChild(this.root);
+    window.addEventListener('keydown', this.keys, true);
     this.render();
   }
 
@@ -184,6 +187,7 @@ export class Placer {
           <button class="mini gold" data-pl="save"${this.dirty.size || this.removed.length ? '' : ' disabled'}>🔒 Save to repo</button>
         </div>
         <textarea class="pl-out" hidden readonly></textarea>
+        <div class="pl-note">Arrow keys nudge the picked structure 10 cm — Shift a metre, Alt an inch. Turning a model turns its ground plan with it.</div>
         <div class="pl-note">Assets live in <code>public/models/</code>. A .glb wants metres, Y up, and its origin at the centre of the ground floor — then <b>Height over ground</b> is 0 and it rests on the hillside wherever you drag it.</div>
       </div>`;
     this.wire();
@@ -198,8 +202,27 @@ export class Placer {
     const at = this.anchor(s);
     if (!at) return 'No position yet — press “Put it under the crosshair”.';
     const g = this.eng.groundElevation({ lng: at[0], lat: at[1] });
-    return `${at[1].toFixed(6)}, ${at[0].toFixed(6)}${g == null ? '' : ` · ground ${Math.round(g)} m (${Math.round(g * 3.28084)} ft)`}`;
+    return `${at[1].toFixed(7)}, ${at[0].toFixed(7)}${g == null ? '' : ` · ground ${Math.round(g)} m (${Math.round(g * 3.28084)} ft)`}`;
   }
+
+  // ---- the strategy-game nudge: arrow keys move the selected structure on the ground -----------
+  //   10 cm a tap · Shift a metre · Alt an inch. Sliders and text fields keep their own arrows.
+  private nudgeT = 0;
+  private keys = (e: KeyboardEvent) => {
+    if (!this.open || !this.current) return;
+    const dir: Record<string, [number, number]> = { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+    const d = dir[e.key]; if (!d) return;
+    const t = e.target as HTMLElement | null;
+    if (t && ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return;
+    e.preventDefault(); e.stopPropagation();
+    const step = e.altKey ? 0.0254 : e.shiftKey ? 1 : 0.1;
+    const s = this.current, at = this.anchor(s); if (!at) return;
+    const mx = R * Math.cos(at[1] * D2R) * D2R, my = R * D2R;
+    this.moveTo(at[0] + (d[0] * step) / mx, at[1] + (d[1] * step) / my, false);
+    const now = this.anchor(s); if (now && this.marker) this.marker.setLngLat(now);
+    const where = this.root.querySelector('.pl-where'); if (where) where.innerHTML = this.whereLine(s);
+    window.clearTimeout(this.nudgeT); this.nudgeT = window.setTimeout(() => this.render(), 400);
+  };
 
   private wire() {
     const q = (sel: string) => this.root.querySelector(sel) as HTMLElement | null;
@@ -235,7 +258,14 @@ export class Placer {
         fn(n); this.touch(s);
       });
     };
-    live('[data-pl="rot"]', 'rot', n => { s.rotationDeg = n; }, '°');
+    // turning a model turns its ground plan with it, about the origin the model spins on (V0.51)
+    const rotBase = { deg: s.rotationDeg ?? 0, ring: s.outline ? s.outline.map(c => [c[0], c[1]] as [number, number]) : null };
+    live('[data-pl="rot"]', 'rot', n => {
+      s.rotationDeg = n;
+      if (rotBase.ring && s.position) {
+        s.outline = rotateRing(rotBase.ring, n - rotBase.deg, [s.position[0], s.position[1]]).map(([x, y]) => [round6(x), round6(y)] as [number, number]);
+      }
+    }, '°');
     live('[data-pl="scale"]', 'scale', n => { s.scale = n; }, '×');
     live('[data-pl="alt"]', 'alt', n => { s.altitudeM = n; }, 'm');
     live('[data-pl="height"]', 'height', n => { s.heightFt = n; }, 'ft');
